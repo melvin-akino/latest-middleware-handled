@@ -1,0 +1,7 @@
+{
+    "require": {
+        "open-smf/connection-pool": "~1.0",
+        "monolog/monolog": "^2.2",
+        "ext-rdkafka": "4.0.4-dev"
+    }
+}
