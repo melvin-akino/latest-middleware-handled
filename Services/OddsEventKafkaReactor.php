@@ -51,7 +51,7 @@ function makeConsumer() {
 //     var_dump($stat);
 // }
 
-function reactor($queue, &$dbPool) {
+function reactor($queue) {
 	global $count;
     global $activeProcesses;
 	while (true) {
@@ -66,7 +66,7 @@ function reactor($queue, &$dbPool) {
                         switch($payload['command']) {
                             case 'odd':
                                 // go("oddHandler", $key, $payload, $message->offset);
-                                oddHandler($key, $dbPool, $payload, $message->offset);
+                                oddHandler($key, $payload, $message->offset);
                                 break;
                             case 'event':
                             default:
@@ -96,9 +96,10 @@ function reactor($queue, &$dbPool) {
 	}
 }
 
-function oddHandler($key, &$dbPool, $message, $offset)
+function oddHandler($key, $message, $offset)
 {
     global $swooleTable;
+    global $dbPool;
 
     $start = microtime(true);
 
@@ -195,7 +196,7 @@ function oddHandler($key, &$dbPool, $message, $offset)
                 echo 3;
                 // $dbPool->init();
                 echo 4;
-                $connection = $dbPool->borrow();
+                $connection = $dbPool->borrow();    
                 var_dump($connection);
                 echo 5;
                 $result = $connection->query("SELECT id FROM users");
@@ -243,7 +244,7 @@ function execute($payload,$key) {
 
 $activeProcesses = 0;
 $queue           = makeConsumer();
-$dbPool = null;
+$dbPool = databaseConnectionPool();
 makeProcess();
 
 Co\run(function() use ($queue, $activeProcesses) {
@@ -252,13 +253,17 @@ Co\run(function() use ($queue, $activeProcesses) {
 	$count = 0;
 
     Swoole\Timer::tick(1000, "checkRate");
-    $dbPool = databaseConnectionPool();
-
+    
     $dbPool->init();
     defer(function () use ($dbPool) {
         echo "Closing connection pool\n";
         $dbPool->close();
     });
+    $connection = $dbPool->borrow();
+    $result = $connection->query("SELECT id FROM users");
+    $stat = $connection->fetchAssoc($result);
+    $dbPool->return($connection);
+    var_dump($stat);
 
-    reactor($queue, $dbPool);
+    reactor($queue);
 });
