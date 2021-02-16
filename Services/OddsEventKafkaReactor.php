@@ -3,7 +3,7 @@
 use RdKafka\KafkaConsumer;
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
-use Swoole\Coroutine\PostgreSQL;
+use Swoole\Runtime;
 
 require_once __DIR__ . '/../Bootstrap.php';
 
@@ -194,10 +194,9 @@ function oddHandler($key, $message, $offset)
             try {
 
                 echo 3;
-                // $dbPool->init();
+                $dbPool->init();
                 echo 4;
                 $connection = $dbPool->borrow();    
-                var_dump($connection);
                 echo 5;
                 $result = $connection->query("SELECT id FROM users");
                 echo 6;
@@ -209,7 +208,8 @@ function oddHandler($key, $message, $offset)
                 echo 9;
                 echo $e->getMessage();
             }
-            
+
+            freeUpProcess();
             // ProcessOdds
         });
     } catch (Exception $e) {
@@ -218,7 +218,7 @@ function oddHandler($key, $message, $offset)
         // processTaskTempDir(false);
         // self::$configTable["processKafka"]["value"] = 1;
     } finally {
-        freeUpProcess();
+        
         return true;
     }
 }
@@ -247,6 +247,7 @@ $queue           = makeConsumer();
 $dbPool = databaseConnectionPool();
 makeProcess();
 
+Runtime::enableCoroutine();
 Co\run(function() use ($queue, $activeProcesses) {
     global $dbPool;
 
