@@ -53,9 +53,11 @@ function makeConsumer() {
 
 function reactor($queue) {
 	global $count;
-    global $activeProcesses;
+	global $activeProcesses;
+
+
 	while (true) {
-		$message = $queue->consume(0);
+		$message=$queue->consume(0);
 		if ($message) {
 			switch ($message->err) {
 				case RD_KAFKA_RESP_ERR_NO_ERROR:
@@ -66,16 +68,17 @@ function reactor($queue) {
                         switch($payload['command']) {
                             case 'odd':
                                 // go("oddHandler", $key, $payload, $message->offset);
-                                oddHandler($key, $payload, $message->offset);
+                                go("oddHandler",$key, $payload, $message->offset);
+				$activeProcesses++;
                                 break;
                             case 'event':
                             default:
                                 // go("eventHandler", $key, $payload, $message->offset);
-                                eventHandler($key, $payload, $message->offset);
+                                go("eventHandler",$key, $payload, $message->offset);
+				$activeProcesses++;
                                 break;
                         }
 						
-						$activeProcesses++;
 						$count++;
                     }
                     $queue->commitAsync($message);
@@ -100,6 +103,7 @@ function oddHandler($key, $message, $offset)
 {
     global $swooleTable;
     global $dbPool;
+
 
     $start = microtime(true);
 
@@ -188,39 +192,29 @@ function oddHandler($key, $message, $offset)
         //     return;
         // }
 
-        echo 1;
-        go(function() use($dbPool) {
-            echo 2;
-            try {
-
-                echo 3;
-                $dbPool->init();
-                echo 4;
-                $connection = $dbPool->borrow();    
-                echo 5;
-                $result = $connection->query("SELECT id FROM users");
-                echo 6;
-                $stat = $connection->fetchAssoc($result);
-                $pool->return($connection);
-                echo 7;
-                var_dump($stat);
-            } catch (Exception $e) {
-                echo 9;
-                echo $e->getMessage();
-            }
-
-            freeUpProcess();
-            // ProcessOdds
-        });
+		#echo "\nhere..";
+	    	#echo 1;
+                $connection = $dbPool->borrow();
+                #var_dump($connection);
+		#echo "..\n";
+                #echo 2;
+                #$result=$connection->query("SELECT id FROM users");
+                #echo 3;
+                #$stat=$connection->fetchAssoc($result);
+		#echo 4;
+                $dbPool->return($connection);
+                #echo 5;
+                #var_dump($stat);
+		#echo 6;
+		echo "c";
+		freeUpProcess();
+		return true;
     } catch (Exception $e) {
         echo $e->getMessage();
         // self::$configTable["processKafka"]["value"] = 0;
         // processTaskTempDir(false);
         // self::$configTable["processKafka"]["value"] = 1;
-    } finally {
-        
-        return true;
-    }
+    } 
 }
 
 function eventHandler($payload, $key)
@@ -250,21 +244,16 @@ makeProcess();
 Runtime::enableCoroutine();
 Co\run(function() use ($queue, $activeProcesses) {
     global $dbPool;
-
-	$count = 0;
+    $count=0;
 
     Swoole\Timer::tick(1000, "checkRate");
-    
-    $dbPool->init();
-    defer(function () use ($dbPool) {
-        echo "Closing connection pool\n";
-        $dbPool->close();
-    });
-    $connection = $dbPool->borrow();
-    $result = $connection->query("SELECT id FROM users");
-    $stat = $connection->fetchAssoc($result);
-    $dbPool->return($connection);
-    var_dump($stat);
+    $dbPool=databaseConnectionPool();
+
+    #$dbPool->init();
+    #defer(function () use ($dbPool) {
+        #echo "Closing connection pool\n";
+        #$dbPool->close();
+    #});
 
     reactor($queue);
 });

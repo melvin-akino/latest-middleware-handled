@@ -52,16 +52,18 @@ function databaseConnectionPool()
         ]
     );
 
-    // $pool->init();
-    // defer(function () use ($pool) {
-    //     echo "Closing connection pool\n";
-    //     $pool->close();
-    // });
-    // $connection = $pool->borrow();
-    // $result = $connection->query("SELECT id FROM users");
-    // $stat = $connection->fetchAssoc($result);
-    // $pool->return($connection);
-    // var_dump($stat);
+    $pool->init();
+    defer(function () use ($pool) {
+        echo "Closing connection pool\n";
+        $pool->close();
+    });
+    #$connection = $pool->borrow();
+    #$result = $connection->query("SELECT id FROM users");
+    #$stat = $connection->fetchAssoc($result);
+    #$pool->return($connection);
+    #echo "\n\nHERE...";
+    #var_dump($stat);
+    #echo "...\n";
 
     return $pool;
 }

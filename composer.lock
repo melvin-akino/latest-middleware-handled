@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e8f3977bb694d3ad9ab1a789ee42a2f4",
+    "content-hash": "a80f20b23712b070df0062785534019e",
     "packages": [
         {
             "name": "monolog/monolog",
@@ -199,13 +199,11 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "ext-rdkafka": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "ext-rdkafka": "4.0.4-dev"
+        "ext-rdkafka": "5.0.0"
     },
     "platform-dev": [],
     "plugin-api-version": "1.1.0"
