@@ -197,15 +197,15 @@ function oddHandler($key, $message, $offset)
                 $connection = $dbPool->borrow();
                 #var_dump($connection);
 		#echo "..\n";
-                #echo 2;
-                #$result=$connection->query("SELECT id FROM users");
-                #echo 3;
-                #$stat=$connection->fetchAssoc($result);
-		#echo 4;
+                echo 2;
+                $result=$connection->query("SELECT id FROM sports");
+                echo 3;
+                $stat=$connection->fetchAssoc($result);
+		echo 4;
                 $dbPool->return($connection);
-                #echo 5;
-                #var_dump($stat);
-		#echo 6;
+                echo 5;
+                var_dump($stat);
+		echo 6;
 		echo "c";
 		freeUpProcess();
 		return true;
@@ -238,7 +238,6 @@ function execute($payload,$key) {
 
 $activeProcesses = 0;
 $queue           = makeConsumer();
-$dbPool = databaseConnectionPool();
 makeProcess();
 
 Runtime::enableCoroutine();
