@@ -4,9 +4,9 @@ $config = [
     'database' => [
         'connection_pool' => [
             'minActive'         => 10,
-            'maxActive'         => 30,
-            'maxWaitTime'       => 5,
-            'maxIdleTime'       => 20,
+            'maxActive'         => 20,
+            'maxWaitTime'       => 100,
+            'maxIdleTime'       => 300,
             'idleCheckInterval' => 10,
         ],
         'pgsql' => [
@@ -324,4 +324,22 @@ $config = [
             ]
         ],
     ],
+    'logger' => [
+        'app' => [
+            'name' => 'app.log',
+            'level' => 'debug'
+        ],
+        'odds-events-reactor' => [
+            'name' => 'odds-event-reactor.log',
+            'level' => 'debug'
+        ],
+        'odds' => [
+            'name' => 'odds-process.log',
+            'level' => 'debug'
+        ],
+        'event' => [
+            'name' => 'event-process.log',
+            'level' => 'debug'
+        ]
+    ]
 ];

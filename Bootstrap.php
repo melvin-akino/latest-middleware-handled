@@ -10,8 +10,12 @@ use RdKafka\Conf;
 
 (new DotEnv(__DIR__ . '/.env'))->load();
 
+$log = null;
+
 require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/config.php';
+
+instantiateLogger();
 
 
 $kafkaConf = new Conf();
