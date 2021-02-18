@@ -42,8 +42,6 @@ function preProcess()
     global $dbPool;
 
     $connection = $dbPool->borrow();
-    $result = $connection->query("SELECT count(*) FROM users");
-    $stat = $connection->fetchAssoc($result);
 
     PreProcess::init($connection);
     PreProcess::loadEnabledProviders();
@@ -96,25 +94,11 @@ function balanceHandler($message, $offset)
     global $swooleTable;
     global $dbPool;
 
-    $start = microtime(true);
-
     try {
-        $start = microtime(true);
 
         $previousTS = $swooleTable['timestamps']['balance']['ts'];
         $messageTS  = $message["request_ts"];
         if ($messageTS < $previousTS) {
-            $statsArray = [
-                "type"        => 'balance',
-                "status"      => SwooleStats::getErrorType('TIMESTAMP_ERROR'),
-                "time"        => microtime(true) - $start,
-                "request_uid" => $message["request_uid"],
-                "request_ts"  => $message["request_ts"],
-                "offset"      => $offset,
-            ];
-
-            SwooleStats::addStat($statsArray);
-
             Logger('info','balance-reactor', 'Validation Error: Timestamp is old', (array) $message);
             return;
         }
@@ -127,31 +111,11 @@ function balanceHandler($message, $offset)
             empty($message['data']['available_balance']) ||
             empty($message['data']['currency'])
         ) {
-            $statsArray = [
-                "type"        => 'balance',
-                "status"      => SwooleStats::getErrorType('ERROR'),
-                "time"        => microtime(true) - $start,
-                "request_uid" => $message["request_uid"],
-                "request_ts"  => $message["request_ts"],
-                "offset"      => $offset,
-            ];
-            SwooleStats::addStat($statsArray);
-
             Logger('info','balance-reactor', 'Validation Error: Invalid Payload', (array) $message);
             return;
         }
 
         if (!$swooleTable['enabledProviders']->exists($message['data']['provider'])) {
-            $statsArray = [
-                "type"        => 'balance',
-                "status"      => SwooleStats::getErrorType('EVENTS_INACTIVE_PROVIDER'),
-                "time"        => microtime(true) - $start,
-                "request_uid" => $message["request_uid"],
-                "request_ts"  => $message["request_ts"],
-                "offset"      => $offset,
-            ];
-            SwooleStats::addStat($statsArray);
-
             Logger('info','balance-reactor', 'Validation Error: Invalid Provider', (array) $message);
             return;
         }
@@ -159,21 +123,13 @@ function balanceHandler($message, $offset)
         go(function() use($dbPool, $swooleTable, $message, $offset) {
             try {
                 $connection = $dbPool->borrow();
-                $result = $connection->query("SELECT count(*) FROM users");
-                $stat = $connection->fetchAssoc($result);
-                // SwooleStats::addStat($statsArray);
-                
 
                 ProcessBalance::handle($connection, $swooleTable, $message, $offset);
-                
-                // var_dump($stat);
 
                 $dbPool->return($connection);
             } catch (Exception $e) {
                 echo $e->getMessage();
             }
-            
-            // ProcessOdds
         });
     } catch (Exception $e) {
         echo $e->getMessage();
@@ -188,7 +144,7 @@ function balanceHandler($message, $offset)
 
 $activeProcesses = 0;
 $queue           = makeConsumer();
-$dbPool = null;
+$dbPool          = null;
 makeProcess();
 
 Co\run(function() use ($queue, $activeProcesses) {
@@ -201,7 +157,7 @@ Co\run(function() use ($queue, $activeProcesses) {
 
     $dbPool->init();
     defer(function () use ($dbPool) {
-        Logger('info','balance-reactor',  "Closing connection pool");
+        Logger('info', 'balance-reactor',  "Closing connection pool");
         echo "Closing connection pool\n";
         $dbPool->close();
     });
