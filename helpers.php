@@ -90,9 +90,9 @@ function instantiateLogger()
     }
 }
 
-function logger($loggerName = 'app', ?string $data = null, $context = [], $extraData = [])
+function logger($type, $loggerName = 'app', ?string $data = null, $context = [], $extraData = [])
 {
     global $log;
 
-    $log[$loggerName]->warning($data, $context, $extraData);
+    $log[$loggerName]->{$type}($data, $context, $extraData);
 }

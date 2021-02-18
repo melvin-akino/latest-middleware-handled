@@ -340,6 +340,14 @@ $config = [
         'event' => [
             'name' => 'event-process.log',
             'level' => 'debug'
-        ]
+        ],
+        'balance-reactor' => [
+            'name' => 'balance-reactor.log',
+            'level' => 'debug'
+        ],
+        'balance' => [
+            'name' => 'balance.log',
+            'level' => 'debug'
+        ],
     ]
 ];

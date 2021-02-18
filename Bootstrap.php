@@ -3,6 +3,7 @@
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/Classes/DotEnv.php';
 require_once __DIR__ . '/Classes/SwooleTable.php';
+require_once __DIR__ . '/Classes/PreProcess.php';
 // require_once __DIR__ . '/Classes/SwooleStats.php';
 
 use DevCoder\DotEnv;
