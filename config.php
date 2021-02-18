@@ -357,5 +357,17 @@ $config = [
             'name' => 'maintenance.log',
             'level' => 'debug'
         ],
+        'sessions-reactor' => [
+            'name' => 'sessions-reactor.log',
+            'level' => 'debug'
+        ],
+        'session-sync' => [
+            'name' => 'session-sync.log',
+            'level' => 'debug'
+        ],
+        'session-transform' => [
+            'name' => 'session-transform.log',
+            'level' => 'debug'
+        ],
     ]
 ];

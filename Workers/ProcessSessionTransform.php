@@ -1,0 +1,75 @@
+<?php
+
+namespace Workers;
+
+use Models\ProviderAccount;
+use Exception;
+
+class ProcessSessionTransform
+{
+    public static function handle($connection, $swooleTable, $message, $offset)
+    {
+        $categoryTypes = [
+            'SCRAPER'         => 'odds',
+            'SCRAPER_MIN_MAX' => 'minmax',
+            'BET_NORMAL'      => 'bet',
+        ];
+
+        try {
+            // Set the starting time of this function, to keep running stats
+            $startTime = microtime(true);
+
+            $activeAccounts   = $message['data']['active_sessions'];
+            $inactiveAccounts = $message['data']['inactive_sessions'];
+
+            $providerAccountsTable = $swooleTable['providerAccounts'];
+
+            $result           = ProviderAccount::getAll($connection);
+            $providerAccounts = $connection->fetchAll($result);
+
+            foreach ($providerAccounts as $providerAccount) {
+                foreach ($activeAccounts as $activeAccount) {
+                    if ($activeAccount['username'] != $providerAccount['username']) {
+                        continue;
+                    }
+
+                    $providerAccountId = $providerAccount['id'];
+                    if (in_array($activeAccount['category'], $categoryTypes)) {
+                        $resultUpdate = ProviderAccount::updateToActive($connection, $providerAccountId);
+                        if ($resultUpdate) {
+                            if ($providerAccountsTable->exists($providerAccountId)) {
+                                $providerAccountsTable[$providerAccountId]['provider_id']       = $providerAccount['provider_id'];
+                                $providerAccountsTable[$providerAccountId]['username']          = $providerAccount['username'];
+                                $providerAccountsTable[$providerAccountId]['punter_percentage'] = $providerAccount['punter_percentage'];
+                                $providerAccountsTable[$providerAccountId]['credits']           = $providerAccount['credits'];
+                                $providerAccountsTable[$providerAccountId]['type']              = $providerAccount['type'];
+                            }
+                        } else {
+                            throw new Exception('Something went wrong');
+                        }
+                    }
+                }
+
+                foreach ($inactiveAccounts as $inactiveAccount) {
+                    if ($inactiveAccount['username'] != $providerAccount['username']) {
+                        continue;
+                    }
+
+                    $providerAccountId = $providerAccount['id'];
+                    if (in_array($inactiveAccount['category'], $categoryTypes)) {
+                        $resultUpdate = ProviderAccount::updateToInActive($connection, $providerAccountId);
+                        if ($resultUpdate) {
+                            $providerAccountsTable->del($providerAccountId);
+                        } else {
+                            throw new Exception('Something went wrong');
+                        }
+                    }
+                }
+            }
+
+            Logger('info', 'session-transform', 'Session Transform Processed', $message);
+        } catch (Exception $e) {
+            Logger('error', 'session-transform', 'Error', (array) $e);
+        }
+    }
+}

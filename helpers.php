@@ -96,3 +96,29 @@ function Logger($type, $loggerName = 'app', ?string $data = null, $context = [],
 
     $log[$loggerName]->{$type}($data, $context, $extraData);
 }
+
+function getMilliseconds()
+{
+    $mt = explode(' ', microtime());
+    return bcadd($mt[1], $mt[0], 8);
+}
+
+function kafkaPush($kafkaTopic, $message, $key)
+{
+    global $kafkaProducer;
+
+    try {
+        $topic = $kafkaProducer->newTopic($kafkaTopic);
+        $topic->produce(RD_KAFKA_PARTITION_UA, 0, json_encode($message), $key);
+
+        for ($flushRetries = 0; $flushRetries < 10; $flushRetries++) {
+            $result = $kafkaProducer->flush(10000);
+            if (RD_KAFKA_RESP_ERR_NO_ERROR === $result) {
+                break;
+            }
+        }
+        Logger('info', 'app', 'Sending to Kafka Topic: ' . $kafkaTopic, $message);
+    } catch (Exception $e) {
+        Logger('error', 'app', 'Error', (array) $e);
+    }
+}
