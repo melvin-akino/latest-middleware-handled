@@ -349,5 +349,13 @@ $config = [
             'name' => 'balance.log',
             'level' => 'debug'
         ],
+        'maintenance-reactor' => [
+            'name' => 'maintenance-reactor.log',
+            'level' => 'debug'
+        ],
+        'maintenance' => [
+            'name' => 'maintenance.log',
+            'level' => 'debug'
+        ],
     ]
 ];

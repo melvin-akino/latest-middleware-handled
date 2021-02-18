@@ -2,7 +2,8 @@
 
 use Models\{
     Provider,
-    ProviderAccount
+    ProviderAccount,
+    SystemConfiguration
 };
 
 // use App\Models\{
@@ -569,26 +570,25 @@ class PreProcess
     //     }
     // }
 
-    // private static function loadMaintenance()
-    // {
-    //     foreach (self::$maintenanceTable as $k => $m) {
-    //         self::$maintenanceTable->del($k);
-    //     }
+    public static function loadMaintenance()
+    {
+        global $swooleTable;
 
-    //     $maintenances = DB::table('system_configurations')
-    //                           ->where('type', 'like', '%_MAINTENANCE')
-    //                           ->select('type', 'value')
-    //                           ->get()
-    //                           ->toArray();
+        foreach ($swooleTable['maintenance'] as $k => $m) {
+            $swooleTable['maintenance']->del($k);
+        }
 
-    //     foreach ($maintenances as $maintenance) {
-    //         $maintenanceTypes = explode('_', $maintenance->type);
-    //         $provider = strtolower($maintenanceTypes[0]);
-    //         if (self::$providersTable->exists($provider)) {
-    //             self::$maintenanceTable->set($provider, ['under_maintenance' => $maintenance->value]);
-    //         }
-    //     }
-    // }
+        $result = SystemConfiguration::getProviderMaintenanceConfigData(self::$connection);
+
+        while ($maintenance = self::$connection->fetchAssoc($result)) {
+            $maintenanceTypes = explode('_', $maintenance['type']);
+            $provider = strtolower($maintenanceTypes[0]);
+            
+            if ($swooleTable['enabledProviders']->exists($provider)) {
+                $swooleTable['enabledProviders']->set($provider, ['under_maintenance' => $maintenance->value]);
+            }
+        }
+    }
 
     // public static function callback(Server $swoole, Process $process)
     // {
