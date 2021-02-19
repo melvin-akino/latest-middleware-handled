@@ -29,7 +29,7 @@ function makeConsumer()
 		$topicConf->set('auto.offset.reset', 'latest');
 
 		$topic = $rk->newTopic($t, $topicConf);
-        Logger('info','balance-reactor',  "Setting up " . $t);
+        logger('info','app',  "Setting up " . $t);
         echo "Setting up " . $t . "\n";
 		$topic->consumeQueueStart(0, RD_KAFKA_OFFSET_STORED,$queue);
 	}
@@ -60,7 +60,7 @@ function reactor($queue) {
 		if ($message) {
 			switch ($message->err) {
 				case RD_KAFKA_RESP_ERR_NO_ERROR:
-                    Logger('info','balance-reactor', 'consuming...', (array) $message);
+                    logger('info','balance-reactor', 'consuming...', (array) $message);
 					if ($message->payload) {
                         getPipe(getenv('BALANCE-PROCESSES-NUMBER', 1));
 
@@ -72,14 +72,14 @@ function reactor($queue) {
                     }
 					break;
 				case RD_KAFKA_RESP_ERR__PARTITION_EOF:
-                    Logger('info','balance-reactor', "No more messages; will wait for more");
+                    logger('info','balance-reactor', "No more messages; will wait for more");
 					echo "No more messages; will wait for more\n";
 					break;
 				case RD_KAFKA_RESP_ERR__TIMED_OUT:
 					// Kafka message timed out. Ignore
 					break;
 				default:
-                    Logger('info','balance-reactor', $message->errstr(), $message->err);
+                    logger('info','balance-reactor', $message->errstr(), $message->err);
 					throw new Exception($message->errstr(), $message->err);
 					break;
 			}
@@ -99,7 +99,7 @@ function balanceHandler($message, $offset)
         $previousTS = $swooleTable['timestamps']['balance']['ts'];
         $messageTS  = $message["request_ts"];
         if ($messageTS < $previousTS) {
-            Logger('info','balance-reactor', 'Validation Error: Timestamp is old', (array) $message);
+            logger('info','balance-reactor', 'Validation Error: Timestamp is old', (array) $message);
             return;
         }
 
@@ -111,12 +111,12 @@ function balanceHandler($message, $offset)
             empty($message['data']['available_balance']) ||
             empty($message['data']['currency'])
         ) {
-            Logger('info','balance-reactor', 'Validation Error: Invalid Payload', (array) $message);
+            logger('info','balance-reactor', 'Validation Error: Invalid Payload', (array) $message);
             return;
         }
 
         if (!$swooleTable['enabledProviders']->exists($message['data']['provider'])) {
-            Logger('info','balance-reactor', 'Validation Error: Invalid Provider', (array) $message);
+            logger('info','balance-reactor', 'Validation Error: Invalid Provider', (array) $message);
             return;
         }
 
@@ -157,7 +157,7 @@ Co\run(function() use ($queue, $activeProcesses) {
 
     $dbPool->init();
     defer(function () use ($dbPool) {
-        Logger('info', 'balance-reactor',  "Closing connection pool");
+        logger('info', 'balance-reactor',  "Closing connection pool");
         echo "Closing connection pool\n";
         $dbPool->close();
     });
