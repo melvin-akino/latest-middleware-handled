@@ -16,9 +16,9 @@ class ProcessMaintenance
                 'under_maintenance' => (string) $message['data']['is_undermaintenance'],
             ]);
 
-            Logger('info', 'maintenance', 'Maintenance Processed', $message);
+            logger('info', 'maintenance', 'Maintenance Processed', $message);
         } catch (Exception $e) {
-            Logger('error', 'maintenance', 'Error', (array) $e);
+            logger('error', 'maintenance', 'Error', (array) $e);
         }
     }
 }
