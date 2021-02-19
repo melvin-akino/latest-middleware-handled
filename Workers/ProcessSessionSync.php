@@ -57,9 +57,9 @@ class ProcessSessionSync
                 kafkaPush(strtolower($message['data']['provider']) . getenv('KAFKA-SESSION-REQUEST-POSTFIX', '_session_req'), $payload, $payload['request_uid']);
             }
 
-            Logger('error', 'session-sync', 'Session Sync Processed', $message);
+            logger('error', 'session-sync', 'Session Sync Processed', $message);
         } catch (Exception $e) {
-            Logger('error', 'session-sync', 'Error', (array) $e);
+            logger('error', 'session-sync', 'Error', (array) $e);
         }
     }
 }

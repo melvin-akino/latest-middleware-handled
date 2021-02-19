@@ -60,7 +60,7 @@ function reactor($queue) {
 		if ($message) {
 			switch ($message->err) {
 				case RD_KAFKA_RESP_ERR_NO_ERROR:
-                    Logger('info','sessions-reactor', 'consuming...', (array) $message);
+                    logger('info','sessions-reactor', 'consuming...', (array) $message);
 					if ($message->payload) {
                         getPipe(getenv('SESSIONS-PROCESSES-NUMBER', 1));
 
@@ -72,14 +72,14 @@ function reactor($queue) {
                     }
 					break;
 				case RD_KAFKA_RESP_ERR__PARTITION_EOF:
-                    Logger('info','sessions-reactor', "No more messages; will wait for more");
+                    logger('info','sessions-reactor', "No more messages; will wait for more");
 					echo "No more messages; will wait for more\n";
 					break;
 				case RD_KAFKA_RESP_ERR__TIMED_OUT:
 					// Kafka message timed out. Ignore
 					break;
 				default:
-                    Logger('info','sessions-reactor', $message->errstr(), $message->err);
+                    logger('info','sessions-reactor', $message->errstr(), $message->err);
 					throw new Exception($message->errstr(), $message->err);
 					break;
 			}
@@ -98,13 +98,13 @@ function sessionHandler($message, $offset)
         $previousTS = $swooleTable['timestamps']['sessions']['ts'];
         $messageTS  = $message["request_ts"];
         if ($messageTS < $previousTS) {
-            Logger('info','sessions-reactor', 'Validation Error: Timestamp is old', (array) $message);
+            logger('info','sessions-reactor', 'Validation Error: Timestamp is old', (array) $message);
             return;
         }
         $swooleTable['timestamps']['sessions']['ts'] = $messageTS;
 
         if (empty($message['data'])) {
-            Logger('info', 'Invalid Payload', $message);
+            logger('info', 'Invalid Payload', $message);
             return;
         }
 
@@ -152,7 +152,7 @@ Co\run(function() use ($queue, $activeProcesses) {
 
     $dbPool->init();
     defer(function () use ($dbPool) {
-        Logger('info','maintenance-reactor',  "Closing connection pool");
+        logger('info','maintenance-reactor',  "Closing connection pool");
         echo "Closing connection pool\n";
         $dbPool->close();
     });

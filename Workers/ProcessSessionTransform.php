@@ -67,9 +67,9 @@ class ProcessSessionTransform
                 }
             }
 
-            Logger('info', 'session-transform', 'Session Transform Processed', $message);
+            logger('info', 'session-transform', 'Session Transform Processed', $message);
         } catch (Exception $e) {
-            Logger('error', 'session-transform', 'Error', (array) $e);
+            logger('error', 'session-transform', 'Error', (array) $e);
         }
     }
 }
