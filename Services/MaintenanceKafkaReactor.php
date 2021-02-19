@@ -29,7 +29,7 @@ function makeConsumer()
 		$topicConf->set('auto.offset.reset', 'latest');
 
 		$topic = $rk->newTopic($t, $topicConf);
-        Logger('info','app',  "Setting up " . $t);
+        logger('info','app',  "Setting up " . $t);
         echo "Setting up " . $t . "\n";
 		$topic->consumeQueueStart(0, RD_KAFKA_OFFSET_STORED,$queue);
 	}
@@ -60,7 +60,7 @@ function reactor($queue) {
 		if ($message) {
 			switch ($message->err) {
 				case RD_KAFKA_RESP_ERR_NO_ERROR:
-                    Logger('info','maintenance-reactor', 'consuming...', (array) $message);
+                    logger('info','maintenance-reactor', 'consuming...', (array) $message);
 					if ($message->payload) {
                         getPipe(getenv('MAINTENANCE-PROCESSES-NUMBER', 1));
 
@@ -72,14 +72,14 @@ function reactor($queue) {
                     }
 					break;
 				case RD_KAFKA_RESP_ERR__PARTITION_EOF:
-                    Logger('info','maintenance-reactor', "No more messages; will wait for more");
+                    logger('info','maintenance-reactor', "No more messages; will wait for more");
 					echo "No more messages; will wait for more\n";
 					break;
 				case RD_KAFKA_RESP_ERR__TIMED_OUT:
 					// Kafka message timed out. Ignore
 					break;
 				default:
-                    Logger('info','maintenance-reactor', $message->errstr(), $message->err);
+                    logger('info','maintenance-reactor', $message->errstr(), $message->err);
 					throw new Exception($message->errstr(), $message->err);
 					break;
 			}
@@ -96,12 +96,12 @@ function maintenanceHandler($message, $offset)
 
     try {
         if (empty($message['data'])) {
-            Logger('info', 'Invalid Payload', $message);
+            logger('info', 'Invalid Payload', $message);
             return;
         }
 
         if (!$swooleTable['enabledProviders']->exists($message['data']['provider'])) {
-            Logger('info', 'Invalid Provider', $message);
+            logger('info', 'Invalid Provider', $message);
             return;
         }
 
@@ -143,7 +143,7 @@ Co\run(function() use ($queue, $activeProcesses) {
 
     $dbPool->init();
     defer(function () use ($dbPool) {
-        Logger('info','maintenance-reactor',  "Closing connection pool");
+        logger('info','maintenance-reactor',  "Closing connection pool");
         echo "Closing connection pool\n";
         $dbPool->close();
     });
