@@ -3,10 +3,13 @@
         "open-smf/connection-pool": "~1.0",
         "monolog/monolog": "^2.2",
         "ext-rdkafka": "5.0.0",
-        "ramsey/uuid": "^4.1"
+        "ramsey/uuid": "^4.1",
+        "nesbot/carbon": "^2.45",
+        "guzzlehttp/guzzle": "^7.2"
     },
     "autoload": {
         "psr-4": {
+            "Classes\\": "Classes/",
             "Workers\\": "Workers/",
             "Models\\": "Models/"
         }

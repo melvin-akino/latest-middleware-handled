@@ -3,7 +3,8 @@
 use Models\{
     Provider,
     ProviderAccount,
-    SystemConfiguration
+    SystemConfiguration,
+    Order
 };
 
 // use App\Models\{
@@ -29,34 +30,34 @@ class PreProcess
 
 
     private static $quit = false;
-    public static $configTable;
-    public static $sportsTable;
-    public static $sportsOddTypesTable;
-    public static $providersTable;
-    public static $eventsTable;
-    public static $providerAccountsTable;
-    public static $eventsIndexTable;
-    public static $masterEventsTable;
-    public static $masterEventsIndexTable;
-    public static $leaguesTable;
-    public static $leaguesIndexTable;
-    public static $masterLeaguesTable;
-    public static $masterLeaguesIndexTable;
-    public static $teamsTable;
-    public static $teamsIndexTable;
-    public static $masterTeamsTable;
-    public static $masterTeamsIndexTable;
-    public static $eventMarketsTable;
-    public static $eventMarketsIndexTable;
-    public static $masterEventMarketsTable;
-    public static $masterEventMarketsIndexTable;
-    public static $eventScoresTable;
-    public static $eventMarketListTable;
-    public static $masterEventMarketListTable;
-    public static $eventsIndexKeysTable;
-    public static $masterEventsIndexKeysTable;
-    public static $ordersTable;
-    public static $maintenanceTable;
+    public static  $configTable;
+    public static  $sportsTable;
+    public static  $sportsOddTypesTable;
+    public static  $providersTable;
+    public static  $eventsTable;
+    public static  $providerAccountsTable;
+    public static  $eventsIndexTable;
+    public static  $masterEventsTable;
+    public static  $masterEventsIndexTable;
+    public static  $leaguesTable;
+    public static  $leaguesIndexTable;
+    public static  $masterLeaguesTable;
+    public static  $masterLeaguesIndexTable;
+    public static  $teamsTable;
+    public static  $teamsIndexTable;
+    public static  $masterTeamsTable;
+    public static  $masterTeamsIndexTable;
+    public static  $eventMarketsTable;
+    public static  $eventMarketsIndexTable;
+    public static  $masterEventMarketsTable;
+    public static  $masterEventMarketsIndexTable;
+    public static  $eventScoresTable;
+    public static  $eventMarketListTable;
+    public static  $masterEventMarketListTable;
+    public static  $eventsIndexKeysTable;
+    public static  $masterEventsIndexKeysTable;
+    public static  $ordersTable;
+    public static  $maintenanceTable;
 
     public static function init($connection)
     {
@@ -545,30 +546,28 @@ class PreProcess
         // }
     }
 
-    // private static function loadActiveOrders()
-    // {
-    //     foreach (self::$ordersTable as $k => $e) {
-    //         self::$ordersTable->del($k);
-    //     }
+    public static function loadActiveOrders()
+    {
+        global $swooleTable;
 
-    //     $orders = DB::table('orders as o')
-    //                 ->join('provider_accounts AS pa', 'o.provider_account_id', 'pa.id')
-    //                 ->join('users as u', 'u.id', 'o.user_id')
-    //                 ->select('o.id', 'o.status', 'o.created_at', 'o.bet_id', 'o.order_expiry', 'pa.username', 'u.currency_id as user_currency_id')
-    //                 ->whereNull('settled_date')
-    //                 ->get();
+        foreach ($swooleTable['activeOrders'] as $k => $e) {
+            $swooleTable['activeOrders']->del($k);
+        }
 
-    //     foreach ($orders->toArray() as $order) {
-    //         self::$ordersTable->set($order->id, [
-    //             'createdAt'      => $order->created_at,
-    //             'betId'          => $order->bet_id,
-    //             'orderExpiry'    => $order->order_expiry,
-    //             'username'       => $order->username,
-    //             'userCurrencyId' => $order->user_currency_id,
-    //             'status'         => $order->status
-    //         ]);
-    //     }
-    // }
+        $result = Order::getActiveOrders(self::$connection);
+        $orders = self::$connection->fetchAll($result);
+
+        foreach ($orders as $order) {
+            $swooleTable['activeOrders']->set($order['id'], [
+                'createdAt'      => $order['created_at'],
+                'betId'          => $order['bet_id'],
+                'orderExpiry'    => $order['order_expiry'],
+                'username'       => $order['username'],
+                'userCurrencyId' => $order['user_currency_id'],
+                'status'         => $order['status']
+            ]);
+        }
+    }
 
     public static function loadMaintenance()
     {
@@ -582,8 +581,8 @@ class PreProcess
 
         while ($maintenance = self::$connection->fetchAssoc($result)) {
             $maintenanceTypes = explode('_', $maintenance['type']);
-            $provider = strtolower($maintenanceTypes[0]);
-            
+            $provider         = strtolower($maintenanceTypes[0]);
+
             if ($swooleTable['enabledProviders']->exists($provider)) {
                 $swooleTable['enabledProviders']->set($provider, ['under_maintenance' => $maintenance->value]);
             }

@@ -1,5 +1,6 @@
 <?php
 
+use RdKafka\{KafkaConsumer, Conf, Consumer, TopicConf};
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
 use Swoole\Coroutine\PostgreSQL;
@@ -121,4 +122,29 @@ function kafkaPush($kafkaTopic, $message, $key)
     } catch (Exception $e) {
         Logger('error', 'app', 'Error', (array) $e);
     }
+}
+
+function createConsumer($topics) 
+{
+    // LOW LEVEL CONSUMER
+    $conf = new Conf();
+	$conf->set('group.id', getenv('KAFKA-GROUP', 'ml-db'));
+
+	$rk = new Consumer($conf);
+	$rk->addBrokers(getenv('KAFKA-BROKER', 'kafka:9092'));
+
+	$queue = $rk->newQueue();
+	foreach ($topics as $t) {
+		$topicConf = new TopicConf();
+		$topicConf->set('auto.commit.interval.ms', 100);
+		$topicConf->set('offset.store.method', 'broker');
+		$topicConf->set('auto.offset.reset', 'latest');
+
+		$topic = $rk->newTopic($t, $topicConf);
+        logger('info','app',  "Setting up " . $t);
+        echo "Setting up " . $t . "\n";
+		$topic->consumeQueueStart(0, RD_KAFKA_OFFSET_STORED,$queue);
+	}
+
+    return $queue;
 }

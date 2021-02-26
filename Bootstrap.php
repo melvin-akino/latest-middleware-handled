@@ -4,10 +4,11 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/Classes/DotEnv.php';
 require_once __DIR__ . '/Classes/SwooleTable.php';
 require_once __DIR__ . '/Classes/PreProcess.php';
-// require_once __DIR__ . '/Classes/SwooleStats.php';
+require_once __DIR__ . '/Classes/WalletService.php';
 
 use DevCoder\DotEnv;
 use RdKafka\{Conf, Producer};
+use Classes\WalletService;
 
 (new DotEnv(__DIR__ . '/.env'))->load();
 
@@ -29,6 +30,12 @@ foreach ($config['swoole_tables'] as $table => $details) {
 };
 
 $swooleTable = $swooleTable->table;
+
+$wallet = new WalletService(
+    getenv('WALLET-URL', '127.0.0.1'),
+    getenv('WALLET-CLIENT-ID', 'wallet-id'),
+    getenv('WALLET-CLIENT-SECRET', 'wallet-secret')
+);
 
 // $swooleStats = SwooleStats::getInstance();
 

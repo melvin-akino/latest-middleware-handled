@@ -369,5 +369,13 @@ $config = [
             'name' => 'session-transform.log',
             'level' => 'debug'
         ],
+        'settlements-reactor' => [
+            'name' => 'settlements-reactor.log',
+            'level' => 'debug'
+        ],
+        'settlements' => [
+            'name' => 'settlements.log',
+            'level' => 'debug'
+        ],
     ]
 ];
