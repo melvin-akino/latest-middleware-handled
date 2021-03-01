@@ -4,7 +4,18 @@ use Models\{
     Provider,
     ProviderAccount,
     SystemConfiguration,
-    Order
+    Order,
+    Team,
+    TeamGroup,
+    League,
+    LeagueGroup,
+    Event,
+    EventGroup,
+    EventMarket,
+    EventMarketGroup,
+    Sport,
+    SportOddType
+
 };
 
 // use App\Models\{
@@ -118,29 +129,33 @@ class PreProcess
     //     self::$configTable["processKafka"]["value"] = 1;
     // }
 
-    // private static function loadEnabledSports()
-    // {
-    //     foreach (self::$sportsTable as $k => $st) {
-    //         self::$sportsTable->del($k);
-    //     }
+    public static function loadEnabledSports()
+    {
+        global $swooleTable;
 
-    //     $enabledSports = Sport::getActiveSports()->pluck('id', 'slug')->toArray();
-    //     foreach ($enabledSports as $k => $row) {
-    //         self::$sportsTable[$row]["value"] = $k;
-    //     }
-    // }
+        foreach ($swooleTable['enabledSports'] as $k => $st) {
+            $swooleTable['enabledSports']->del($k);
+        }
 
-    // private static function loadSportsOddTypes()
-    // {
-    //     foreach (self::$sportsOddTypesTable as $k => $sot) {
-    //         self::$sportsOddTypesTable->del($k);
-    //     }
+        $result = Sport::getActiveSports(self::$connection);
+        while ($sport = self::$connection->fetchAssoc($result)) {
+            $swooleTable['enabledSports'][$sport['id']]["value"] = $sport['slug'];
+        }
+    }
 
-    //     $sportsOddTypes = SportOddType::getOddTypes();
-    //     foreach ($sportsOddTypes as $sot) {
-    //         self::$sportsOddTypesTable[$sot->sport_id . '-' . $sot->type]["value"] = $sot->odd_type_id;
-    //     }
-    // }
+    public static function loadSportsOddTypes()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['sportsOddTypes'] as $k => $st) {
+            $swooleTable['sportsOddTypes']->del($k);
+        }
+
+        $result = SportOddType::getOddTypes(self::$connection);
+        while ($sot = self::$connection->fetchAssoc($result)) {
+            $swooleTable['sportsOddTypes'][$sot['sport_id'] . '-' . $sot['type']]["value"] = $sot['odd_type_id'];
+        }
+    }
 
     public static function loadEnabledProviders()
     {
@@ -191,32 +206,206 @@ class PreProcess
     //     }
     // }
 
-    // private static function loadMasterLeagues()
+    // public static function loadMasterLeagues()
     // {
-    //     foreach (self::$masterLeaguesTable as $k => $ml) {
-    //         self::$masterLeaguesTable->del($k);
+    //     global $swooleTable;
+        
+    //     foreach ($swooleTable['masterLeagues'] as $k => $ml) {
+    //         $swooleTable['masterLeagues']->del($k);
     //     }
 
-    //     foreach (self::$masterLeaguesIndexTable as $k => $ml) {
-    //         self::$masterLeaguesIndexTable->del($k);
+    //     foreach ($swooleTable['masterLeaguesIndex'] as $k => $ml) {
+    //         $swooleTable['masterLeaguesIndex']->del($k);
     //     }
 
-    //     $masterLeagues = MasterLeague::all()->toArray();
-    //     foreach ($masterLeagues as $masterLeague) {
-    //         self::$masterLeaguesTable->set($masterLeague['id'],
+    //     // $masterLeagues = MasterLeague::all()->toArray();
+    //     $result = MasterLeague::getAll(self::$connection);
+    //     while ($masterLeague = self::$connection->fetchAssoc($result)) {
+    //         $swooleTable['masterLeagues']->set($masterLeague['id'],
     //             [
     //                 'sport_id' => $masterLeague['sport_id'],
     //                 'name'     => $masterLeague['name']
     //             ]
     //         );
 
-    //         self::$masterLeaguesIndexTable->set(md5(implode(':', [$masterLeague['name'], $masterLeague['sport_id']])),
+    //         $swooleTable['masterLeaguesIndex']->set(md5(implode(':', [$masterLeague['name'], $masterLeague['sport_id']])),
     //             [
     //                 'master_league_id' => $masterLeague['id']
     //             ]
     //         );
     //     }
     // }
+
+    public static function loadLeagues()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['leagues'] as $k => $ml) {
+            $swooleTable['leagues']->del($k);
+        }
+
+        $result = League::getActiveLeagues(self::$connection);
+        while ($league = self::$connection->fetchAssoc($result)) {
+            $swooleTable['leagues']->set(md5(implode(':', [$league['sport_id'], $league['provider_id'], $league['name']])),
+                [
+                    'id'          => $league['id'],
+                    'name'        => $league['name'],
+                    'sport_id'    => $league['sport_id'],
+                    'provider_id' => $league['provider_id'],
+                ]
+            );
+        }
+    }
+
+    public static function loadLeagueGroups()
+    {
+        global $swooleTable;
+        
+        foreach ($swooleTable['leagueGroups'] as $k => $lg) {
+            $swooleTable['leagueGroups']->del($k);
+        }
+
+        $result = LeagueGroup::getLeaguesData(self::$connection);
+        while ($league = self::$connection->fetchAssoc($result)) {
+            $swooleTable['leagueGroups']->set(md5(implode(':', [$league['sport_id'], $league['provider_id'], $league['name']])),
+                [
+                    'league_id'        => $league['league_id'],
+                    'master_league_id' => $league['master_league_id']
+                ]
+            );
+        }
+    }
+
+    public static function loadTeams()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['teams'] as $k => $ml) {
+            $swooleTable['teams']->del($k);
+        }
+
+        $result = Team::getActiveTeams(self::$connection);
+        while ($team = self::$connection->fetchAssoc($result)) {
+            $swooleTable['teams']->set(md5(implode(':', [$league['sport_id'], $league['provider_id'], $league['name']])),
+                [
+                    'id'          => $team['id'],
+                    'name'        => $team['name'],
+                    'sport_id'    => $team['sport_id'],
+                    'provider_id' => $team['provider_id'],
+                ]
+            );
+        }
+    }
+
+    public static function loadTeamGroups()
+    {
+        global $swooleTable;
+        
+        foreach ($swooleTable['teamGroups'] as $k => $lg) {
+            $swooleTable['teamGroups']->del($k);
+        }
+
+        $result = teamGroup::getTeamsData(self::$connection);
+        while ($team = self::$connection->fetchAssoc($result)) {
+            $swooleTable['teamGroups']->set(md5(implode(':', [$league['sport_id'], $league['provider_id'], $league['name']])),
+                [
+                    'team_id'        => $league['team_id'],
+                    'master_team_id' => $league['master_team_id']
+                ]
+            );
+        }
+    }
+
+    public static function loadEvents()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['events'] as $k => $ml) {
+            $swooleTable['events']->del($k);
+        }
+
+        $result = Event::getActiveEvents(self::$connection);
+        while ($event = self::$connection->fetchAssoc($result)) {
+            $swooleTable['events']->set(md5(implode(':', [$event['sport_id'], $event['provider_id'], $event['event_identifier']])),
+                [
+                    'id'            => $event['id'],
+                    'sport_id'      => $event['sport_id'],
+                    'provider_id'   => $event['provider_id'],
+                    'missingCount'  => $event['missing_count'],
+                    'league_id'     => $event['league_id'],
+                    'team_home_id'  => $event['team_home_id'],
+                    'team_away_id'  => $event['team_away_id'],
+                    'ref_schedule'  => $event['ref_schedule'],
+                    'game_schedule' => $event['game_schedule']
+                ]
+            );
+        }
+    }
+
+    public static function loadEventGroups()
+    {
+        global $swooleTable;
+        
+        foreach ($swooleTable['eventGroups'] as $k => $lg) {
+            $swooleTable['eventGroups']->del($k);
+        }
+
+        $result = EventGroup::getEventsData(self::$connection);
+        while ($event = self::$connection->fetchAssoc($result)) {
+            $swooleTable['eventGroups']->set(md5(implode(':', [$event['sport_id'], $event['provider_id'], $event['event_identifier']])),
+                [
+                    'event_id'        => $event['event_id'],
+                    'master_event_id' => $event['master_event_id']
+                ]
+            );
+        }
+    }
+
+    public static function loadEventMarkets()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['eventMarkets'] as $k => $ml) {
+            $swooleTable['eventMarkets']->del($k);
+        }
+
+        $result = EventMarket::getActiveEventMarkets(self::$connection);
+        while ($eventMarket = self::$connection->fetchAssoc($result)) {
+            $swooleTable['eventMarkets']->set(md5(implode(':', [$eventMarket['provider_id'], $eventMarket['bet_identifier']])),
+                [
+                    'id'            => $eventMarket['id'],
+                    'bet_identifier'   => $eventMarket['bet_identifier'],
+                    'event_id'  => $eventMarket['event_id'],
+                    'provider_id'     => $eventMarket['provider_id'],
+                    'odd_type_id'  => $eventMarket['odd_type_id'],
+                    'market_event_identifier'  => $eventMarket['market_event_identifier'],
+                    'market_flag'  => $eventMarket['market_flag'],
+                    'is_main' => $eventMarket['is_main'],
+                    'odd_label'  => $eventMarket['odd_label'],
+                    'odds'  => $eventMarket['odds']
+                ]
+            );
+        }
+    }
+
+    public static function loadEventMarketGroups()
+    {
+        global $swooleTable;
+        
+        foreach ($swooleTable['eventMarketGroups'] as $k => $lg) {
+            $swooleTable['eventMarketGroups']->del($k);
+        }
+
+        $result = EventMarketGroup::getEventMarketsData(self::$connection);
+        while ($eventMarket = self::$connection->fetchAssoc($result)) {
+            $swooleTable['eventMarketGroups']->set(md5(implode(':', [$eventMarket['provider_id'], $eventMarket['bet_identifier']])),
+                [
+                    'event_market_id'        => $eventMarket['event_market_id'],
+                    'master_event_market_id' => $eventMarket['master_event_market_id']
+                ]
+            );
+        }
+    }
 
     // private static function loadTeams()
     // {

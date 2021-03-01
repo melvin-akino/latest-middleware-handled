@@ -36,28 +36,37 @@ $config = [
                 ['name' => 'hash', 'type' => \Swoole\Table::TYPE_STRING, "size" => 37],
             ],
         ],
-        'leagues'                   => [
+        'leagues'                   => [ // md5(implode(':', [$sportId, $providerId, $leagueName]))
             'size'   => 10000, //@TODO needs to be adjusted once additional provider comes in
             'column' => [
+                ['name' => 'id', 'type' => \Swoole\Table::TYPE_INT],
                 ['name' => 'name', 'type' => \Swoole\Table::TYPE_STRING, "size" => 80],
                 ['name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT],
                 ['name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT],
             ],
         ],
-        'leaguesIndex'              => [
+        'leaguesIndex'              => [ // md5(implode(':', [$sportId, $providerId, $leagueName]))
             'size'   => 10000, //@TODO needs to be adjusted once additional provider comes in
             'column' => [
                 ['name' => 'league_id', 'type' => \Swoole\Table::TYPE_INT],
             ],
         ],
+        'leagueGroups'             => [ // md5(implode(':', [$sportId, $providerId, $leagueName]));
+            'size'   => 10000,
+            'column' => [
+                ['name' => 'league_id', 'type' => \Swoole\Table::TYPE_INT],
+                ['name' => 'master_league_id', 'type' => \Swoole\Table::TYPE_INT],
+            ],
+        ],
         'masterLeagues'             => [
             'size'   => 10000,
             'column' => [
+                ['name' => 'id', 'type' => \Swoole\Table::TYPE_INT],
                 ['name' => 'name', 'type' => \Swoole\Table::TYPE_STRING, "size" => 80],
-                ['name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT],
+                ['name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT]
             ],
         ],
-        'masterLeaguesIndex'        => [ // md5($leagueName . ':' . $sportId)
+        'masterLeaguesIndex'        => [ // md5($sportId . ':' . $leagueName)
                                          'size'   => 10000,
                                          'column' => [
                                              ['name' => 'master_league_id', 'type' => \Swoole\Table::TYPE_INT],
@@ -66,9 +75,17 @@ $config = [
         'teams'                     => [
             'size'   => 20000, //@TODO needs to be adjusted once additional provider comes in
             'column' => [
+                ['name' => 'id', 'type' => \Swoole\Table::TYPE_INT],
                 ['name' => 'name', 'type' => \Swoole\Table::TYPE_STRING, "size" => 80],
                 ['name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT],
                 ['name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT],
+            ],
+        ],
+        'teamGroups'             => [ // md5(implode(':', [$sportId, $providerId, $leagueName]));
+            'size'   => 10000,
+            'column' => [
+                ['name' => 'team_id', 'type' => \Swoole\Table::TYPE_INT],
+                ['name' => 'master_team_id', 'type' => \Swoole\Table::TYPE_INT],
             ],
         ],
         'teamsIndex'                => [
@@ -80,11 +97,12 @@ $config = [
         'masterTeams'               => [
             'size'   => 20000,
             'column' => [
+                ['name' => 'id', 'type' => \Swoole\Table::TYPE_INT],
                 ['name' => 'name', 'type' => \Swoole\Table::TYPE_STRING, "size" => 80],
                 ['name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT],
             ],
         ],
-        'masterTeamsIndex'          => [
+        'masterTeamsIndex'          => [ // md5($homeTeam . ':' . $sportId)
             'size'   => 20000,
             'column' => [
                 ['name' => 'master_team_id', 'type' => \Swoole\Table::TYPE_INT],
@@ -106,16 +124,22 @@ $config = [
         "events"                    => [
             "size"   => 10000,
             "column" => [
-                ["name" => "sport", "type" => \Swoole\Table::TYPE_INT],
-                ["name" => "schedule", "type" => \Swoole\Table::TYPE_STRING, "size" => 6],
-                ["name" => "provider", "type" => \Swoole\Table::TYPE_INT],
-                ["name" => "missingCount", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "id", "type" => \Swoole\Table::TYPE_INT],
+                ["name" => "sport_id", "type" => \Swoole\Table::TYPE_INT],
+                ["name" => "provider_id", "type" => \Swoole\Table::TYPE_INT],
+                ["name" => "missingCount", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "league_id", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "team_home_id", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "team_away_id", "type" => \Swoole\Table::TYPE_INT],
-                ["name" => "master_event_id", "type" => \Swoole\Table::TYPE_INT],
-                ["name" => "ref_schedule", "type" => \Swoole\Table::TYPE_STRING, "size" => 20]
+                ["name" => "ref_schedule", "type" => \Swoole\Table::TYPE_STRING, "size" => 20],
+                ["name" => "game_schedule", "type" => \Swoole\Table::TYPE_STRING, "size" => 6]
+            ],
+        ],
+        "eventGroups"               => [
+            "size"   => 10000,
+            "column" => [
+                ["name" => "event_id", "type" => \Swoole\Table::TYPE_INT],
+                ["name" => "master_event_id", "type" => \Swoole\Table::TYPE_INT]
             ],
         ],
         "eventsIndex"               => [
@@ -133,17 +157,12 @@ $config = [
         "masterEvents"              => [
             "size"   => 10000,
             "column" => [
+                ["name" => "id", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "master_event_unique_id", "type" => \Swoole\Table::TYPE_STRING, "size" => 30],
                 ["name" => "sport_id", "type" => \Swoole\Table::TYPE_INT],
-                ["name" => "ref_schedule", "type" => \Swoole\Table::TYPE_STRING, "size" => 20],
                 ["name" => "master_league_id", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "master_team_home_id", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "master_team_away_id", "type" => \Swoole\Table::TYPE_INT],
-                ["name" => "game_schedule", "type" => \Swoole\Table::TYPE_STRING, "size" => 6],
-                ["name" => "score", "type" => \Swoole\Table::TYPE_STRING, "size" => 7],
-                ["name" => "running_time", "type" => \Swoole\Table::TYPE_STRING, "size" => 15],
-                ["name" => "home_penalty", "type" => \Swoole\Table::TYPE_INT],
-                ["name" => "home_penalty", "type" => \Swoole\Table::TYPE_INT],
             ],
         ],
         "masterEventsIndex"         => [
@@ -167,7 +186,7 @@ $config = [
         "eventMarkets"              => [
             "size"   => 100000,
             "column" => [
-                ["name" => "master_event_market_id", "type" => \Swoole\Table::TYPE_INT],
+                ["name" => "id", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "bet_identifier", "type" => \Swoole\Table::TYPE_STRING, "size" => 20],
                 ["name" => "event_id", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "provider_id", "type" => \Swoole\Table::TYPE_INT],
@@ -177,6 +196,13 @@ $config = [
                 ["name" => "is_main", "type" => \Swoole\Table::TYPE_INT],
                 ["name" => "odd_label", "type" => \Swoole\Table::TYPE_STRING, "size" => 10],
                 ["name" => "odds", "type" => \Swoole\Table::TYPE_FLOAT],
+            ],
+        ],
+        "eventMarketGroups"               => [
+            "size"   => 10000,
+            "column" => [
+                ["name" => "event_market_id", "type" => \Swoole\Table::TYPE_INT],
+                ["name" => "master_event_market_id", "type" => \Swoole\Table::TYPE_INT]
             ],
         ],
         "eventMarketsIndex"         => [
@@ -334,11 +360,11 @@ $config = [
             'level' => 'debug'
         ],
         'odds' => [
-            'name' => 'odds-process.log',
+            'name' => 'odds.log',
             'level' => 'debug'
         ],
         'event' => [
-            'name' => 'event-process.log',
+            'name' => 'event.log',
             'level' => 'debug'
         ],
         'balance-reactor' => [

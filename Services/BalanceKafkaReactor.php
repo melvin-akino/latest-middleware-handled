@@ -1,6 +1,6 @@
 <?php
 
-use RdKafka\{KafkaConsumer, Conf, Consumer, TopicConf};
+use RdKafka\KafkaConsumer;
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
 use Swoole\Coroutine\PostgreSQL;
