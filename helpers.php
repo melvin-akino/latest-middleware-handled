@@ -6,36 +6,41 @@ use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
 use Swoole\Coroutine\PostgreSQL;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Ramsey\Uuid\Uuid;
 
-function getPipe($maxProcessNumber = 1) {
-	global $activeProcesses;
+function getPipe($maxProcessNumber = 1)
+{
+    global $activeProcesses;
 
-	while (true) {
-		if ($activeProcesses < $maxProcessNumber) {
-			return true;
-		}
+    while (true) {
+        if ($activeProcesses < $maxProcessNumber) {
+            return true;
+        }
         Co\System::sleep(0.001);
-	}
+    }
 }
 
-function makeProcess() {
-	global $activeProcesses;
+function makeProcess()
+{
+    global $activeProcesses;
 
-	$activeProcesses = 0;
+    $activeProcesses = 0;
 }
 
-function freeUpProcess() {
-	global $activeProcesses;
+function freeUpProcess()
+{
+    global $activeProcesses;
 
-	$activeProcesses--;
+    $activeProcesses--;
 }
 
-function checkRate() {
-	global $count;
-	global $activeProcesses;
+function checkRate()
+{
+    global $count;
+    global $activeProcesses;
 
-	echo "\n" . $count . " .. [" . $activeProcesses . "]..\n";
-	$count=0;
+    echo "\n" . $count . " .. [" . $activeProcesses . "]..\n";
+    $count = 0;
 }
 
 function databaseConnectionPool()
@@ -47,7 +52,7 @@ function databaseConnectionPool()
         $dbString[] = $key . '=' . $db;
     }
     $connectionString = implode(' ', $dbString);
-    $pool = new ConnectionPool(
+    $pool             = new ConnectionPool(
         $config['database']['connection_pool'],
         new CoroutinePostgreSQLConnector,
         [
@@ -87,7 +92,7 @@ function instantiateLogger()
 
         $log[$key] = new Logger($key);
         $log[$key]->pushHandler(new StreamHandler(__DIR__ . '/Log/' . $logConfig['name'], $level));
-        
+
     }
 }
 
@@ -124,27 +129,40 @@ function kafkaPush($kafkaTopic, $message, $key)
     }
 }
 
-function createConsumer($topics) 
+function createConsumer($topics)
 {
     // LOW LEVEL CONSUMER
     $conf = new Conf();
-	$conf->set('group.id', getenv('KAFKA-GROUP', 'ml-db'));
+    $conf->set('group.id', getenv('KAFKA-GROUP', 'ml-db'));
 
-	$rk = new Consumer($conf);
-	$rk->addBrokers(getenv('KAFKA-BROKER', 'kafka:9092'));
+    $rk = new Consumer($conf);
+    $rk->addBrokers(getenv('KAFKA-BROKER', 'kafka:9092'));
 
-	$queue = $rk->newQueue();
-	foreach ($topics as $t) {
-		$topicConf = new TopicConf();
-		$topicConf->set('auto.commit.interval.ms', 100);
-		$topicConf->set('offset.store.method', 'broker');
-		$topicConf->set('auto.offset.reset', 'latest');
+    $queue = $rk->newQueue();
+    foreach ($topics as $t) {
+        $topicConf = new TopicConf();
+        $topicConf->set('auto.commit.interval.ms', 100);
+        $topicConf->set('offset.store.method', 'broker');
+        $topicConf->set('auto.offset.reset', 'latest');
 
-		$topic = $rk->newTopic($t, $topicConf);
-        logger('info','app',  "Setting up " . $t);
+        $topic = $rk->newTopic($t, $topicConf);
+        logger('info', 'app', "Setting up " . $t);
         echo "Setting up " . $t . "\n";
-		$topic->consumeQueueStart(0, RD_KAFKA_OFFSET_STORED,$queue);
-	}
+        $topic->consumeQueueStart(0, RD_KAFKA_OFFSET_STORED, $queue);
+    }
 
     return $queue;
+}
+
+function getPayloadPart($command, $subCommand)
+{
+    $requestId = (string) Uuid::uuid4();
+    $requestTs = getMilliseconds();
+
+    return [
+        'request_uid' => $requestId,
+        'request_ts'  => $requestTs,
+        'command'     => $command,
+        'sub_command' => $subCommand
+    ];
 }

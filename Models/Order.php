@@ -2,7 +2,7 @@
 
 namespace Models;
 
-Class Order
+class Order
 {
     private static $table = 'orders';
 
@@ -26,7 +26,7 @@ Class Order
 
     public static function updateByBetIdNumber($connection, $providerBetId, $arrayParams)
     {
-        $sql = "UPDATE " . self::$table . " SET ";
+        $sql    = "UPDATE " . self::$table . " SET ";
         $params = [];
         foreach ($arrayParams as $key => $value) {
             $params[] = "{$key} = '{$value}'";
@@ -34,6 +34,12 @@ Class Order
         $sql .= implode(', ', $params);
         $sql .= "WHERE bet_id LIKE '%{$providerBetId}'";
         echo $sql . "\n";
+        return $connection->query($sql);
+    }
+
+    public static function getUnsettledDates($connection, $providerAccountId)
+    {
+        $sql = "SELECT DATE(created_at) as unsettled_date FROM " . self::$table . " WHERE settled_date is null AND provider_account_id = '{$providerAccountId}' GROUP BY unsettled_date";
         return $connection->query($sql);
     }
 }

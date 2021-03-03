@@ -226,9 +226,7 @@ class PreProcess
             $maintenanceTypes = explode('_', $maintenance['type']);
             $provider         = strtolower($maintenanceTypes[0]);
 
-            if ($swooleTable['enabledProviders']->exists($provider)) {
-                $swooleTable['enabledProviders']->set($provider, ['under_maintenance' => $maintenance->value]);
-            }
+            $swooleTable['maintenance']->set($provider, ['under_maintenance' => $maintenance['value']]);
         }
     }
 }
