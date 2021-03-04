@@ -119,6 +119,7 @@ $config = [
             'column' => [
                 ['name' => 'value', 'type' => \Swoole\Table::TYPE_FLOAT],
                 ['name' => 'currencyId', 'type' => \Swoole\Table::TYPE_INT],
+                ["name" => "currency_code", "type" => \Swoole\Table::TYPE_STRING, "size" => 3],
             ],
         ],
         "events"                    => [
@@ -335,6 +336,7 @@ $config = [
                 ["name" => "credits", "type" => \Swoole\Table::TYPE_FLOAT],
                 ["name" => "alias", "type" => \Swoole\Table::TYPE_STRING, "size" => 16],
                 ['name' => 'type', 'type' => \Swoole\Table::TYPE_STRING, "size" => 50],
+                ['name' => 'uuid', 'type' => \Swoole\Table::TYPE_STRING, "size" => 32],
             ]
         ],
         'maintenance'               => [

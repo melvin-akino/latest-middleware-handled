@@ -1,41 +1,13 @@
 <?php
 
-use RdKafka\KafkaConsumer;
+use Classes\WalletService;
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
 use Swoole\Coroutine\PostgreSQL;
 use Workers\ProcessBalance;
+use Carbon\Carbon;
 
 require_once __DIR__ . '/../Bootstrap.php';
-
-function makeConsumer() 
-{
-    // LOW LEVEL CONSUMER
-    $topics = [
-        getenv('KAFKA-SCRAPING-BALANCES', 'BALANCE'),
-    ];
-
-    $conf = new Conf();
-	$conf->set('group.id', getenv('KAFKA-GROUP', 'ml-db'));
-
-	$rk = new Consumer($conf);
-	$rk->addBrokers(getenv('KAFKA-BROKER', 'kafka:9092'));
-
-	$queue = $rk->newQueue();
-	foreach ($topics as $t) {
-		$topicConf = new TopicConf();
-		$topicConf->set('auto.commit.interval.ms', 100);
-		$topicConf->set('offset.store.method', 'broker');
-		$topicConf->set('auto.offset.reset', 'latest');
-
-		$topic = $rk->newTopic($t, $topicConf);
-        logger('info','app',  "Setting up " . $t);
-        echo "Setting up " . $t . "\n";
-		$topic->consumeQueueStart(0, RD_KAFKA_OFFSET_STORED,$queue);
-	}
-
-    return $queue;
-}
 
 function preProcess()
 {
@@ -48,58 +20,72 @@ function preProcess()
     preProcess::loadEnabledProviderAccounts();
 
     $dbPool->return($connection);
-    
+
 }
 
-function reactor($queue) {
-	global $count;
+function reactor($queue)
+{
+    global $count;
     global $activeProcesses;
+    global $swooleTable;
 
-	while (true) {
-		$message = $queue->consume(0);
-		if ($message) {
-			switch ($message->err) {
-				case RD_KAFKA_RESP_ERR_NO_ERROR:
-                    logger('info','balance-reactor', 'consuming...', (array) $message);
-					if ($message->payload) {
+    $walletProvider = [];
+    foreach ($swooleTable['enabledProviders'] as $alias => $provider) {
+        $walletProvider[$alias] = new WalletService(
+            getenv('WALLET-URL', '127.0.0.1'),
+            $alias,
+            md5($alias)
+        );
+
+        $getAccessToken[$alias] = $walletProvider[$alias]->getAccessToken('wallet');
+    }
+    while (true) {
+        $message = $queue->consume(0);
+        if ($message) {
+            switch ($message->err) {
+                case RD_KAFKA_RESP_ERR_NO_ERROR:
+                    logger('info', 'balance-reactor', 'consuming...', (array) $message);
+                    if ($message->payload) {
                         getPipe(getenv('BALANCE-PROCESSES-NUMBER', 1));
 
                         $payload = json_decode($message->payload, true);
-                        balanceHandler($payload, $message->offset);
-						
-						$activeProcesses++;
-						$count++;
+                        balanceHandler($walletProvider, $getAccessToken, $payload, $message->offset);
+
+                        $activeProcesses++;
+                        $count++;
                     }
-					break;
-				case RD_KAFKA_RESP_ERR__PARTITION_EOF:
-                    logger('info','balance-reactor', "No more messages; will wait for more");
-					echo "No more messages; will wait for more\n";
-					break;
-				case RD_KAFKA_RESP_ERR__TIMED_OUT:
-					// Kafka message timed out. Ignore
-					break;
-				default:
-                    logger('info','balance-reactor', $message->errstr(), $message->err);
-					throw new Exception($message->errstr(), $message->err);
-					break;
-			}
-		} else {
-			Co\System::sleep(0.001);
-		}
-	}
+                    break;
+                case RD_KAFKA_RESP_ERR__PARTITION_EOF:
+                    logger('info', 'balance-reactor', "No more messages; will wait for more");
+                    echo "No more messages; will wait for more\n";
+                    break;
+                case RD_KAFKA_RESP_ERR__TIMED_OUT:
+                    // Kafka message timed out. Ignore
+                    break;
+                default:
+                    logger('info', 'balance-reactor', $message->errstr(), $message->err);
+                    throw new Exception($message->errstr(), $message->err);
+                    break;
+            }
+        } else {
+            Co\System::sleep(0.001);
+        }
+    }
 }
 
-function balanceHandler($message, $offset)
+function balanceHandler($walletProvider, $getAccessToken, $message, $offset)
 {
     global $swooleTable;
     global $dbPool;
+
+    global $countToExpiration;
 
     try {
 
         $previousTS = $swooleTable['timestamps']['balance']['ts'];
         $messageTS  = $message["request_ts"];
         if ($messageTS < $previousTS) {
-            logger('info','balance-reactor', 'Validation Error: Timestamp is old', (array) $message);
+            logger('info', 'balance-reactor', 'Validation Error: Timestamp is old', (array) $message);
             return;
         }
 
@@ -111,20 +97,43 @@ function balanceHandler($message, $offset)
             empty($message['data']['available_balance']) ||
             empty($message['data']['currency'])
         ) {
-            logger('info','balance-reactor', 'Validation Error: Invalid Payload', (array) $message);
+            logger('info', 'balance-reactor', 'Validation Error: Invalid Payload', (array) $message);
             return;
         }
 
         if (!$swooleTable['enabledProviders']->exists($message['data']['provider'])) {
-            logger('info','balance-reactor', 'Validation Error: Invalid Provider', (array) $message);
+            logger('info', 'balance-reactor', 'Validation Error: Invalid Provider', (array) $message);
             return;
         }
 
-        go(function() use($dbPool, $swooleTable, $message, $offset) {
+        $providerWalletService = $walletProvider[$message['data']['provider']];
+        $expiresIn             = $getAccessToken[$message['data']['provider']]->data->expires_in;
+        $refreshToken          = $getAccessToken[$message['data']['provider']]->data->refresh_token;
+
+        $timestampNow = Carbon::now()->timestamp;
+        if ($countToExpiration + $expiresIn <= $timestampNow) {
+            $getAccessToken[$message['data']['provider']] = $providerWalletService->refreshToken($refreshToken);
+
+            $countToExpiration = $timestampNow;
+
+            if ($getAccessToken[$message['data']['provider']]->status) {
+                if ($countToExpiration + $getAccessToken[$message['data']['provider']]->data->expires_in <= $timestampNow) {
+                    $getAccessToken[$message['data']['provider']] = $providerWalletService->getAccessToken('wallet');
+                }
+            } else {
+                $getAccessToken[$message['data']['provider']] = $providerWalletService->getAccessToken('wallet');
+            }
+        }
+
+        $accessToken = $getAccessToken[$message['data']['provider']]->data->access_token;
+        $swooleTable['walletClients']->set($message['data']['provider'] . '-users', [
+            'token' => $accessToken
+        ]);
+        go(function () use ($dbPool, $swooleTable, $providerWalletService, $message, $offset) {
             try {
                 $connection = $dbPool->borrow();
 
-                ProcessBalance::handle($connection, $swooleTable, $message, $offset);
+                ProcessBalance::handle($connection, $swooleTable, $providerWalletService, $message, $offset);
 
                 $dbPool->return($connection);
             } catch (Exception $e) {
@@ -142,22 +151,28 @@ function balanceHandler($message, $offset)
     }
 }
 
-$activeProcesses = 0;
-$queue           = makeConsumer();
-$dbPool          = null;
+$activeProcesses   = 0;
+$topics            = [
+    getenv('KAFKA-SCRAPING-BALANCES', 'BALANCE'),
+];
+$queue             = createConsumer($topics);
+$dbPool            = null;
+$countToExpiration = Carbon::now()->timestamp;
 makeProcess();
 
-Co\run(function() use ($queue, $activeProcesses) {
+Co\run(function () use ($queue, $activeProcesses) {
     global $dbPool;
+    global $wallet;
+    global $http;
 
-	$count = 0;
+    $count = 0;
 
     // Swoole\Timer::tick(1000, "checkRate");
     $dbPool = databaseConnectionPool();
 
     $dbPool->init();
     defer(function () use ($dbPool) {
-        logger('info', 'balance-reactor',  "Closing connection pool");
+        logger('info', 'balance-reactor', "Closing connection pool");
         echo "Closing connection pool\n";
         $dbPool->close();
     });

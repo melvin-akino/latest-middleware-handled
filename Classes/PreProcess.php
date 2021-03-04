@@ -169,6 +169,7 @@ class PreProcess
         while ($p = self::$connection->fetchAssoc($result)) {
             $swooleTable['enabledProviders'][strtolower($p["alias"])]["value"]      = $p["id"];
             $swooleTable['enabledProviders'][strtolower($p["alias"])]["currencyId"] = $p["currency_id"];
+            $swooleTable['enabledProviders'][strtolower($p["alias"])]["currency_code"] = $p["currency_code"];
         }
     }
 
@@ -717,7 +718,8 @@ class PreProcess
                 'punter_percentage' => $providerAccount['punter_percentage'],
                 'credits'           => $providerAccount['credits'],
                 'alias'             => $providerAccount['alias'],
-                'type'              => $providerAccount['type']
+                'type'              => $providerAccount['type'],
+                'uuid'              => $providerAccount['uuid']
             ];
         }
 
