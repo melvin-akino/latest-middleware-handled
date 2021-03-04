@@ -116,7 +116,7 @@ function oddHandler($message, $offset)
 
     try {
 
-        $previousTS = $swooleTable['timestamps']['odds']['ts'];
+        $previousTS = $swooleTable['timestamps']['odds:' . $message["data"]["schedule"]]['ts'];
         $messageTS  = $message["request_ts"];
 
         if ($messageTS < $previousTS) {
@@ -124,7 +124,7 @@ function oddHandler($message, $offset)
             return;
         }
 
-        $swooleTable['timestamps']['odds']['ts'] = $messageTS;
+        $swooleTable['timestamps']['odds:' . $message["data"]["schedule"]]['ts'] = $messageTS;
 
         if (!is_array($message["data"]) || empty($message["data"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Invalid Payload', (array) $message);
@@ -185,7 +185,7 @@ function eventHandler($message, $offset)
     global $dbPool;
 
     try {
-        $previousTS = $swooleTable['timestamps']['event']['ts'];
+        $previousTS = $swooleTable['timestamps']['event:' . $message["data"]["schedule"]]['ts'];
         $messageTS  = $message["request_ts"];
 
         if ($messageTS < $previousTS) {
@@ -194,7 +194,7 @@ function eventHandler($message, $offset)
             return;
         }
 
-        $swooleTable['timestamps']['event']['ts'] = $messageTS;
+        $swooleTable['timestamps']['event:' . $message["data"]["schedule"]]['ts'] = $messageTS;
 
         if (!is_array($message["data"]) || empty($message["data"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Data should be valid', (array) $message);
