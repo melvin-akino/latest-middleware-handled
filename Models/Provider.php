@@ -8,7 +8,8 @@ Class Provider
 
     public static function getActiveProviders($connection)
     {
-        $sql = "SELECT * FROM " . self::$table . " WHERE is_enabled = true";
+        $sql = "SELECT p.*, c.code as currency_code FROM " . self::$table . " as p 
+                JOIN currency as c ON c.id = p.currency_id WHERE is_enabled = true";
         return $connection->query($sql);
         
     }

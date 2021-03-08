@@ -1,264 +1,275 @@
 <?php
 
-use RdKafka\KafkaConsumer;
+use App\Facades\SwooleStats;
+use RdKafka\{KafkaConsumer, Conf, Consumer, TopicConf};
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
 use Swoole\Coroutine\PostgreSQL;
+use Workers\{ProcessOdds, ProcessEvent};
 
 require_once __DIR__ . '/../Bootstrap.php';
 
-function makeConsumer() {
-    global $kafkaConf;
-
-    $kafkaConsumer = new KafkaConsumer($kafkaConf);
-    $kafkaConsumer->subscribe([
-        getenv('KAFKA-SCRAPING-ODDS', 'SCRAPING-ODDS'), 
+function makeConsumer()
+{
+    // LOW LEVEL CONSUMER
+    $topics = [
+        getenv('KAFKA-SCRAPING-ODDS', 'SCRAPING-ODDS'),
         getenv('KAFKA-SCRAPING-EVENTS', 'SCRAPING-PROVIDER-EVENTS')
-    ]);
+    ];
 
-    echo "Setting Up Odds & Events Scraping Consumer";
+    $conf = new Conf();
+    $conf->set('group.id', getenv('KAFKA-GROUP', 'ml-db'));
 
-	return $kafkaConsumer;
+    $rk = new Consumer($conf);
+    $rk->addBrokers(getenv('KAFKA-BROKER', 'kafka:9092'));
+
+    $queue = $rk->newQueue();
+    foreach ($topics as $t) {
+        $topicConf = new TopicConf();
+        $topicConf->set('auto.commit.interval.ms', 100);
+        $topicConf->set('offset.store.method', 'broker');
+        $topicConf->set('auto.offset.reset', 'latest');
+
+        $topic = $rk->newTopic($t, $topicConf);
+        logger('info', 'app', "Setting up " . $t);
+        echo "Setting up " . $t . "\n";
+        $topic->consumeQueueStart(0, RD_KAFKA_OFFSET_STORED, $queue);
+    }
+
+    return $queue;
 }
 
-// function databaseConnectionPool()
-// {
-//     $pool = new ConnectionPool(
-//         [
-//             'minActive'         => 10,
-//             'maxActive'         => 30,
-//             'maxWaitTime'       => 5,
-//             'maxIdleTime'       => 20,
-//             'idleCheckInterval' => 10,
-//         ],
-//         new CoroutinePostgreSQLConnector,
-//         [
-//             'connection_strings' => "host=" . getenv('DB_HOST', 'db') . " port=" . getenv('DB_PORT', 5432) . " dbname=" . getenv('DB_DATABASE', 'multilinev2') . " user=" . getenv('DB_USERNAME', 'postgres') . " password=" . getenv('DB_PASSWORD', 'password'),
-//         ]
-//     );
-    
+function preProcess()
+{
+    global $dbPool;
 
-//     $pool->init();
+    $connection = $dbPool->borrow();
 
-//     $connection = $pool->borrow();
-//     $status = $connection->query('SELECT id FROM users');
-//     $stat = $connection->fetchAssoc($status);
-    
+    PreProcess::init($connection);
+    PreProcess::loadLeagues();
+    PreProcess::loadTeams();
+    PreProcess::loadEvents();
+    PreProcess::loadEventMarkets();
 
-//     echo "Return the connection to pool as soon as possible\n";
-//     $pool->return($connection);
+    PreProcess::loadEnabledProviders();
+    PreProcess::loadEnabledSports();
+    PreProcess::loadSportsOddTypes();
+    preProcess::loadMaintenance();
 
-//     var_dump($stat);
-// }
+    $dbPool->return($connection);
 
-function reactor($queue, &$dbPool) {
-	global $count;
+}
+
+function reactor($queue)
+{
+    global $count;
     global $activeProcesses;
-	while (true) {
-		$message = $queue->consume(0);
-		if ($message) {
-			switch ($message->err) {
-				case RD_KAFKA_RESP_ERR_NO_ERROR:
-					if ($message->payload) {
+
+    while (true) {
+        $message = $queue->consume(0);
+        if ($message) {
+            switch ($message->err) {
+                case RD_KAFKA_RESP_ERR_NO_ERROR:
+                    logger('info', 'odds-events-reactor', 'consuming...', (array) $message);
+                    if ($message->payload) {
                         $key = getPipe(getenv('ODDS-EVENTS-PROCESSES-NUMBER', 1));
 
                         $payload = json_decode($message->payload, true);
-                        switch($payload['command']) {
+                        switch ($payload['command']) {
                             case 'odd':
                                 // go("oddHandler", $key, $payload, $message->offset);
-                                oddHandler($key, $dbPool, $payload, $message->offset);
+                                oddHandler($payload, $message->offset);
                                 break;
                             case 'event':
                             default:
                                 // go("eventHandler", $key, $payload, $message->offset);
-                                eventHandler($key, $payload, $message->offset);
+                                eventHandler($payload, $message->offset);
                                 break;
                         }
-						
-						$activeProcesses++;
-						$count++;
+
+                        $activeProcesses++;
+                        $count++;
                     }
-                    $queue->commitAsync($message);
-					break;
-				case RD_KAFKA_RESP_ERR__PARTITION_EOF:
-					echo "No more messages; will wait for more\n";
-					break;
-				case RD_KAFKA_RESP_ERR__TIMED_OUT:
-					// echo "Timed out\n";
-					break;
-				default:
-					throw new Exception($message->errstr(), $message->err);
-					break;
-			}
-		} else {
-			Co\System::sleep(0.001);
-		}
-	}
+                    break;
+                case RD_KAFKA_RESP_ERR__PARTITION_EOF:
+                    echo "No more messages; will wait for more\n";
+                    break;
+                case RD_KAFKA_RESP_ERR__TIMED_OUT:
+                    // echo "Timed out\n";
+                    break;
+                default:
+                    throw new Exception($message->errstr(), $message->err);
+                    break;
+            }
+        } else {
+            Co\System::sleep(0.001);
+        }
+    }
 }
 
-function oddHandler($key, &$dbPool, $message, $offset)
+function oddHandler($message, $offset)
 {
     global $swooleTable;
+    global $dbPool;
 
     $start = microtime(true);
 
     try {
 
-        // $previousTS = $swooleTable['timestamps']['odds']['ts'];
-        // $messageTS  = $message["request_ts"];
+        $previousTS = $swooleTable['timestamps']['odds:' . $message["data"]["schedule"]]['ts'];
+        $messageTS  = $message["request_ts"];
 
-        // if ($messageTS < $previousTS) {
-        //     $statsArray = [
-        //         "type"        => "odds",
-        //         // "status"      => $swooleStats::getErrorType('TIMESTAMP_ERROR'),
-        //         "time"        => microtime(true) - $start,
-        //         "request_uid" => $message["request_uid"],
-        //         "request_ts"  => $message["request_ts"],
-        //         "offset"      => $offset,
-        //     ];
+        if ($messageTS < $previousTS) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
+            return;
+        }
 
-        //     // SwooleStats::addStat($statsArray);
-        //     freeUpProcess();
-        //     return;
-        // }
+        $swooleTable['timestamps']['odds:' . $message["data"]["schedule"]]['ts'] = $messageTS;
 
-        // if (!is_array($message["data"]) || empty($message["data"])) {
-        //     $statsArray = [
-        //         "type"        => "odds",
-        //         // "status"      => SwooleStats::getErrorType('ERROR'),
-        //         "time"        => microtime(true) - $start,
-        //         "request_uid" => $message["request_uid"],
-        //         "request_ts"  => $message["request_ts"],
-        //         "offset"      => $offset,
-        //     ];
-        //     // SwooleStats::addStat($statsArray);
-        //     freeUpProcess();
-        //     return;
-        // }
+        if (!is_array($message["data"]) || empty($message["data"])) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Invalid Payload', (array) $message);
+            freeUpProcess();
+            return;
+        }
 
-        // $toHashMessage = $message["data"];
-        // unset($toHashMessage['runningtime'], $toHashMessage['id']);
-        // $caching = 'odds-' . md5(json_encode((array) $toHashMessage));
+        $toHashMessage = $message["data"];
+        unset($toHashMessage['runningtime'], $toHashMessage['id']);
+        $caching = 'odds-' . md5(json_encode((array) $toHashMessage));
 
-        // if (!empty($toHashMessage['events'][0]['eventId'])) {
-        //     $eventId = $toHashMessage['events'][0]['eventId'];
+        if (!empty($toHashMessage['events'][0]['eventId'])) {
+            $eventId = $toHashMessage['events'][0]['eventId'];
 
-        //     if ($swooleTable['eventOddsHash']->exists($eventId) && $swooleTable['eventOddsHash'][$eventId]['hash'] == $caching) {
-        //         $statsArray = [
-        //             "type"        => "odds",
-        //             // "status"      => SwooleStats::getErrorType('HASH_ERROR'),
-        //             "time"        => microtime(true) - $start,
-        //             "request_uid" => $message["request_uid"],
-        //             "request_ts"  => $message["request_ts"],
-        //             "offset"      => $offset,
-        //         ];
-        //         // SwooleStats::addStat($statsArray);
-        //         freeUpProcess();
-        //         return;
-        //     }
-        // }
-        // $swooleTable['eventOddsHash'][$eventId] = ['hash' => $caching];
+            if ($swooleTable['eventOddsHash']->exists($eventId) && $swooleTable['eventOddsHash'][$eventId]['hash'] == $caching) {
+                logger('info', 'odds-events-reactor', 'Validation Error: Hash data is the same as with the current hash data', (array) $message);
+                freeUpProcess();
+                return;
+            }
+        }
+        $swooleTable['eventOddsHash'][$eventId] = ['hash' => $caching];
 
-        // if (!$swooleTable['enabledSports']->exists($message["data"]["sport"])) {
-        //     $statsArray = [
-        //         "type"        => "odds",
-        //         // "status"      => SwooleStats::getErrorType('EVENTS_INACTIVE_SPORT'),
-        //         "time"        => microtime(true) - $start,
-        //         "request_uid" => $message["request_uid"],
-        //         "request_ts"  => $message["request_ts"],
-        //         "offset"      => $offset,
-        //     ];
-        //     // SwooleStats::addStat($statsArray);
-        //     freeUpProcess();
-        //     return;
-        // }
+        if (!$swooleTable['enabledSports']->exists($message["data"]["sport"])) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Sport is inactive', (array) $message);
+            freeUpProcess();
+            return;
+        }
 
-        // if (!$$swooleTable['enabledProvidersTable']->exists($message["data"]["provider"])) {
-        //     $statsArray = [
-        //         "type"        => "odds",
-        //         "status"      => SwooleStats::getErrorType('EVENTS_INACTIVE_PROVIDER'),
-        //         "time"        => microtime(true) - $start,
-        //         "request_uid" => $message["request_uid"],
-        //         "request_ts"  => $message["request_ts"],
-        //         "offset"      => $offset,
-        //     ];
-        //     // SwooleStats::addStat($statsArray);
-        //     freeUpProcess();
-        //     return;
-        // }
+        if (!$swooleTable['enabledProviders']->exists($message["data"]["provider"])) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Provider is inactive', (array) $message);
+            freeUpProcess();
+            return;
+        }
 
-        echo 1;
-        go(function() use($dbPool) {
-            echo 2;
+        go(function () use ($dbPool, $swooleTable, $message, $offset) {
             try {
-
-                echo 3;
-                // $dbPool->init();
-                echo 4;
                 $connection = $dbPool->borrow();
-                var_dump($connection);
-                echo 5;
-                $result = $connection->query("SELECT id FROM users");
-                echo 6;
-                $stat = $connection->fetchAssoc($result);
-                $pool->return($connection);
-                echo 7;
-                var_dump($stat);
+
+                ProcessOdds::handle($connection, $swooleTable, $message, $offset);
+
+                $dbPool->return($connection);
             } catch (Exception $e) {
-                echo 9;
                 echo $e->getMessage();
             }
-            
-            // ProcessOdds
+
         });
     } catch (Exception $e) {
-        echo $e->getMessage();
-        // self::$configTable["processKafka"]["value"] = 0;
-        // processTaskTempDir(false);
-        // self::$configTable["processKafka"]["value"] = 1;
+        logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
     } finally {
         freeUpProcess();
         return true;
     }
 }
 
-function eventHandler($payload, $key)
+function eventHandler($message, $offset)
 {
-    freeUpProcess();
+    global $swooleTable;
+    global $dbPool;
+
+    try {
+        $previousTS = $swooleTable['timestamps']['event:' . $message["data"]["schedule"]]['ts'];
+        $messageTS  = $message["request_ts"];
+
+        if ($messageTS < $previousTS) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
+            freeUpProcess();
+            return;
+        }
+
+        $swooleTable['timestamps']['event:' . $message["data"]["schedule"]]['ts'] = $messageTS;
+
+        if (!is_array($message["data"]) || empty($message["data"])) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Data should be valid', (array) $message);
+            freeUpProcess();
+            return;
+        }
+
+        if (!$swooleTable['enabledSports']->exists($message["data"]["sport"])) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Sport is inactive', (array) $message);
+            freeUpProcess();
+            return;
+        }
+
+        if (!$swooleTable['enabledProviders']->exists($message["data"]["provider"])) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Provider is inactive', (array) $message);
+            freeUpProcess();
+            return;
+        }
+
+        go(function () use ($dbPool, $swooleTable, $message, $offset) {
+            try {
+                $connection = $dbPool->borrow();
+
+                ProcessEvent::handle($connection, $swooleTable, $message, $offset);
+
+                $dbPool->return($connection);
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+
+        });
+    } catch (Exception $e) {
+        logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
+    } finally {
+        freeUpProcess();
+        return true;
+    }
+
+
 }
 
-function execute($payload,$key) {
-	#var_dump($payload);
-	#var_dump($key);
-	$myPayload=json_decode($payload);
-	if($myPayload) {
-		Co\System::sleep(0.025);
-		echo "c";
-		freeUpProcess();
-	}
-	else {
-		echo "x";
-	}
+function execute($payload, $key)
+{
+    #var_dump($payload);
+    #var_dump($key);
+    $myPayload = json_decode($payload);
+    if ($myPayload) {
+        Co\System::sleep(0.025);
+        echo "c";
+        freeUpProcess();
+    } else {
+        echo "x";
+    }
 }
 
 $activeProcesses = 0;
+$count = 0;
 $queue           = makeConsumer();
-$dbPool = null;
+$dbPool          = null;
 makeProcess();
 
-Co\run(function() use ($queue, $activeProcesses) {
+Co\run(function () use ($queue) {
     global $dbPool;
 
-	$count = 0;
 
-    Swoole\Timer::tick(1000, "checkRate");
+
+    // Swoole\Timer::tick(1000, "checkRate");
     $dbPool = databaseConnectionPool();
 
     $dbPool->init();
     defer(function () use ($dbPool) {
-        echo "Closing connection pool\n";
+        logger('info', 'odds-events-reactor', "Closing connection pool");
         $dbPool->close();
     });
 
+    preProcess();
     reactor($queue, $dbPool);
 });
