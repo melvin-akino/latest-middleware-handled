@@ -3,10 +3,12 @@
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/Classes/DotEnv.php';
 require_once __DIR__ . '/Classes/SwooleTable.php';
-// require_once __DIR__ . '/Classes/SwooleStats.php';
+require_once __DIR__ . '/Classes/PreProcess.php';
+require_once __DIR__ . '/Classes/WalletService.php';
 
 use DevCoder\DotEnv;
-use RdKafka\Conf;
+use RdKafka\{Conf, Producer};
+use Classes\WalletService;
 
 (new DotEnv(__DIR__ . '/.env'))->load();
 
@@ -18,11 +20,9 @@ require_once __DIR__ . '/config.php';
 instantiateLogger();
 
 
-$kafkaConf = new Conf();
-$kafkaConf->set('metadata.broker.list', 'kafka:9092');
-$kafkaConf->set('group.id', getenv('KAFKA-GROUP', 'ml-db'));
-$kafkaConf->set('auto.offset.reset', 'latest');
-$kafkaConf->set('enable.auto.commit', 'false');
+$producerConf = new Conf();
+$producerConf->set('metadata.broker.list', getenv('KAFKA-BROKER', 'kafka:9092'));
+$kafkaProducer    = new Producer($producerConf);
 
 $swooleTable = new SwooleTable;
 foreach ($config['swoole_tables'] as $table => $details) {
@@ -30,6 +30,12 @@ foreach ($config['swoole_tables'] as $table => $details) {
 };
 
 $swooleTable = $swooleTable->table;
+
+$wallet = new WalletService(
+    getenv('WALLET-URL', '127.0.0.1'),
+    getenv('WALLET-CLIENT-ID', 'wallet-id'),
+    getenv('WALLET-CLIENT-SECRET', 'wallet-secret')
+);
 
 // $swooleStats = SwooleStats::getInstance();
 
