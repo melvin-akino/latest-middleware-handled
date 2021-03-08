@@ -2,7 +2,7 @@
 
 namespace Models;
 
-Class Sport
+class Sport
 {
     protected static $table = 'sports';
 
@@ -10,6 +10,6 @@ Class Sport
     {
         $sql = "SELECT * FROM " . self::$table . " WHERE is_enabled = true";
         return $connection->query($sql);
-        
+
     }
 }

@@ -4,7 +4,7 @@ namespace Models;
 
 use Models\Model;
 
-Class League extends Model
+class League extends Model
 {
     protected static $table = 'leagues';
 

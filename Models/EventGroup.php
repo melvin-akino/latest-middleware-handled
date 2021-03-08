@@ -4,14 +4,13 @@ namespace Models;
 
 use Models\Model;
 
-Class EventGroup extends Model
+class EventGroup extends Model
 {
     protected static $table = 'event_groups';
 
-    public static function getEventsData($connection)
+    public static function checkIfMatched($connection, $eventId)
     {
-        $sql = "SELECT eg.*, event_identifier, sport_id, provider_id FROM " . self::$table . " as eg
-                JOIN events as e ON eg.event_id = e.id WHERE e.deleted_at is null";
+        $sql = "SELECT * FROM " . self::$table . " WHERE event_id = '{$eventId}'";
         return $connection->query($sql);
-    } 
+    }
 }

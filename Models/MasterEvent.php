@@ -4,7 +4,7 @@ namespace Models;
 
 use Models\Model;
 
-Class MasterEvent extends Model
+class MasterEvent extends Model
 {
     protected static $table = 'master_events';
 }
