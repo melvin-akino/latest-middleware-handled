@@ -8,7 +8,8 @@ use Workers\{
     RequestBalance,
     RequestSettlement,
     RequestSessionStatus,
-    RequestSessionCategory
+    RequestSessionCategory,
+    ProduceAdminBetSettlement
 };
 
 require_once __DIR__ . '/../Bootstrap.php';
@@ -65,5 +66,9 @@ Co\run(function () use ($queue, $activeProcesses) {
 
     go(function () use ($dbPool, $swooleTable) {
         RequestSessionCategory::handle($dbPool, $swooleTable);
+    });
+
+    go(function () use ($dbPool, $swooleTable) {
+        ProduceAdminBetSettlement::handle($dbPool, $swooleTable);
     });
 });
