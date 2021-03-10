@@ -20,7 +20,7 @@ class Model
         return $connection->query($sql);
     }
 
-    public static function create($connection, $params)
+    public static function create($connection, $params, $return = false)
     {
         $sql    = "INSERT INTO " . static::$table . " (";
         $array2 = self::_index2string($params);
@@ -32,6 +32,10 @@ class Model
         $sql .= self::_sfield($params);
 
         $sql .= ")";
+
+        if ($return) {
+            $sql .= " RETURNING {$return}";
+        }
         return $connection->query($sql);
     }
 
