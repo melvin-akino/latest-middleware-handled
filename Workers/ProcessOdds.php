@@ -123,6 +123,8 @@ class ProcessOdds
                         logger('error', 'odds', 'Another worker already created the league group');
                         return;
                     }
+                } else {
+                    $masterLeagueId = $leagueGroupData['master_league_id'];
                 }
             }
 
@@ -200,6 +202,8 @@ class ProcessOdds
                         logger('error', 'odds', 'Another worker already created the team group');
                         return;
                     }
+                } else {
+                    $masterTeamHomeId = $teamGroupData['master_team_id'];
                 }
             }
 
@@ -277,6 +281,8 @@ class ProcessOdds
                         logger('error', 'odds', 'Another worker already created the team group');
                         return;
                     }
+                } else {
+                    $masterTeamAwayId = $teamGroupData['master_team_id'];
                 }
             }
             /** end master away team **/
@@ -421,6 +427,8 @@ class ProcessOdds
                         logger('error', 'odds', 'Another worker already created the event group');
                         return;
                     }
+                } else {
+                    $masterEventId = $eventGroupData['master_event_id'];
                 }
             }
 
@@ -654,6 +662,8 @@ class ProcessOdds
                                             logger('error', 'odds', 'Another worker already created the event market group');
                                             return;
                                         }
+                                    } else {
+                                        $masterEventMarketId = $eventMarketGroupData['master_event_market_id'];
                                     }
                                 }
                             } else {
