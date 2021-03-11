@@ -618,11 +618,14 @@ class ProcessOdds
                                     'odds'                    => $odds,
                                 ];
 
+                                if ($eventMarket['odd_label'] != $points) {
+                                    EventMarketGroup::delete($connection, 'event_market_id', $eventMarketId);
+                                }
+
                                 $newMarkets[] = $marketId;
                                 $eventMarketListTable->set($eventId, ['marketIDs' => implode(',', $newMarkets)]);
 
                                 $masterEventMarketId = null;
-                                // if (strtolower($primaryProvider['value']) == strtolower($provider)) {
                                 if ($isEventMatched) {
                                     $memUID                 = md5($eventId . strtoupper($marketFlag) . $marketId);
                                     $eventMarketGroupResult = EventMarketGroup::checkIfMatched($connection, $eventMarketId);
