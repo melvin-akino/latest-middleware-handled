@@ -123,6 +123,8 @@ class ProcessOdds
                         logger('error', 'odds', 'Another worker already created the league group');
                         return;
                     }
+                } else {
+                    $masterLeagueId = $leagueGroupData['master_league_id'];
                 }
             }
 
@@ -200,6 +202,8 @@ class ProcessOdds
                         logger('error', 'odds', 'Another worker already created the team group');
                         return;
                     }
+                } else {
+                    $masterTeamHomeId = $teamGroupData['master_team_id'];
                 }
             }
 
@@ -277,6 +281,8 @@ class ProcessOdds
                         logger('error', 'odds', 'Another worker already created the team group');
                         return;
                     }
+                } else {
+                    $masterTeamAwayId = $teamGroupData['master_team_id'];
                 }
             }
             /** end master away team **/
@@ -384,13 +390,13 @@ class ProcessOdds
             }
             /* end events */
 
+            $isEventMatched = false;
             $masterEventId = null;
-            if (strtolower($primaryProvider['value']) == strtolower($provider)) {
-                $masterEventUniqueId = date('Ymd', strtotime($referenceSchedule)) . '-' . $sportId . '-' . $masterLeagueId . '-' . $eventIdentifier;
-
-                $eventGroupResult = EventGroup::checkIfMatched($connection, $eventId);
-                $eventGroupData   = $connection->fetchArray($eventGroupResult);
-                if (!$eventGroupData) {
+            $eventGroupResult = EventGroup::checkIfMatched($connection, $eventId);
+            $eventGroupData   = $connection->fetchArray($eventGroupResult);
+            if (!$eventGroupData) {
+                if (strtolower($primaryProvider['value']) == strtolower($provider)) {
+                    $masterEventUniqueId = date('Ymd', strtotime($referenceSchedule)) . '-' . $sportId . '-' . $masterLeagueId . '-' . $eventIdentifier;
                     try {
                         $masterEventResult = MasterEvent::create($connection, [
                             'sport_id'               => $sportId,
@@ -421,7 +427,12 @@ class ProcessOdds
                         logger('error', 'odds', 'Another worker already created the event group');
                         return;
                     }
-                }
+
+                    $isEventMatched = true;
+                } 
+            } else {
+                $isEventMatched = true;
+                $masterEventId = $eventGroupData['master_event_id'];
             }
 
             $currentMarketsParsed     = [];
@@ -607,11 +618,15 @@ class ProcessOdds
                                     'odds'                    => $odds,
                                 ];
 
+                                if ($eventMarket['odd_label'] != $points) {
+                                    EventMarketGroup::delete($connection, 'event_market_id', $eventMarketId);
+                                }
+
                                 $newMarkets[] = $marketId;
                                 $eventMarketListTable->set($eventId, ['marketIDs' => implode(',', $newMarkets)]);
 
                                 $masterEventMarketId = null;
-                                if (strtolower($primaryProvider['value']) == strtolower($provider)) {
+                                if ($isEventMatched) {
                                     $memUID                 = md5($eventId . strtoupper($marketFlag) . $marketId);
                                     $eventMarketGroupResult = EventMarketGroup::checkIfMatched($connection, $eventMarketId);
                                     $eventMarketGroupData   = $connection->fetchArray($eventMarketGroupResult);
@@ -654,6 +669,8 @@ class ProcessOdds
                                             logger('error', 'odds', 'Another worker already created the event market group');
                                             return;
                                         }
+                                    } else {
+                                        $masterEventMarketId = $eventMarketGroupData['master_event_market_id'];
                                     }
                                 }
                             } else {

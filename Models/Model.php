@@ -20,6 +20,12 @@ class Model
         return $connection->query($sql);
     }
 
+    public static function delete($connection, $columnName, $value)
+    {
+        $sql = "DELETE " . static::$table . " WHERE {$columnName} = '{$value}'";
+        return $connection->query($sql);
+    }
+
     public static function create($connection, $params, $return = false)
     {
         $sql    = "INSERT INTO " . static::$table . " (";
