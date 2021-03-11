@@ -390,13 +390,13 @@ class ProcessOdds
             }
             /* end events */
 
+            $isEventMatched = false;
             $masterEventId = null;
-            if (strtolower($primaryProvider['value']) == strtolower($provider)) {
-                $masterEventUniqueId = date('Ymd', strtotime($referenceSchedule)) . '-' . $sportId . '-' . $masterLeagueId . '-' . $eventIdentifier;
-
-                $eventGroupResult = EventGroup::checkIfMatched($connection, $eventId);
-                $eventGroupData   = $connection->fetchArray($eventGroupResult);
-                if (!$eventGroupData) {
+            $eventGroupResult = EventGroup::checkIfMatched($connection, $eventId);
+            $eventGroupData   = $connection->fetchArray($eventGroupResult);
+            if (!$eventGroupData) {
+                if (strtolower($primaryProvider['value']) == strtolower($provider)) {
+                    $masterEventUniqueId = date('Ymd', strtotime($referenceSchedule)) . '-' . $sportId . '-' . $masterLeagueId . '-' . $eventIdentifier;
                     try {
                         $masterEventResult = MasterEvent::create($connection, [
                             'sport_id'               => $sportId,
@@ -427,9 +427,12 @@ class ProcessOdds
                         logger('error', 'odds', 'Another worker already created the event group');
                         return;
                     }
-                } else {
-                    $masterEventId = $eventGroupData['master_event_id'];
-                }
+
+                    $isEventMatched = true;
+                } 
+            } else {
+                $isEventMatched = true;
+                $masterEventId = $eventGroupData['master_event_id'];
             }
 
             $currentMarketsParsed     = [];
@@ -619,7 +622,8 @@ class ProcessOdds
                                 $eventMarketListTable->set($eventId, ['marketIDs' => implode(',', $newMarkets)]);
 
                                 $masterEventMarketId = null;
-                                if (strtolower($primaryProvider['value']) == strtolower($provider)) {
+                                // if (strtolower($primaryProvider['value']) == strtolower($provider)) {
+                                if ($isEventMatched) {
                                     $memUID                 = md5($eventId . strtoupper($marketFlag) . $marketId);
                                     $eventMarketGroupResult = EventMarketGroup::checkIfMatched($connection, $eventMarketId);
                                     $eventMarketGroupData   = $connection->fetchArray($eventMarketGroupResult);
