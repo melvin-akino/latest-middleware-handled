@@ -29,4 +29,49 @@ class EventGroup extends Model
         // var_dump($sql);
         return $connection->query($sql);
     }
+
+    public static function matchEvent($connection, $params)
+    {
+		$sql = "INSERT INTO " . self::$table . "(";
+		$array2 = self::_index2string($params);
+
+		$sql .= self::_field($array2);
+
+		$sql .= ") VALUES (";
+		
+        $sql .= self::_sfield($params);
+		
+        $sql .= ")";
+        echo $sql . "\n";
+		return $connection->query($sql);
+	}
+
+    private static function _field($array)
+	{
+		$str = implode(", ", $array);
+		return $str;
+	}
+
+    private static function _sfield($array)
+    {
+		$str = "";
+		for ($i = 0; $i < count($array); $i++){
+			$str .= "'" . addslashes($array[key($array)]) . "'";
+			next($array);
+			if ($i < count($array) - 1) {
+				$str .= ", ";
+			}
+		}
+		return $str;
+	}
+
+    private static function _index2string($array)
+    {
+		$array2 = array();
+		for ($i=0; $i < count($array); $i++) {
+			$array2[key($array)] = key($array);
+			next($array);
+		}
+		return $array2;
+	}
 }
