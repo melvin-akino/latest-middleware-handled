@@ -19,4 +19,17 @@ class Event extends Model
         $sql = "SELECT * FROM " . static::$table . " WHERE event_identifier = '{$eventIdentifier}' AND provider_id = '{$providerId}' AND sport_id = '{$sportId}' ORDER BY id DESC LIMIT 1";
         return $connection->query($sql);
     }
+
+    public static function getAllUnmatchedEvents($connection)
+    {
+        $sql = "SELECT * FROM " . static::$table . " WHERE id NOT IN (SELECT event_id FROM event_groups) ORDER BY id DESC";
+        return $connection->query($sql);
+    }
+
+    public static function getEventsById($connection, $eventId)
+    {
+        $sql = "SELECT e.*, eg.* FROM " . static::$table . " as e 
+                LEFT JOIN event_groups as eg ON eg.event_id = e.id WHERE id = '{$eventId}'";
+        return $connection->query($sql);
+    }
 }
