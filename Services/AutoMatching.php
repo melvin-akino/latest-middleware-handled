@@ -10,25 +10,8 @@ use Workers\{
 
 require_once __DIR__ . '/../Bootstrap.php';
 
-function preProcess()
-{
-    global $dbPool;
-
-    $connection = $dbPool->borrow();
-
-    PreProcess::init($connection);
-    PreProcess::loadEnabledProviders();
-    PreProcess::loadEnabledSports();
-    PreProcess::loadMaintenance();
-    PreProcess::loadEnabledProviderAccounts();
-
-    $dbPool->return($connection);
-}
-
 $dbPool = null;
-makeProcess();
-
-Co\run(function () use ($queue, $activeProcesses) {
+Co\run(function () use ($queue) {
     global $dbPool;
     global $swooleTable;
 
@@ -41,7 +24,6 @@ Co\run(function () use ($queue, $activeProcesses) {
         $dbPool->close();
     });
 
-    preProcess();
 
     // go(function () use ($dbPool, $swooleTable) {
     //     MatchEvent::handle($dbPool, $swooleTable);
