@@ -29,8 +29,7 @@ class EventMarket extends Model
 
     public static function getAllUnmatchedMarket($connection)
     {
-        $sql = "SELECT * FROM " . static::$table . " WHERE id NOT IN (SELECT event_market_id FROM event_market_groups)";
-        var_dump($sql);
+        $sql = "SELECT * FROM " . static::$table . " WHERE id NOT IN (SELECT event_market_id FROM event_market_groups) ORDER BY id DESC";
         return $connection->query($sql);
     }
 
@@ -38,7 +37,6 @@ class EventMarket extends Model
     {
         $sql = "SELECT em.*, emg.* FROM " . static::$table . " as em 
                 LEFT JOIN event_market_groups as emg ON emg.event_market_id = em.id WHERE event_id = '{$eventId}'";
-                echo $sql;
         return $connection->query($sql);
     }
 }

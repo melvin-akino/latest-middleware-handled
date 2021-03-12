@@ -18,7 +18,6 @@ Class OrderTransaction
         $sql .= self::_sfield($params);
 		
         $sql .= ")";
-        echo $sql . "\n";
 		return $connection->query($sql);
 	}
 
