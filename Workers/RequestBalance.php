@@ -61,7 +61,7 @@ class RequestBalance
         if (!empty($systemConfigurationsTimers)) {
             foreach ($systemConfigurationsTimers as $key => $systemConfigurationsTimer) {
                 if ($balanceTime % (int) $systemConfigurationsTimer == 0) {
-                    self::sendKafkaPayload($swooleTable, getenv('KAFKA-SCRAPE-BALANCE-POSTFIX', '_balance_req'), 'balance', 'scrape');
+                    self::sendKafkaPayload($swooleTable, getenv('KAFKA_SCRAPE_BALANCE_POSTFIX', '_balance_req'), 'balance', 'scrape');
                     break;
                 }
             }

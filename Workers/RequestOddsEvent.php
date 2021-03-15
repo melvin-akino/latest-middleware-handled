@@ -18,7 +18,7 @@ class RequestOddsEvent
     {
         global $defaults;
 
-        self::$kafkaTopic           = getenv('KAFKA-SCRAPE-REQUEST-POSTFIX', '_req');
+        self::$kafkaTopic           = getenv('KAFKA_SCRAPE_REQUEST_POSTFIX', '_req');
         self::$scheduleMapping      = $defaults['scraping']['scheduleMapping'];
         self::$scheduleMappingField = $defaults['scraping']['scheduleMappingField'];
     }

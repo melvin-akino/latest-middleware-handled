@@ -67,7 +67,7 @@ class ProduceAdminBetSettlement
 
     public static function send2KafkaUnprocessedSettlement($connection)
     {
-        $topic = getenv('KAFKA-SCRAPING-SETTLEMENTS', 'SCRAPING-SETTLEMENTS');
+        $topic = getenv('KAFKA_SCRAPING_SETTLEMENTS', 'SCRAPING-SETTLEMENTS');
         $result = AdminSettlement::fetchUnprocessedPayloads($connection);
         while ($record = $connection->fetchAssoc($result)) {
             $payload = getPayloadPart('settlement', 'transform');

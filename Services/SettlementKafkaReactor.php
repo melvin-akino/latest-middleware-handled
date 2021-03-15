@@ -32,7 +32,7 @@ function reactor($queue) {
 				case RD_KAFKA_RESP_ERR_NO_ERROR:
                     logger('info','settlements-reactor', 'consuming...', (array) $message);
 					if ($message->payload) {
-                        getPipe(getenv('SETTLEMENT-PROCESSES-NUMBER', 1));
+                        getPipe(getenv('SETTLEMENT_PROCESSES_NUMBER', 1));
 
                         $payload = json_decode($message->payload, true);
                         settlementeHandler($payload, $message->offset);
@@ -133,7 +133,7 @@ function settlementeHandler($message, $offset)
 
 $activeProcesses   = 0;
 $topics            = [
-                        getenv('KAFKA-SCRAPING-SETTLEMENTS', 'SCRAPING-SETTLEMENTS'),
+                        getenv('KAFKA_SCRAPING_SETTLEMENTS', 'SCRAPING-SETTLEMENTS'),
                      ];
 $queue             = createConsumer($topics);
 $dbPool            = null;
