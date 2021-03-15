@@ -8,7 +8,7 @@ Class ProviderAccount
 
     public static function getAll($connection)
     {
-        $sql = "SELECT * FROM " . self::$table . "WHERE deleted_at is null";
+        $sql = "SELECT * FROM " . self::$table . " WHERE deleted_at is null";
         return $connection->query($sql);
     }
 
