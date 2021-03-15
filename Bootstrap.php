@@ -21,7 +21,7 @@ instantiateLogger();
 
 
 $producerConf = new Conf();
-$producerConf->set('metadata.broker.list', getenv('KAFKA_BROKER', 'kafka:9092'));
+$producerConf->set('metadata.broker.list', getenv('KAFKA_BROKERS', 'kafka:9092'));
 $kafkaProducer    = new Producer($producerConf);
 
 $swooleTable = new SwooleTable;

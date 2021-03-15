@@ -16,10 +16,10 @@ function makeConsumer()
     ];
 
     $conf = new Conf();
-	$conf->set('group.id', getenv('KAFKA_GROUP', 'ml-db'));
+	$conf->set('group.id', getenv('KAFKA_GROUP_ID', 'ml-db'));
 
 	$rk = new Consumer($conf);
-	$rk->addBrokers(getenv('KAFKA_BROKER', 'kafka:9092'));
+	$rk->addBrokers(getenv('KAFKA_BROKERS', 'kafka:9092'));
 
 	$queue = $rk->newQueue();
 	foreach ($topics as $t) {
