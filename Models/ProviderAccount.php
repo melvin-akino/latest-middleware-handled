@@ -28,7 +28,7 @@ Class ProviderAccount
 
     public static function getByProviderAndTypes($connection, $providerId, $providerTypes)
     {
-        $sql = "SELECT username, password, type, is_enabled FROM " . self::$table . " WHERE provider_id = '{$providerId}' AND type IN ('" . implode("', '", array_keys($providerTypes)) . "')";
+        $sql = "SELECT username, password, type, is_enabled FROM " . self::$table . " WHERE provider_id = '{$providerId}' AND type IN ('" . implode("', '", array_keys($providerTypes)) . "') AND deleted_at is null";
         return $connection->query($sql);
     }
 
