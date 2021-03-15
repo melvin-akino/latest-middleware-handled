@@ -81,28 +81,19 @@ class MatchEvent
                     $masterAwayTeamId = $isAwayMatched['master_team_id'];                   
                     
                     //if all conditions above are true, continue the verification process to get the master_event_id
-                    //Concern starts here - @alex
-                    $masterEventResult = MasterEvent::getMasterEventId($connection, $masterLeagueId, $masterHomeTeamId, $masterAwayTeamId);
+                    $masterEventResult = MasterEvent::getMasterEventData($connection, $masterLeagueId, $masterHomeTeamId, $masterAwayTeamId);
 
                     if ($connection->numRows($masterEventResult))
                     {
                         $masterEvent = $connection->fetchAssoc($masterEventResult);
-                        //compare if matched master(leagueId, hometeamId, awayteamId) == unmatched master (leagueId, hometeamId, awayteamId)
-                        //where to compare these 3 params if not getting from master_events table
-                        //please let me know what you think here
-                        $matchedEventsResult = EventGroup::getEventByMasterEventId($connection, $masterEvent['id']);
-                        if ($connection->numRows($matchedEventsResult)) 
+                        if ($masterEvent['ref_schedule'] == $event['ref_schedule'])
                         {
-                            $matchedEvent = $connection->fetchAssoc($matchedEventsResult);
-                            if ($matchedEvent['game_schedule'] == $event['game_schedule'])
-                            {
-                                //create a new record in the pivot table event_group
-                                $eventGroup = [
-                                    'master_event_id'   => $masterEvent['id'],
-                                    'event_id'          => $event['id']
-                                ];
-                                $result = EventGroup::create($connection, $eventGroup);
-                            }
+                            //create a new record in the pivot table event_groups
+                            $eventGroup = [
+                                'master_event_id'   => $masterEvent['id'],
+                                'event_id'          => $event['id']
+                            ];
+                            $result = EventGroup::create($connection, $eventGroup);
                         }
                     }
                 }

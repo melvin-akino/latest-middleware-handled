@@ -14,10 +14,10 @@ class EventGroup extends Model
         return $connection->query($sql);
     }
 
-    public static function getEventByMasterEventId($connection, $masterEventId)
+    public static function getEventsByMasterEventId($connection, $masterEventId)
     {
         $sql = "SELECT * FROM " . static::$table . " 
-                JOIN events ON events.id = " . static::$table . ".event_id WHERE " . static::$table . ".master_event_id = '{$masterEventId}' AND deleted_at is null LIMIT 1";
+                JOIN events ON events.id = " . static::$table . ".event_id WHERE " . static::$table . ".master_event_id = '{$masterEventId}' AND deleted_at is null";
 
         return $connection->query($sql);
     }
