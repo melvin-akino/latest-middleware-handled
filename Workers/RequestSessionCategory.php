@@ -67,7 +67,7 @@ class RequestSessionCategory
                         'username' => $account['username'],
                         'category' => self::CATEGORY_TYPES[$providerAccounts[$key]]
                     ];
-                    kafkaPush(strtolower($account['alias']) . getenv('KAFKA-SESSION-REQUEST-POSTFIX', '_session_req'), $payload, $payload['request_uid']);
+                    kafkaPush(strtolower($account['alias']) . getenv('KAFKA_SESSION_REQUEST_POSTFIX', '_session_req'), $payload, $payload['request_uid']);
                 }
             }
         }

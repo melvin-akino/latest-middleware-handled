@@ -13,15 +13,15 @@ function makeConsumer()
 {
     // LOW LEVEL CONSUMER
     $topics = [
-        getenv('KAFKA-SCRAPING-ODDS', 'SCRAPING-ODDS'),
-        getenv('KAFKA-SCRAPING-EVENTS', 'SCRAPING-PROVIDER-EVENTS')
+        getenv('KAFKA_SCRAPING_ODDS', 'SCRAPING-ODDS'),
+        getenv('KAFKA_SCRAPING_EVENTS', 'SCRAPING-PROVIDER-EVENTS')
     ];
 
     $conf = new Conf();
-    $conf->set('group.id', getenv('KAFKA-GROUP', 'ml-db'));
+    $conf->set('group.id', getenv('KAFKA_GROUP_ID', 'ml-db'));
 
     $rk = new Consumer($conf);
-    $rk->addBrokers(getenv('KAFKA-BROKER', 'kafka:9092'));
+    $rk->addBrokers(getenv('KAFKA_BROKERS', 'kafka:9092'));
 
     $queue = $rk->newQueue();
     foreach ($topics as $t) {
@@ -72,7 +72,7 @@ function reactor($queue)
                 case RD_KAFKA_RESP_ERR_NO_ERROR:
                     logger('info', 'odds-events-reactor', 'consuming...', (array) $message);
                     if ($message->payload) {
-                        $key = getPipe(getenv('ODDS-EVENTS-PROCESSES-NUMBER', 1));
+                        $key = getPipe(getenv('ODDS_EVENTS_PROCESSES_NUMBER', 1));
 
                         $payload = json_decode($message->payload, true);
                         switch ($payload['command']) {

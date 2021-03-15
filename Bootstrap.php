@@ -21,7 +21,7 @@ instantiateLogger();
 
 
 $producerConf = new Conf();
-$producerConf->set('metadata.broker.list', getenv('KAFKA-BROKER', 'kafka:9092'));
+$producerConf->set('metadata.broker.list', getenv('KAFKA_BROKERS', 'kafka:9092'));
 $kafkaProducer    = new Producer($producerConf);
 
 $swooleTable = new SwooleTable;
@@ -32,9 +32,9 @@ foreach ($config['swoole_tables'] as $table => $details) {
 $swooleTable = $swooleTable->table;
 
 $wallet = new WalletService(
-    getenv('WALLET-URL', '127.0.0.1'),
-    getenv('WALLET-CLIENT-ID', 'wallet-id'),
-    getenv('WALLET-CLIENT-SECRET', 'wallet-secret')
+    getenv('WALLET_URL', '127.0.0.1'),
+    getenv('WALLET_CLIENT_ID', 'wallet-id'),
+    getenv('WALLET_CLIENT_SECRET', 'wallet-secret')
 );
 
 // $swooleStats = SwooleStats::getInstance();

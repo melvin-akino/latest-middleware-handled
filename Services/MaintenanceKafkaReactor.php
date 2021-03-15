@@ -12,14 +12,14 @@ function makeConsumer()
 {
     // LOW LEVEL CONSUMER
     $topics = [
-        getenv('KAFKA-SCRAPING-MAINTENANCE', 'PROVIDER-MAINTENANCE'),
+        getenv('KAFKA_SCRAPING_MAINTENANCE', 'PROVIDER-MAINTENANCE'),
     ];
 
     $conf = new Conf();
-	$conf->set('group.id', getenv('KAFKA-GROUP', 'ml-db'));
+	$conf->set('group.id', getenv('KAFKA_GROUP_ID', 'ml-db'));
 
 	$rk = new Consumer($conf);
-	$rk->addBrokers(getenv('KAFKA-BROKER', 'kafka:9092'));
+	$rk->addBrokers(getenv('KAFKA_BROKERS', 'kafka:9092'));
 
 	$queue = $rk->newQueue();
 	foreach ($topics as $t) {
@@ -62,7 +62,7 @@ function reactor($queue) {
 				case RD_KAFKA_RESP_ERR_NO_ERROR:
                     logger('info','maintenance-reactor', 'consuming...', (array) $message);
 					if ($message->payload) {
-                        getPipe(getenv('MAINTENANCE-PROCESSES-NUMBER', 1));
+                        getPipe(getenv('MAINTENANCE_PROCESSES_NUMBER', 1));
 
                         $payload = json_decode($message->payload, true);
                         maintenanceHandler($payload, $message->offset);
