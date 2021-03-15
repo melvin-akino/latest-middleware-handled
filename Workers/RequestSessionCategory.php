@@ -59,7 +59,7 @@ class RequestSessionCategory
             }
 
             foreach ($swooleTable['providerAccounts'] as $key => $account) {
-                if (array_key_exists($key, $providerAccounts) && $providerAccounts[$key] != $account['type']) {
+                if (array_key_exists($key, $providerAccounts) && $providerAccounts[$key] == $account['type']) {
                     $swooleTable['providerAccounts'][$key]['type'] = $providerAccounts[$key];
                     $payload                                       = getPayloadPart('session', 'category');
                     $payload['data']                               = [
