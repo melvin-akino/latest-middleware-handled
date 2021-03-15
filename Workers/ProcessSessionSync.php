@@ -36,7 +36,7 @@ class ProcessSessionSync
                         "provider" => strtolower($message['data']['provider']),
                         "username" => $row['username'],
                         "password" => $row['password'],
-                        "category" => $providerTypes[$row->type],
+                        "category" => $providerTypes[$row['type']],
                     ];
                 } else {
                     $command = "stop";
