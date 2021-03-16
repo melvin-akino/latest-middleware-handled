@@ -193,5 +193,9 @@ $config = [
             'name'  => 'settlements.log',
             'level' => 'debug'
         ],
+        'matching'         => [
+            'name'  => 'matching.log',
+            'level' => 'debug'
+        ],
     ]
 ];
