@@ -123,16 +123,14 @@ function sessionHandler($message, $offset)
                 $dbPool->return($connection);
             } catch (Exception $e) {
                 echo $e->getMessage();
+            } finally {
+                freeUpProcess();
             }
             
         });
     } catch (Exception $e) {
         echo $e->getMessage();
-        // self::$configTable["processKafka"]["value"] = 0;
-        // processTaskTempDir(false);
-        // self::$configTable["processKafka"]["value"] = 1;
     } finally {
-        freeUpProcess();
         return true;
     }
 }

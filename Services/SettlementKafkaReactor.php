@@ -74,7 +74,6 @@ function settlementeHandler($message, $offset)
 
         $timestampNow = Carbon::now()->timestamp;
         if ($countToExpiration + $expiresIn <= $timestampNow) {
-            echo "sdf";
             $getRefreshToken         = $userWalletService->refreshToken($refreshToken);
             
             $countToExpiration = $timestampNow;
@@ -116,17 +115,14 @@ function settlementeHandler($message, $offset)
                 $dbPool->return($connection);
             } catch (Exception $e) {
                 echo $e->getMessage();
+            } finally {
+                freeUpProcess();
             }
             
         });
     } catch (Exception $e) {
-        var_dump($e);
         echo $e->getMessage();
-        // self::$configTable["processKafka"]["value"] = 0;
-        // processTaskTempDir(false);
-        // self::$configTable["processKafka"]["value"] = 1;
     } finally {
-        freeUpProcess();
         return true;
     }
 }
