@@ -26,23 +26,22 @@ class MatchEvent
                 foreach($events as $event) 
                 {                                     
                     //if all conditions above are true, continue the verification process to get the master_event_id
-                    $masterEventResult = MasterEvent::getMasterEventData($connection, $event['master_league_id'], $event['master_home_team_id'], $event['master_away_team_id']);
+                    $masterEventResult = MasterEvent::getMasterEventData($connection, $event['master_league_id'], $event['master_home_team_id'], $event['master_away_team_id'], $event['ref_schedule']);
 
+                    //if a master event is returned
                     if ($connection->numRows($masterEventResult))
                     {
                         $masterEvent = $connection->fetchAssoc($masterEventResult);
-                        if ($masterEvent['ref_schedule'] == $event['ref_schedule'])
-                        {
-                            //create a new record in the pivot table event_groups
-                            $eventGroup = [
-                                'master_event_id'   => $masterEvent['id'],
-                                'event_id'          => $event['event_id']
-                            ];
-                            EventGroup::create($connection, $eventGroup);
 
-                            //Delete it from the unmatched table
-                            UnmatchedEvent::deleteUnmatched($connection, $event['event_id']);
-                        }
+                        //create a new record in the pivot table event_groups
+                        $eventGroup = [
+                            'master_event_id'   => $masterEvent['id'],
+                            'event_id'          => $event['event_id']
+                        ];
+                        EventGroup::create($connection, $eventGroup);
+
+                        //Delete it from the unmatched table
+                        UnmatchedEvent::deleteUnmatched($connection, $event['event_id']);
                     }
                 }
             }
