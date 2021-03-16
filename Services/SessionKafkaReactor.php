@@ -95,13 +95,13 @@ function sessionHandler($message, $offset)
     global $dbPool;
 
     try {
-        $previousTS = $swooleTable['timestamps']['sessions']['ts'];
+        $previousTS = $swooleTable['timestamps']['sessions:' . $message['sub_command']]['ts'];
         $messageTS  = $message["request_ts"];
         if ($messageTS < $previousTS) {
             logger('info','sessions-reactor', 'Validation Error: Timestamp is old', (array) $message);
             return;
         }
-        $swooleTable['timestamps']['sessions']['ts'] = $messageTS;
+        $swooleTable['timestamps']['sessions:' . $message['sub_command']]['ts'] = $messageTS;
 
         if (empty($message['data'])) {
             logger('info', 'Invalid Payload', $message);
