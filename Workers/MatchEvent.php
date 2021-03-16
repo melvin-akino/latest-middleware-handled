@@ -3,11 +3,10 @@
 namespace Workers;
 
 use Models\{
-    Event,
+    UnmatchedEvent,
     EventGroup,    
     League,
     LeagueGroup,
-    Team,
     TeamGroup,
     MasterEvent
 };
@@ -22,7 +21,7 @@ class MatchEvent
         {
             $connection = $dbPool->borrow();
             
-            $unmatchedEvents = Event::getAllUnmatchedEvents($connection);
+            $unmatchedEvents = UnmatchedEvent::getAllUnmatchedEvents($connection);
             if ($connection->numRows($unmatchedEvents)) 
             {
                 $events = $connection->fetchAll($unmatchedEvents);
@@ -45,21 +44,6 @@ class MatchEvent
                     }
                     $leagueGroup = $connection->fetchAssoc($leagueGroupResult);
                     $masterLeagueId = $leagueGroup['master_league_id'];
-
-                    //query the teams part second if these teamIds exist in the raw table teams, if not, skip
-                    $homeTeamResult = Team::getTeam($connection, $event['home_team_id']);
-                    if (!$connection->numRows($homeTeamResult))
-                    {
-                        logger('info', 'matching', "Home team does not exist", $event['home_team_id']);
-                        continue;
-                    }
-
-                    $awayTeamResult = Team::getTeam($connection, $event['away_team_id']);
-                    if (!$connection->numRows($homeTeamResult))
-                    {
-                        logger('info', 'matching', "Away team does not exist", $event['away_team_id']);
-                        continue;
-                    }
 
                     //query team_group if these teams are already matched
                     $isHomeMatchedResult = TeamGroup::checkIfMatched($connection, $event['home_team_id']);
@@ -91,9 +75,12 @@ class MatchEvent
                             //create a new record in the pivot table event_groups
                             $eventGroup = [
                                 'master_event_id'   => $masterEvent['id'],
-                                'event_id'          => $event['id']
+                                'event_id'          => $event['data_id']
                             ];
-                            $result = EventGroup::create($connection, $eventGroup);
+                            EventGroup::create($connection, $eventGroup);
+
+                            //Delete it from the unmatched table
+                            UnmatchedEvent::deleteUnmatched($connection, $event['data_id']);
                         }
                     }
                 }
@@ -103,7 +90,6 @@ class MatchEvent
                 continue;    
             }
 
-            var_dump($result);
             $dbPool->return($connection);
             System::sleep(10);
         }
