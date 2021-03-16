@@ -17,7 +17,8 @@ use Models\{
     MasterEvent,
     EventMarket,
     EventMarketGroup,
-    MasterEventMarket
+    MasterEventMarket,
+    UnmatchedData
 };
 
 class ProcessOdds
@@ -91,6 +92,14 @@ class ProcessOdds
                     'provider_id' => $providerId,
                     'name'        => $leagueName,
                 ];
+
+                if (strtolower($primaryProvider['value']) != strtolower($provider)) {
+                    UnmatchedData::create($connection, [
+                        'provider_id' => $providerId,
+                        'data_type' => 'league',
+                        'data_id' => $leagueId
+                    ]);
+                }
             }
 
             $masterLeagueId = null;
@@ -160,6 +169,14 @@ class ProcessOdds
                     'name'        => $homeTeam,
                     'sport_id'    => $sportId,
                 ];
+
+                if (strtolower($primaryProvider['value']) != strtolower($provider)) {
+                    UnmatchedData::create($connection, [
+                        'provider_id' => $providerId,
+                        'data_type' => 'team',
+                        'data_id' => $teamHomeId
+                    ]);
+                }
             }
             /** end home team **/
 
@@ -238,6 +255,14 @@ class ProcessOdds
                     'name'        => $awayTeam,
                     'sport_id'    => $sportId,
                 ];
+
+                if (strtolower($primaryProvider['value']) != strtolower($provider)) {
+                    UnmatchedData::create($connection, [
+                        'provider_id' => $providerId,
+                        'data_type' => 'team',
+                        'data_id' => $teamAwayId
+                    ]);
+                }
             }
             /** end master away team **/
 
@@ -367,6 +392,14 @@ class ProcessOdds
                         $event       = $connection->fetchArray($eventResult);
 
                         logger('info', 'odds', 'Event Created ' . $event['id']);
+
+                        if (strtolower($primaryProvider['value']) != strtolower($provider)) {
+                            UnmatchedData::create($connection, [
+                                'provider_id' => $providerId,
+                                'data_type' => 'event',
+                                'data_id' => $event['event_id']
+                            ]);
+                        }
                     }
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the event');

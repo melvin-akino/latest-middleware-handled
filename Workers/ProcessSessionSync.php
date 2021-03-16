@@ -36,7 +36,7 @@ class ProcessSessionSync
                         "provider" => strtolower($message['data']['provider']),
                         "username" => $row['username'],
                         "password" => $row['password'],
-                        "category" => $providerTypes[$row->type],
+                        "category" => $providerTypes[$row['type']],
                     ];
                 } else {
                     $command = "stop";
@@ -54,7 +54,7 @@ class ProcessSessionSync
                     "data"        => $data,
                 ];
 
-                kafkaPush(strtolower($message['data']['provider']) . getenv('KAFKA-SESSION-REQUEST-POSTFIX', '_session_req'), $payload, $payload['request_uid']);
+                kafkaPush(strtolower($message['data']['provider']) . getenv('KAFKA_SESSION_REQUEST_POSTFIX', '_session_req'), $payload, $payload['request_uid']);
             }
 
             logger('error', 'session-sync', 'Session Sync Processed', $message);

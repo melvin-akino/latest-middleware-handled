@@ -59,7 +59,7 @@ class RequestSessionCategory
             }
 
             foreach ($swooleTable['providerAccounts'] as $key => $account) {
-                if (array_key_exists($key, $providerAccounts) && $providerAccounts[$key] != $account['type']) {
+                if (array_key_exists($key, $providerAccounts) && $providerAccounts[$key] == $account['type']) {
                     $swooleTable['providerAccounts'][$key]['type'] = $providerAccounts[$key];
                     $payload                                       = getPayloadPart('session', 'category');
                     $payload['data']                               = [
@@ -67,7 +67,7 @@ class RequestSessionCategory
                         'username' => $account['username'],
                         'category' => self::CATEGORY_TYPES[$providerAccounts[$key]]
                     ];
-                    kafkaPush(strtolower($account['alias']) . getenv('KAFKA-SESSION-REQUEST-POSTFIX', '_session_req'), $payload, $payload['request_uid']);
+                    kafkaPush(strtolower($account['alias']) . getenv('KAFKA_SESSION_REQUEST_POSTFIX', '_session_req'), $payload, $payload['request_uid']);
                 }
             }
         }

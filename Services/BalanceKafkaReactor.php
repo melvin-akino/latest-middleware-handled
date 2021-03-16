@@ -32,7 +32,7 @@ function reactor($queue)
     $walletProvider = [];
     foreach ($swooleTable['enabledProviders'] as $alias => $provider) {
         $walletProvider[$alias] = new WalletService(
-            getenv('WALLET-URL', '127.0.0.1'),
+            getenv('WALLET_URL', '127.0.0.1'),
             $alias,
             md5($alias)
         );
@@ -46,7 +46,7 @@ function reactor($queue)
                 case RD_KAFKA_RESP_ERR_NO_ERROR:
                     logger('info', 'balance-reactor', 'consuming...', (array) $message);
                     if ($message->payload) {
-                        getPipe(getenv('BALANCE-PROCESSES-NUMBER', 1));
+                        getPipe(getenv('BALANCE_PROCESSES_NUMBER', 1));
 
                         $payload = json_decode($message->payload, true);
                         balanceHandler($walletProvider, $getAccessToken, $payload, $message->offset);
@@ -138,22 +138,20 @@ function balanceHandler($walletProvider, $getAccessToken, $message, $offset)
                 $dbPool->return($connection);
             } catch (Exception $e) {
                 echo $e->getMessage();
+            } finally {
+                freeUpProcess();
             }
         });
     } catch (Exception $e) {
         echo $e->getMessage();
-        // self::$configTable["processKafka"]["value"] = 0;
-        // processTaskTempDir(false);
-        // self::$configTable["processKafka"]["value"] = 1;
     } finally {
-        freeUpProcess();
         return true;
     }
 }
 
 $activeProcesses   = 0;
 $topics            = [
-    getenv('KAFKA-SCRAPING-BALANCES', 'BALANCE'),
+    getenv('KAFKA_SCRAPING_BALANCES', 'BALANCE'),
 ];
 $queue             = createConsumer($topics);
 $dbPool            = null;

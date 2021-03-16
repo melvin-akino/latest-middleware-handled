@@ -12,14 +12,14 @@ function makeConsumer()
 {
     // LOW LEVEL CONSUMER
     $topics = [
-        getenv('KAFKA-SESSIONS', 'SESSIONS'),
+        getenv('KAFKA_SESSIONS', 'SESSIONS'),
     ];
 
     $conf = new Conf();
-	$conf->set('group.id', getenv('KAFKA-GROUP', 'ml-db'));
+	$conf->set('group.id', getenv('KAFKA_GROUP_ID', 'ml-db'));
 
 	$rk = new Consumer($conf);
-	$rk->addBrokers(getenv('KAFKA-BROKER', 'kafka:9092'));
+	$rk->addBrokers(getenv('KAFKA_BROKERS', 'kafka:9092'));
 
 	$queue = $rk->newQueue();
 	foreach ($topics as $t) {
@@ -62,7 +62,7 @@ function reactor($queue) {
 				case RD_KAFKA_RESP_ERR_NO_ERROR:
                     logger('info','sessions-reactor', 'consuming...', (array) $message);
 					if ($message->payload) {
-                        getPipe(getenv('SESSIONS-PROCESSES-NUMBER', 1));
+                        getPipe(getenv('SESSIONS_PROCESSES_NUMBER', 1));
 
                         $payload = json_decode($message->payload, true);
                         sessionHandler($payload, $message->offset);
@@ -123,16 +123,14 @@ function sessionHandler($message, $offset)
                 $dbPool->return($connection);
             } catch (Exception $e) {
                 echo $e->getMessage();
+            } finally {
+                freeUpProcess();
             }
             
         });
     } catch (Exception $e) {
         echo $e->getMessage();
-        // self::$configTable["processKafka"]["value"] = 0;
-        // processTaskTempDir(false);
-        // self::$configTable["processKafka"]["value"] = 1;
     } finally {
-        freeUpProcess();
         return true;
     }
 }

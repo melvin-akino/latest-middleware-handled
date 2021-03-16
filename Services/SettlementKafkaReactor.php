@@ -32,7 +32,7 @@ function reactor($queue) {
 				case RD_KAFKA_RESP_ERR_NO_ERROR:
                     logger('info','settlements-reactor', 'consuming...', (array) $message);
 					if ($message->payload) {
-                        getPipe(getenv('SETTLEMENT-PROCESSES-NUMBER', 1));
+                        getPipe(getenv('SETTLEMENT_PROCESSES_NUMBER', 1));
 
                         $payload = json_decode($message->payload, true);
                         settlementeHandler($payload, $message->offset);
@@ -74,7 +74,6 @@ function settlementeHandler($message, $offset)
 
         $timestampNow = Carbon::now()->timestamp;
         if ($countToExpiration + $expiresIn <= $timestampNow) {
-            echo "sdf";
             $getRefreshToken         = $userWalletService->refreshToken($refreshToken);
             
             $countToExpiration = $timestampNow;
@@ -116,24 +115,21 @@ function settlementeHandler($message, $offset)
                 $dbPool->return($connection);
             } catch (Exception $e) {
                 echo $e->getMessage();
+            } finally {
+                freeUpProcess();
             }
             
         });
     } catch (Exception $e) {
-        var_dump($e);
         echo $e->getMessage();
-        // self::$configTable["processKafka"]["value"] = 0;
-        // processTaskTempDir(false);
-        // self::$configTable["processKafka"]["value"] = 1;
     } finally {
-        freeUpProcess();
         return true;
     }
 }
 
 $activeProcesses   = 0;
 $topics            = [
-                        getenv('KAFKA-SCRAPING-SETTLEMENTS', 'SCRAPING-SETTLEMENTS'),
+                        getenv('KAFKA_SCRAPING_SETTLEMENTS', 'SCRAPING-SETTLEMENTS'),
                      ];
 $queue             = createConsumer($topics);
 $dbPool            = null;

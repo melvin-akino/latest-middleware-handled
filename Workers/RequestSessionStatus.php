@@ -63,7 +63,7 @@ class RequestSessionStatus
                 $payload['data'] = [
                     'provider' => strtolower($alias)
                 ];
-                kafkaPush(strtolower($alias) . getenv('KAFKA-SESSION-REQUEST-POSTFIX', '_session_req'), $payload, $payload['request_uid']);
+                kafkaPush(strtolower($alias) . getenv('KAFKA_SESSION_REQUEST_POSTFIX', '_session_req'), $payload, $payload['request_uid']);
             }
         }
 
