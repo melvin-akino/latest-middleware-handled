@@ -115,14 +115,13 @@ function settlementeHandler($message, $offset)
                 $dbPool->return($connection);
             } catch (Exception $e) {
                 echo $e->getMessage();
-            } finally {
-                freeUpProcess();
             }
             
         });
     } catch (Exception $e) {
         echo $e->getMessage();
     } finally {
+        freeUpProcess();
         return true;
     }
 }
