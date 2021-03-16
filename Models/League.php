@@ -13,4 +13,10 @@ class League extends Model
         $sql = "SELECT * FROM " . self::$table . " WHERE deleted_at is null";
         return $connection->query($sql);
     }
+
+    public static function getLeague($connection, $leagueId)
+    {
+        $sql = "SELECT * FROM " . self::$table . " WHERE id = $leagueId";
+        return $connection->query($sql);
+    }
 }

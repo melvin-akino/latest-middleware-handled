@@ -33,7 +33,6 @@ class Order
         }
         $sql .= implode(', ', $params);
         $sql .= "WHERE bet_id LIKE '%{$providerBetId}'";
-        echo $sql . "\n";
         return $connection->query($sql);
     }
 
