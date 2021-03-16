@@ -64,8 +64,9 @@ class RequestOddsEvent
         }
 
         $request = [];
+        $config = $connection->fetchAll(self::$systemConfigResult);
         foreach (self::$scheduleMapping as $key => $scheduleType) {
-            while ($conf = $connection->fetchAssoc(self::$systemConfigResult)) {
+            foreach ($config as $conf) {
                 if (in_array($conf['type'], $scheduleType)) {
                     $request[$key][self::$scheduleMappingField[$conf['type']]] = $conf['value'];
                 }
