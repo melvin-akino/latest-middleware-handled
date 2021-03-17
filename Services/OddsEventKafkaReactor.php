@@ -168,14 +168,13 @@ function oddHandler($message, $offset)
                 $dbPool->return($connection);
             } catch (Exception $e) {
                 echo $e->getMessage();
-            } finally {
-                freeUpProcess();
             }
 
         });
     } catch (Exception $e) {
         logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
     } finally {
+        freeUpProcess();
         return true;
     }
 }
