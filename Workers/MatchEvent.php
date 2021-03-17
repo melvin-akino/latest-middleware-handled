@@ -31,6 +31,7 @@ class MatchEvent
                     //if a master event is returned
                     if ($connection->numRows($masterEventResult))
                     {
+                        
                         $masterEvent = $connection->fetchAssoc($masterEventResult);
 
                         //create a new record in the pivot table event_groups
@@ -38,7 +39,7 @@ class MatchEvent
                             'master_event_id'   => $masterEvent['id'],
                             'event_id'          => $event['event_id']
                         ];
-                        EventGroup::create($connection, $eventGroup);
+                        $eventGroupResult = EventGroup::create($connection, $eventGroup);
 
                         //Delete it from the unmatched table
                         UnmatchedEvent::deleteUnmatched($connection, $event['event_id']);

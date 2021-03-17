@@ -10,7 +10,7 @@ class UnmatchedEvent extends Model
 
     public static function deleteUnmatched($connection, $dataId)
     {
-        $sql = "DELETE FROM " . static::$table . " WHERE type = 'event' AND data_id = {$dataId}";
+        $sql = "DELETE FROM " . static::$table . " WHERE data_type = 'event' AND data_id = {$dataId}";
         return $connection->query($sql);
     }
 }

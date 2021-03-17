@@ -397,7 +397,7 @@ class ProcessOdds
                             UnmatchedData::create($connection, [
                                 'provider_id' => $providerId,
                                 'data_type' => 'event',
-                                'data_id' => $event['event_id']
+                                'data_id' => $event['id']
                             ]);
                         }
                     }
