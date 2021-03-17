@@ -42,13 +42,13 @@ class MatchEvent
 
                         //Delete it from the unmatched table
                         UnmatchedEvent::deleteUnmatched($connection, $event['event_id']);
+                    } else {
+                        logger('info', 'matching', "Event remained unmatched", $unmatchedEvents);
+                        continue;    
                     }
                 }
             }
-            else {
-                logger('info', 'matching', "Event remained unmatched", $unmatchedEvents);
-                continue;    
-            }
+            
 
             $dbPool->return($connection);
             System::sleep(10);
