@@ -69,7 +69,7 @@ class RequestSettlement
                             // if (!empty($providerUnsettledDates)) {
                             while ($providerUnsettledDate = $connection->fetchAssoc($providerUnsettledDatesResult)) {
                                 // foreach ($providerUnsettledDates as $providerUnsettledDate) {
-                                $payload         = self::getPayloadPart($command, $subCommand);
+                                $payload         = getPayloadPart($command, $subCommand);
                                 $payload['data'] = [
                                     'sport'           => $sportId,
                                     'provider'        => $providerAlias,
@@ -77,7 +77,7 @@ class RequestSettlement
                                     'settlement_date' => Carbon::createFromFormat('Y-m-d', $providerUnsettledDate['unsettled_date'])->subDays(1)->format('Y-m-d'),
                                 ];
 
-                                kafkaPush($providerAlias . env('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
+                                kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
 
                                 // add sleep to prevent detecting as bot
                                 $sleepTime      = rand(1, 3);
@@ -93,7 +93,7 @@ class RequestSettlement
                                         'settlement_date' => Carbon::createFromFormat('Y-m-d', $providerUnsettledDate['unsettled_date'])->format('Y-m-d'),
                                     ];
 
-                                    kafkaPush($providerAlias . env('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
+                                    kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
 
                                     logger('info', 'app', $providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req') . " Payload Sent", $payload);
 
