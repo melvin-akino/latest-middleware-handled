@@ -78,4 +78,16 @@ class SystemConfiguration
         $sql = "SELECT type, value FROM " . self::$table . " WHERE type = 'SESSION_CATEGORY_PRODUCER_DB_INTERVAL'";
         return $connection->query($sql);
     }
+
+    public static function getOpenOrderRequestInterval($connection)
+    {
+        $sql = "SELECT type, value FROM " . self::$table . " WHERE type = 'OPEN_ORDER_PRODUCER_REQUEST_INTERVAL'";
+        return $connection->query($sql);
+    }
+
+    public static function getOpenOrderRequestTimer($connection)
+    {
+        $sql = "SELECT type, value FROM " . self::$table . " WHERE type = 'OPEN_ORDERS_REQUEST_TIMER'";
+        return $connection->query($sql);
+    }
 }
