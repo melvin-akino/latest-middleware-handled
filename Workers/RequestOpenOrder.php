@@ -56,7 +56,7 @@ class RequestOpenOrder
         if ($systemConfigurationsTimer) {
             foreach ($swooleTable['enabledSports'] as $key => $row) {
                 if ($openOrderTime % (int) $systemConfigurationsTimer == 0) {
-                    self::sendKafkaPayload($swooleTable, getenv('KAFKA_SCRAPE_OPEN_ORDERS_POSTFIX', '_openorder_req'), 'orders', 'scrape');
+                    self::sendKafkaPayload($swooleTable, getenv('KAFKA_SCRAPE_OPEN_ORDERS_POSTFIX', '_openorder_req'), 'orders', 'scrape', $key);
                 }
             }
         }
