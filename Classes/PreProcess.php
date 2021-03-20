@@ -173,8 +173,8 @@ class PreProcess
             );
 
 
-            $activeMarkets[] = $eventMarket['bet_identifier'];
-            $swooleTable['eventMarketList'][$eventMarket['event_id']]['marketIDs'] = implode(',', $activeMarkets);
+            $activeMarkets[$eventMarket['event_id']][] = $eventMarket['bet_identifier'];
+            $swooleTable['eventMarketList'][$eventMarket['event_id']]['marketIDs'] = implode(',', $activeMarkets[$eventMarket['event_id']]);
         }
     }
 
