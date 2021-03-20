@@ -235,18 +235,17 @@ function eventHandler($message, $offset)
 
 }
 
-function execute($payload, $key)
-{
-    #var_dump($payload);
-    #var_dump($key);
-    $myPayload = json_decode($payload);
-    if ($myPayload) {
-        Co\System::sleep(0.025);
-        echo "c";
-        freeUpProcess();
-    } else {
-        echo "x";
-    }
+function checkTableCounts() {
+	global $swooleTable;
+
+    logger('info', 'odds-events-reactor', 'Count Leagues:' . $swooleTable['leagues']->count());
+    logger('info', 'odds-events-reactor', 'Count Teams:' . $swooleTable['teams']->count());
+    logger('info', 'odds-events-reactor', 'Count Events:' . $swooleTable['events']->count());
+    logger('info', 'odds-events-reactor', 'Count Event Markets:' . $swooleTable['eventMarkets']->count());
+    logger('info', 'odds-events-reactor', 'Count Providers:' . $swooleTable['enabledProviders']->count());
+    logger('info', 'odds-events-reactor', 'Count Sports:' . $swooleTable['enabledSports']->count());
+    logger('info', 'odds-events-reactor', 'Count Sport Odd Types:' . $swooleTable['sportsOddTypes']->count());
+    logger('info', 'odds-events-reactor', 'Count Maintenance:' . $swooleTable['maintenance']->count());
 }
 
 $activeProcesses = 0;
@@ -270,5 +269,7 @@ Co\run(function () use ($queue) {
     });
 
     preProcess();
+
+    Swoole\Timer::tick(10000,"checkTableCounts");
     reactor($queue, $dbPool);
 });

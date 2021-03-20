@@ -149,6 +149,12 @@ class PreProcess
             $swooleTable['eventMarkets']->del($k);
         }
 
+        foreach ($swooleTable['eventMarketList'] as $k => $em) {
+            $swooleTable['eventMarketList']->del($k);
+        }
+
+        $activeMarkets = [];
+
         $result = EventMarket::getActiveEventMarkets(self::$connection);
         while ($eventMarket = self::$connection->fetchAssoc($result)) {
             $swooleTable['eventMarkets']->set(md5(implode(':', [$eventMarket['provider_id'], $eventMarket['bet_identifier']])),
@@ -165,6 +171,10 @@ class PreProcess
                     'odds'                    => $eventMarket['odds']
                 ]
             );
+
+
+            $activeMarkets[] = $eventMarket['bet_identifier'];
+            $swooleTable['eventMarketList'][$eventMarket['event_id']]['marketIDs'] = implode(',', $activeMarkets);
         }
     }
 
