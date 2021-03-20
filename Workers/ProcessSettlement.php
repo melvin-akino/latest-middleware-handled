@@ -148,6 +148,10 @@ class ProcessSettlement
         $source          = $connection->fetchAssoc($orderResult);
         $sourceId            = $source['id'];
 
+        $score = !empty($data['score']) ? $data['score'] : "0 - 0";
+        $score = explode("-", $score);
+        $finalScore = trim($score[0]) . ' - ' . trim($score[1]);
+
         try {
             $orderUpdate = Order::updateByBetIdNumber($connection, $providerBetId, [
                 'status'       => strtoupper($data['status']),
@@ -155,7 +159,7 @@ class ProcessSettlement
                 'reason'       => $data['reason'],
                 'settled_date' => Carbon::now(),
                 'updated_at'   => Carbon::now(),
-                'final_score'  => $data['score']
+                'final_score'  => $finalScore
             ]);
 
             $orderLogs = OrderLog::create($connection, [
