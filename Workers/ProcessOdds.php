@@ -343,7 +343,17 @@ class ProcessOdds
                     'event_identifier' => $eventIdentifier
                 ]);
 
-                logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier);
+                logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier, [
+                    'ref_schedule'  => $referenceSchedule,
+                    'missing_count' => $missingCount,
+                    'game_schedule' => $gameSchedule,
+                    'score'         => $score,
+                    'running_time'  => $runningtime,
+                    'home_penalty'  => $homeRedcard,
+                    'away_penalty'  => $awayRedcard,
+                    'deleted_at'    => null,
+                    'updated_at'    => $timestamp
+                ]);
             } else {
                 $eventResult = Event::getEventByProviderParam($connection, $eventIdentifier, $providerId, $sportId);
                 $event       = $connection->fetchArray($eventResult);
@@ -496,7 +506,7 @@ class ProcessOdds
 
                             if (is_array($activeEventMarkets)) {
                                 foreach ($activeEventMarkets as $marketId) {
-                                    $eventMarketsTable->del(implode(':', [$sportId, $providerId, $marketId]));
+                                    $eventMarketsTable->del(md5(implode(':', [$providerId, $marketId])));
                                 }
                             }
                             $eventMarketListTable->del($eventId);
@@ -517,7 +527,7 @@ class ProcessOdds
                             if ($marketId == "") {
                                 if (is_array($activeEventMarkets)) {
                                     foreach ($activeEventMarkets as $activeEventMarket) {
-                                        $eventMarket = $eventMarketsTable[implode(':', [$sportId, $providerId, $activeEventMarket])];
+                                        $eventMarket = $eventMarketsTable[md5(implode(':', [$providerId, $activeEventMarket]))];
                                         if (
                                             $eventMarket['odd_type_id'] == $oddTypeId &&
                                             $eventMarket['provider_id'] == $providerId &&
@@ -525,7 +535,7 @@ class ProcessOdds
                                             $eventMarket['market_flag'] == $marketFlag
                                         ) {
                                             EventMarket::softDelete($connection, 'bet_identifier', $activeEventMarket);
-                                            $eventMarketsTable->del(implode(':', [$sportId, $providerId, $activeEventMarket]));
+                                            $eventMarketsTable->del(md5(implode(':', [$providerId, $activeEventMarket])));
 
                                             logger('info', 'odds', 'Event Market Deleted with bet identifier ' . $activeEventMarket);
                                             break;
@@ -710,7 +720,7 @@ class ProcessOdds
                                 if (is_array($activeEventMarkets) && in_array($marketId, $activeEventMarkets)) {
                                     EventMarket::softDelete($connection, 'bet_identifier', $marketId);
 
-                                    $eventMarketsTable->del($marketId);
+                                    $eventMarketsTable->del(md5(implode(':', [$providerId, $marketId])));
 
                                     logger('info', 'odds', 'Event Market Deleted with bet identifier ' . $marketId);
                                 }
@@ -728,7 +738,7 @@ class ProcessOdds
                     array_key_exists($activeEventMarket, $noLongerActiveMarkets)
                     ) {
                         EventMarket::softDelete($connection, 'bet_identifier', $activeEventMarket);
-                        $eventMarketsTable->del($activeEventMarket);
+                        $eventMarketsTable->del(md5(implode(':', [$providerId, $activeEventMarket])));
 
                         logger('info', 'odds', 'Event Market Deleted with bet identifier ' . $activeEventMarket);
                     }

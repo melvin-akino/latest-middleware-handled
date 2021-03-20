@@ -111,7 +111,7 @@ class ProcessEvent
                                             'provider_id'    => $providerId
                                         ]);
 
-                                        $eventMarketsTable->del(implode(':', [$sportId, $providerId, $marketId]));
+                                        $eventMarketsTable->del(md5(implode(':', [$providerId, $marketId])));
                                     }
                                 }
                                 logger('info', 'event', 'Event deleted event identifier ' . $eT['event_identifier']);
