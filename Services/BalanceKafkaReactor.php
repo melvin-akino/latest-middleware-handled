@@ -81,16 +81,6 @@ function balanceHandler($walletProvider, $getAccessToken, $message, $offset)
     global $countToExpiration;
 
     try {
-
-        $previousTS = $swooleTable['timestamps']['balance']['ts'];
-        $messageTS  = $message["request_ts"];
-        if ($messageTS < $previousTS) {
-            logger('info', 'balance-reactor', 'Validation Error: Timestamp is old', (array) $message);
-            return;
-        }
-
-        $swooleTable['timestamps']['balance']['ts'] = $messageTS;
-
         if (
             empty($message['data']['provider']) ||
             empty($message['data']['username']) ||
@@ -105,6 +95,15 @@ function balanceHandler($walletProvider, $getAccessToken, $message, $offset)
             logger('info', 'balance-reactor', 'Validation Error: Invalid Provider', (array) $message);
             return;
         }
+
+        $previousTS = $swooleTable['timestamps']['balance:' . $message['data']['provider']]['ts'];
+        $messageTS  = $message["request_ts"];
+        if ($messageTS < $previousTS) {
+            logger('info', 'balance-reactor', 'Validation Error: Timestamp is old', (array) $message);
+            return;
+        }
+
+        $swooleTable['timestamps']['balance:' . $message['data']['provider']]['ts'] = $messageTS;
 
         $providerWalletService = $walletProvider[$message['data']['provider']];
         $expiresIn             = $getAccessToken[$message['data']['provider']]->data->expires_in;
