@@ -19,7 +19,7 @@ $config = [
     ],
     'swoole_tables' => [
         'timestamps'       => [
-            'size'   => 20,
+            'size'   => 100,
             'column' => [
                 ['name' => 'ts', 'type' => \Swoole\Table::TYPE_FLOAT],
             ],

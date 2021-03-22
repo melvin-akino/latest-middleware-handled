@@ -93,6 +93,8 @@ class RequestBalance
                 kafkaPush($provider . $topic, $payload, $payload['request_uid']);
 
                 logger('info', 'app', $provider . $topic . " Payload Sent", $payload);
+
+                System::sleep(1);
             }
         }
     }
