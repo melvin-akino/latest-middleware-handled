@@ -126,7 +126,7 @@ function oddHandler($message, $offset)
 
         if ($messageTS < $previousTS) {
             logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
-            return;
+            // return;
         }
 
         $swooleTable['timestamps']['odds:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'] = $messageTS;
@@ -196,7 +196,7 @@ function eventHandler($message, $offset)
         if ($messageTS < $previousTS) {
             logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
             freeUpProcess();
-            return;
+            // return;
         }
 
         $swooleTable['timestamps']['event:' . $message["data"]["schedule"]]['ts'] = $messageTS;

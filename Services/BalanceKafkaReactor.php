@@ -100,7 +100,7 @@ function balanceHandler($walletProvider, $getAccessToken, $message, $offset)
         $messageTS  = $message["request_ts"];
         if ($messageTS < $previousTS) {
             logger('info', 'balance-reactor', 'Validation Error: Timestamp is old', (array) $message);
-            return;
+            // return;
         }
 
         $swooleTable['timestamps']['balance:' . $message['data']['provider']]['ts'] = $messageTS;
