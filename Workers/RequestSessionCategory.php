@@ -19,19 +19,20 @@ class RequestSessionCategory
 
     public static function handle($dbPool, $swooleTable)
     {
-
         try {
-            $sessionCategoryTime = 0;
-
+            $sessionCategoryTime     = 0;
             $connection              = $dbPool->borrow();
             $refreshDBIntervalResult = SystemConfiguration::getSessionCategoryDbInterval($connection);
             $refreshDBInterval       = $connection->fetchArray($refreshDBIntervalResult);
+
             $dbPool->return($connection);
 
             while (true) {
                 $connection = $dbPool->borrow();
                 $response   = self::logicHandler($connection, $swooleTable, $sessionCategoryTime, $refreshDBInterval['value']);
+
                 $dbPool->return($connection);
+
                 if ($response) {
                     $sessionCategoryTime = $response;
                 }
@@ -49,11 +50,14 @@ class RequestSessionCategory
         if (empty($refreshDBInterval)) {
             $sessionCategoryTime++;
             logger('error', 'app', 'No refresh DB interval');
+
             return $sessionCategoryTime;
         }
+
         if ($sessionCategoryTime % $refreshDBInterval == 0) {
             $providerAccountResult = ProviderAccount::getEnabledProviderAccounts($connection);
             $providerAccounts      = [];
+
             while ($providerAccount = $connection->fetchAssoc($providerAccountResult)) {
                 $providerAccounts[$providerAccount['id']] = $providerAccount['type'];
             }
@@ -67,11 +71,14 @@ class RequestSessionCategory
                         'username' => $account['username'],
                         'category' => self::CATEGORY_TYPES[$providerAccounts[$key]]
                     ];
+
                     kafkaPush(strtolower($account['alias']) . getenv('KAFKA_SESSION_REQUEST_POSTFIX', '_session_req'), $payload, $payload['request_uid']);
                 }
             }
         }
+
         $sessionCategoryTime++;
+
         return $sessionCategoryTime;
     }
 }

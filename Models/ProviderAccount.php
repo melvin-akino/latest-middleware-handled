@@ -14,10 +14,21 @@ Class ProviderAccount
 
     public static function getEnabledProviderAccounts($connection)
     {
-        $sql = "SELECT pa.*, p.alias FROM " . self::$table . " as pa LEFT JOIN providers as p ON p.id = pa.provider_id
-                WHERE pa.deleted_at is null AND pa.is_idle = true AND p.is_enabled = true AND deleted_at is null";
+        $sql = "SELECT
+                pa.*,
+                p.alias
+            FROM " . self::$table . " as pa
+
+            LEFT JOIN providers as p
+                ON p.id = pa.provider_id
+
+            WHERE pa.deleted_at is null
+            AND pa.is_idle = true
+            AND pa.is_enabled = true
+            AND p.is_enabled = true
+            AND pa.deleted_at is null";
+
         return $connection->query($sql);
-        
     }
 
     public static function updateBalance($connection, string $username, int $providerId, $credits)
