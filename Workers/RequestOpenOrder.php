@@ -49,8 +49,6 @@ class RequestOpenOrder
             if ($openOrderTimer) {
                 $systemConfigurationsTimer = $openOrderTimer['value'];
             }
-
-            logger('error', 'app', 'Open Orders: refresh request interval');
         }
 
         if ($systemConfigurationsTimer) {
