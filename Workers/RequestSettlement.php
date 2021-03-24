@@ -84,6 +84,9 @@ class RequestSettlement
                                 if (Carbon::now()->format('Y-m-d') != Carbon::createFromFormat('Y-m-d', $providerUnsettledDate['unsettled_date'])->format('Y-m-d')) {
                                     $payload         = getPayloadPart($command, $subCommand);
                                     $payload['data'] = [
+                                        'sport'           => $sportId,
+                                        'provider'        => $providerAlias,
+                                        'username'        => $username,
                                         'settlement_date' => Carbon::createFromFormat('Y-m-d', $providerUnsettledDate['unsettled_date'])->format('Y-m-d'),
                                     ];
                                     go(function () use ($providerAlias, $payload) {
@@ -95,6 +98,9 @@ class RequestSettlement
 
                                 $payload         = getPayloadPart($command, $subCommand);
                                 $payload['data'] = [
+                                    'sport'           => $sportId,
+                                    'provider'        => $providerAlias,
+                                    'username'        => $username,
                                     'settlement_date' => Carbon::now()->subHours(5)->format('Y-m-d'),
                                 ];
                                 go(function () use ($providerAlias, $payload) {
