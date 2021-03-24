@@ -46,7 +46,7 @@ class RequestSettlement
             return $settlementTime;
         }
 
-        if ($settlementTime % $refreshDBInterval == 0) {
+        if (($settlementTime % $refreshDBInterval == 0) or empty($systemConfigurationsTimer)) {
             $settlementTimerResult = SystemConfiguration::getSettlementRequestTimer($connection);
             $settlementTimer       = $connection->fetchArray($settlementTimerResult);
             if ($settlementTimer) {
@@ -66,9 +66,8 @@ class RequestSettlement
                         if ($swooleTable['maintenance']->exists($providerAlias) && empty($swooleTable['maintenance'][$providerAlias]['under_maintenance'])) {
                             $providerUnsettledDatesResult = Order::getUnsettledDates($connection, $paId);
 
-                            // if (!empty($providerUnsettledDates)) {
                             while ($providerUnsettledDate = $connection->fetchAssoc($providerUnsettledDatesResult)) {
-                                // foreach ($providerUnsettledDates as $providerUnsettledDate) {
+                                logger('info', 'app', 'Unsettlement: ' . $username . '==' . $providerUnsettledDate['unsettled_date']);
                                 $payload         = getPayloadPart($command, $subCommand);
                                 $payload['data'] = [
                                     'sport'           => $sportId,
@@ -76,55 +75,36 @@ class RequestSettlement
                                     'username'        => $username,
                                     'settlement_date' => Carbon::createFromFormat('Y-m-d', $providerUnsettledDate['unsettled_date'])->subDays(1)->format('Y-m-d'),
                                 ];
-
-                                kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
-
-                                // add sleep to prevent detecting as bot
-                                $sleepTime      = rand(1, 3);
-                                $settlementTime += $sleepTime;
-                                System::sleep($sleepTime);
+                                go(function () use ($providerAlias, $payload) {
+                                    System::sleep(rand(1, 3));
+                                    kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
+                                    logger('info', 'app', $providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req') . " Payload Sent", $payload);
+                                });
 
                                 if (Carbon::now()->format('Y-m-d') != Carbon::createFromFormat('Y-m-d', $providerUnsettledDate['unsettled_date'])->format('Y-m-d')) {
                                     $payload         = getPayloadPart($command, $subCommand);
                                     $payload['data'] = [
-                                        'sport'           => $sportId,
-                                        'provider'        => $providerAlias,
-                                        'username'        => $username,
                                         'settlement_date' => Carbon::createFromFormat('Y-m-d', $providerUnsettledDate['unsettled_date'])->format('Y-m-d'),
                                     ];
-
-                                    kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
-
-                                    logger('info', 'app', $providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req') . " Payload Sent", $payload);
-
-                                    // add sleep to prevent detecting as bot
-                                    $sleepTime      = rand(1, 3);
-                                    $settlementTime += $sleepTime;
-                                    System::sleep($sleepTime);
+                                    go(function () use ($providerAlias, $payload) {
+                                        System::sleep(rand(1, 3));
+                                        kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
+                                        logger('info', 'app', $providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req') . " Payload Sent", $payload);
+                                    });
                                 }
+
+                                $payload         = getPayloadPart($command, $subCommand);
+                                $payload['data'] = [
+                                    'settlement_date' => Carbon::now()->subHours(5)->format('Y-m-d'),
+                                ];
+                                go(function () use ($providerAlias, $payload) {
+                                    System::sleep(rand(60, 300));
+                                    kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
+                                    logger('info', 'app', $providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req') . " Payload Sent", $payload);
+                                });
                             }
-
-                            $payload         = getPayloadPart($command, $subCommand);
-                            $payload['data'] = [
-                                'sport'           => $sportId,
-                                'provider'        => $providerAlias,
-                                'username'        => $username,
-                                'settlement_date' => Carbon::now()->subHours(5)->format('Y-m-d'),
-                            ];
-
-                            kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
-
-                            logger('info', 'app', $providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req') . " Payload Sent", $payload);
-
-                            // add sleep to prevent detecting as bot
-                            $sleepTime      = rand(60, 300);
-                            $settlementTime += $sleepTime;
-                            System::sleep($sleepTime);
-
-                            // }
-                        } else {
-                            $settlementTime++;
                         }
+                        $settlementTime++;
                     }
                 }
             }
