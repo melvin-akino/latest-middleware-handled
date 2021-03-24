@@ -38,11 +38,11 @@ class Order
 
     public static function getUnsettledDates($connection, $providerAccountId)
     {
-        $sql = "SELECT DATE(o.created_at) as unsettled_date, pa.username,
-                    pa.provider_id FROM " . self::$table . " o JOIN
+        $sql = "SELECT DISTINCT DATE(o.created_at) as unsettled_date, pa.username,
+                    o.provider_account_id FROM " . self::$table . " o JOIN
                     provider_accounts pa ON pa.id = o.provider_account_id
                     WHERE o.settled_date IS NULL AND o.provider_account_id = '{$providerAccountId}'
-                    GROUP BY pa.username, o.created_at, pa.id";
+                    GROUP BY pa.username, o.created_at, o.provider_account_id";
         return $connection->query($sql);
     }
 }
