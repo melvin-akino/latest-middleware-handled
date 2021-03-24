@@ -38,7 +38,11 @@ class Order
 
     public static function getUnsettledDates($connection, $providerAccountId)
     {
-        $sql = "SELECT DATE(created_at) as unsettled_date FROM " . self::$table . " WHERE settled_date is null AND provider_account_id = '{$providerAccountId}' GROUP BY unsettled_date";
+        $sql = "SELECT DATE(o.created_at) as unsettled_date, pa.username,
+                    pa.provider_id FROM " . self::$table . " o JOIN
+                    provider_accounts pa ON pa.id = o.provider_account_id
+                    WHERE o.settled_date IS NULL AND o.provider_account_id = '{$providerAccountId}'
+                    GROUP BY pa.username, o.created_at, pa.id";
         return $connection->query($sql);
     }
 }
