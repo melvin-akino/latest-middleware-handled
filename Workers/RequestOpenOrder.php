@@ -26,7 +26,6 @@ class RequestOpenOrder
                 if ($response) {
                     $openOrderTime = $response;
                 }
-
                 System::sleep(1);
             }
         } catch (Exception $e) {
@@ -54,10 +53,10 @@ class RequestOpenOrder
         if ($systemConfigurationsTimer) {
             // logger('info', 'app', 'Open Orders: openOrderTime % systemConfigurationsTimer==' . (time() - $openOrderTime) .' == ' . ((time() - $openOrderTime) % (int) $systemConfigurationsTimer));
             if ((time() - $openOrderTime) % (int) $systemConfigurationsTimer == 0) {
+                $openOrderTime = time();
                 foreach ($swooleTable['enabledSports'] as $key => $row) {
                     self::sendKafkaPayload($swooleTable, getenv('KAFKA_SCRAPE_OPEN_ORDERS_POSTFIX', '_openorder_req'), 'orders', 'scrape', $key);
                 }
-                $openOrderTime = time();
             }
         }
         return $openOrderTime;

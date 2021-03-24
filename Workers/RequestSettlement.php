@@ -57,6 +57,7 @@ class RequestSettlement
             foreach ($swooleTable['enabledSports'] as $sportId => $sRow) {
                 // logger('info', 'app', 'Settlement: settlementTime % systemConfigurationsTimer==' . (time() - $settlementTime) .' == ' . ((time() - $settlementTime) % (int) $systemConfigurationsTimer));
                 if ((time() - $settlementTime) % (int) $systemConfigurationsTimer == 0) {
+                    $settlementTime = time();
                     foreach ($swooleTable['providerAccounts'] as $paId => $pRow) {
                         $providerAlias = strtolower($pRow['alias']);
                         $username      = $pRow['username'];
@@ -117,7 +118,6 @@ class RequestSettlement
                             }
                         }
                     }
-                    $settlementTime = time();
                 }
             }
             return $settlementTime;

@@ -24,7 +24,7 @@ class RequestBalance
                 $dbPool->return($connection);
 
                 if ($response) {
-                    $settlementTime = $response;
+                    $balanceTime = $response;
                 }
                 System::sleep(1);
             }
@@ -57,12 +57,12 @@ class RequestBalance
 
         if ($systemConfigurationsTimers) {
             // logger('info', 'app', 'Balance: balanceTime % systemConfigurationsTimer==' . (time() - $balanceTime) .' == ' . ((time() - $balanceTime) % (int) $systemConfigurationsTimer));
-            if ((time() - $balanceTime) % (int) $systemConfigurationsTimer == 0) {
-                foreach ($systemConfigurationsTimers as $key => $systemConfigurationsTimer) {
+            foreach ($systemConfigurationsTimers as $key => $systemConfigurationsTimer) {
+                if ((time() - $balanceTime) % (int) $systemConfigurationsTimer == 0) {
                     self::sendKafkaPayload($swooleTable, getenv('KAFKA_SCRAPE_BALANCE_POSTFIX', '_balance_req'), 'balance', 'scrape');
+                    $balanceTime = time();
                     break;
                 }
-                $balanceTime = time();
             }
         }
 
