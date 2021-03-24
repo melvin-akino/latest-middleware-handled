@@ -65,10 +65,12 @@ class ProcessOdds
             /** leagues */
             $leagueId        = null;
             $leagueIndexHash = md5(implode(':', [$sportId, $providerId, $leagueName]));
+            lockProcess($leagueIndexHash, 'league');
             if ($leaguesTable->exists($leagueIndexHash)) {
                 $leagueId = $leaguesTable[$leagueIndexHash]['id'];
-                logger('info', 'odds', 'league ID from $leaguesTable' . $leagueId);
+                logger('info', 'odds', 'league ID from $leaguesTable ' . $leagueId);
             } else {
+                $swooleTable['lockHashData'][$leagueIndexHash]['type'] = 'league';
                 try {
                     $leagueResult = League::create($connection, [
                         'sport_id'    => $sportId,
@@ -84,7 +86,11 @@ class ProcessOdds
                 $league   = $connection->fetchArray($leagueResult);
                 $leagueId = $league['id'];
 
-                logger('info', 'odds', 'League Created ' . $leagueId);
+                logger('info', 'odds', 'League Created ' . $leagueId, [
+                    'sport_id'    => $sportId,
+                    'provider_id' => $providerId,
+                    'name'        => $leagueName
+                ]);
 
                 $leaguesTable[$leagueIndexHash] = [
                     'id'          => $leagueId,
@@ -102,6 +108,10 @@ class ProcessOdds
                 }
             }
 
+            $swooleTable['lockHashData']->del($leagueIndexHash);
+            /** end league **/
+
+            /** master league **/
             $masterLeagueId = null;
             if (strtolower($primaryProvider['value']) == strtolower($provider)) {
                 $leagueGroupResult = LeagueGroup::checkIfMatched($connection, $leagueId);
@@ -116,7 +126,11 @@ class ProcessOdds
                         ], 'id');
                         $masterLeague       = $connection->fetchArray($masterLeagueResult);
                         $masterLeagueId = $masterLeague['id'];
-                        logger('info', 'odds', 'Master League Created ' . $masterLeagueId);
+                        logger('info', 'odds', 'Master League Created ' . $masterLeagueId, [
+                            'sport_id'   => $sportId,
+                            'name'       => null,
+                            'created_at' => $timestamp
+                        ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master league');
                         return;
@@ -127,7 +141,10 @@ class ProcessOdds
                             'league_id'        => $leagueId,
                             'master_league_id' => $masterLeagueId
                         ]);
-                        logger('info', 'odds', 'League Group Created ' . $leagueId . ' - ' . $masterLeagueId);
+                        logger('info', 'odds', 'League Group Created', [
+                            'league_id'        => $leagueId,
+                            'master_league_id' => $masterLeagueId
+                        ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the league group');
                         return;
@@ -142,10 +159,12 @@ class ProcessOdds
             /** teams **/
             $teamHomeId    = null;
             $teamIndexHash = md5($homeTeam . ':' . $sportId . ':' . $providerId);
+            lockProcess($teamIndexHash, 'team');
             if ($teamsTable->exists($teamIndexHash)) {
                 $teamHomeId = $teamsTable[$teamIndexHash]['id'];
                 logger('info', 'odds', 'team ID from $teamsTable ' . $teamHomeId);
             } else {
+                $swooleTable['lockHashData'][$teamIndexHash]['type'] = 'team';
                 try {
                     $teamResult = Team::create($connection, [
                         'provider_id' => $providerId,
@@ -161,7 +180,11 @@ class ProcessOdds
                 $team       = $connection->fetchArray($teamResult);
                 $teamHomeId = $team['id'];
 
-                logger('info', 'odds', 'Team Created ' . $teamHomeId);
+                logger('info', 'odds', 'Team Created ' . $teamHomeId, [
+                    'provider_id' => $providerId,
+                    'name'        => $homeTeam,
+                    'sport_id'    => $sportId
+                ]);
 
                 $teamsTable[$teamIndexHash] = [
                     'id'          => $teamHomeId,
@@ -178,6 +201,8 @@ class ProcessOdds
                     ]);
                 }
             }
+
+            $swooleTable['lockHashData']->del($teamIndexHash);
             /** end home team **/
 
             /** master teams **/
@@ -214,7 +239,10 @@ class ProcessOdds
                             'master_team_id' => $masterTeamHomeId,
                         ];
 
-                        logger('info', 'odds', 'Team Groups Created ' . $teamHomeId . ' - ' . $masterTeamHomeId);
+                        logger('info', 'odds', 'Team Groups Created', [
+                            'team_id'        => $teamHomeId,
+                            'master_team_id' => $masterTeamHomeId
+                        ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the team group');
                         return;
@@ -228,10 +256,12 @@ class ProcessOdds
             /** teams **/
             $teamAwayId    = null;
             $teamIndexHash = md5($awayTeam . ':' . $sportId . ':' . $providerId);
+            lockProcess($teamIndexHash, 'team');
             if ($teamsTable->exists($teamIndexHash)) {
                 $teamAwayId = $teamsTable[$teamIndexHash]['id'];
                 logger('info', 'odds', 'team ID from $teamsTable ' . $teamAwayId);
             } else {
+                $swooleTable['lockHashData'][$teamIndexHash]['type'] = 'team';
                 try {
                     $teamResult = Team::create($connection, [
                         'provider_id' => $providerId,
@@ -247,7 +277,11 @@ class ProcessOdds
                 $team       = $connection->fetchArray($teamResult);
                 $teamAwayId = $team['id'];
 
-                logger('info', 'odds', 'Team Created ' . $teamAwayId);
+                logger('info', 'odds', 'Team Created ' . $teamAwayId, [
+                    'provider_id' => $providerId,
+                    'name'        => $awayTeam,
+                    'sport_id'    => $sportId,
+                ]);
 
                 $teamsTable[$teamIndexHash] = [
                     'id'          => $teamAwayId,
@@ -264,6 +298,8 @@ class ProcessOdds
                     ]);
                 }
             }
+
+            $swooleTable['lockHashData']->del($teamIndexHash);
             /** end master away team **/
 
             /** master away teams **/
@@ -301,7 +337,10 @@ class ProcessOdds
                             'master_team_id' => $masterTeamAwayId,
                         ];
 
-                        logger('info', 'odds', 'Team Groups Created ' . $teamAwayId . ' - ' . $masterTeamAwayId);
+                        logger('info', 'odds', 'Team Groups Created', [
+                            'team_id'        => $teamAwayId,
+                            'master_team_id' => $masterTeamAwayId
+                        ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the team group');
                         return;
@@ -380,7 +419,20 @@ class ProcessOdds
                             'event_identifier' => $eventIdentifier
                         ]);
 
-                        logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier);
+                        logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier, [
+                            'sport_id'      => $sportId,
+                            'provider_id'   => $providerId,
+                            'league_id'     => $leagueId,
+                            'team_home_id'  => $teamHomeId,
+                            'team_away_id'  => $teamAwayId,
+                            'ref_schedule'  => $referenceSchedule,
+                            'missing_count' => $missingCount,
+                            'game_schedule' => $gameSchedule,
+                            'score'         => $score,
+                            'running_time'  => $runningtime,
+                            'home_penalty'  => $homeRedcard,
+                            'away_penalty'  => $awayRedcard
+                        ]);
                     } else {
                         $eventResult = Event::create($connection, [
                             'event_identifier' => $eventIdentifier,
@@ -401,7 +453,21 @@ class ProcessOdds
 
                         $event       = $connection->fetchArray($eventResult);
 
-                        logger('info', 'odds', 'Event Created ' . $event['id']);
+                        logger('info', 'odds', 'Event Created ' . $event['id'], [
+                            'event_identifier' => $eventIdentifier,
+                            'sport_id'         => $sportId,
+                            'provider_id'      => $providerId,
+                            'league_id'        => $leagueId,
+                            'team_home_id'     => $teamHomeId,
+                            'team_away_id'     => $teamAwayId,
+                            'ref_schedule'     => $referenceSchedule,
+                            'missing_count'    => $missingCount,
+                            'game_schedule'    => $gameSchedule,
+                            'score'            => $score,
+                            'running_time'     => $runningtime,
+                            'home_penalty'     => $homeRedcard,
+                            'away_penalty'     => $awayRedcard
+                        ]);
 
                         if (strtolower($primaryProvider['value']) != strtolower($provider)) {
                             UnmatchedData::create($connection, [
@@ -453,7 +519,13 @@ class ProcessOdds
 
                         $masterEventId = $masterEvent['id'];
 
-                        logger('info', 'odds', 'Master Event Created ' . $masterEventId);
+                        logger('info', 'odds', 'Master Event Created ' . $masterEventId, [
+                            'sport_id'               => $sportId,
+                            'master_event_unique_id' => $masterEventUniqueId,
+                            'master_league_id'       => $masterLeagueId,
+                            'master_team_home_id'    => $masterTeamHomeId,
+                            'master_team_away_id'    => $masterTeamAwayId
+                        ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master event');
                         return;
@@ -465,7 +537,10 @@ class ProcessOdds
                             'master_event_id' => $masterEventId,
                         ]);
 
-                        logger('info', 'odds', 'Event Groups Created ' . $eventId . ' - ' . $masterEventId);
+                        logger('info', 'odds', 'Event Groups Created', [
+                            'event_id'        => $eventId,
+                            'master_event_id' => $masterEventId
+                        ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the event group');
                         return;
@@ -591,7 +666,14 @@ class ProcessOdds
                                                 'updated_at'              => $timestamp
                                             ]);
 
-                                            logger('info', 'odds', 'Event Market Update event market ID ' . $eventMarketId);
+                                            logger('info', 'odds', 'Event Market Update event market ID ' . $eventMarketId, [
+                                                'odds'                    => $odds,
+                                                'odd_label'               => $points,
+                                                'is_main'                 => $marketType,
+                                                'market_flag'             => $marketFlag,
+                                                'event_id'                => $eventId,
+                                                'market_event_identifier' => $event["eventId"]
+                                            ]);
                                         }
                                     } catch (Exception $e) {
                                         logger('error', 'odds', 'Another worker already updated the event market');
@@ -617,7 +699,17 @@ class ProcessOdds
                                                 'updated_at'              => $timestamp
                                             ]);
 
-                                            logger('info', 'odds', 'Event Market Update event market ID ' . $eventMarketId);
+                                            logger('info', 'odds', 'Event Market Update event market ID ' . $eventMarketId, [
+                                                'event_id'                => $eventId,
+                                                'odd_type_id'             => $oddTypeId,
+                                                'odds'                    => $odds,
+                                                'odd_label'               => $points,
+                                                'bet_identifier'          => $marketId,
+                                                'is_main'                 => $marketType,
+                                                'market_flag'             => $marketFlag,
+                                                'provider_id'             => $providerId,
+                                                'market_event_identifier' => $event["eventId"]
+                                            ]);
                                         } catch (Exception $e) {
                                             logger('error', 'odds', 'Another worker already updated the event market');
                                             return;
@@ -644,7 +736,17 @@ class ProcessOdds
                                         }
                                         $eventMarketId = $eventMarket['id'];
 
-                                        logger('info', 'odds', 'Event Market Created ' . $eventMarketId);
+                                        logger('info', 'odds', 'Event Market Created ' . $eventMarketId, [
+                                            'event_id'                => $eventId,
+                                            'odd_type_id'             => $oddTypeId,
+                                            'odds'                    => $odds,
+                                            'odd_label'               => $points,
+                                            'bet_identifier'          => $marketId,
+                                            'is_main'                 => $marketType,
+                                            'market_flag'             => $marketFlag,
+                                            'provider_id'             => $providerId,
+                                            'market_event_identifier' => $event["eventId"]
+                                        ]);
                                     }
                                 }
 
@@ -689,7 +791,10 @@ class ProcessOdds
                                             }
                                             $masterEventMarketId = $masterEventMarket['id'];
 
-                                            logger('info', 'odds', 'Master Event Market Created ' . $masterEventMarketId);
+                                            logger('info', 'odds', 'Master Event Market Created ' . $masterEventMarketId, [
+                                                'master_event_id'               => $masterEventId,
+                                                'master_event_market_unique_id' => $memUID
+                                            ]);
                                         } catch (Exception $e) {
                                             logger('error', 'odds', 'Another worker already created the master event market');
                                             return;
@@ -706,8 +811,10 @@ class ProcessOdds
                                                 'master_event_market_id' => $masterEventMarketId,
                                             ];
 
-
-                                            logger('info', 'odds', 'Event Market Groups Created ' . $eventMarketId . ' - ' . $masterEventMarketId);
+                                            logger('info', 'odds', 'Event Market Groups Created', [
+                                                'event_market_id'        => $eventMarketId,
+                                                'master_event_market_id' => $masterEventMarketId
+                                            ]);
                                         } catch (Exception $e) {
                                             logger('error', 'odds', 'Another worker already created the event market group');
                                             return;

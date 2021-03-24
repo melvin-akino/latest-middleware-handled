@@ -139,6 +139,12 @@ $config = [
                 ["name" => "token", "type" => \Swoole\Table::TYPE_STRING, 'size' => 32],
             ]
         ],
+        'lockHashData'    => [
+            "size"   => 50000,
+            "column" => [
+                ["name" => "type", "type" => \Swoole\Table::TYPE_STRING, 'size' => 10],
+            ]
+        ],
     ],
     'logger'        => [
         'app'                 => [

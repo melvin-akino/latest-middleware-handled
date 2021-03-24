@@ -166,3 +166,15 @@ function getPayloadPart($command, $subCommand)
         'sub_command' => $subCommand
     ];
 }
+
+function lockProcess(string $hash, string $type)
+{
+    global $swooleTable;
+
+    do {
+        Co\System::sleep(0.001);
+    } while (
+        $swooleTable['lockHashData']->exists($hash) &&
+        $swooleTable['lockHashData'][$hash]['type'] == $type
+    );
+}
