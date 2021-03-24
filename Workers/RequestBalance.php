@@ -10,7 +10,7 @@ class RequestBalance
     public static function handle($dbPool, $swooleTable)
     {
         try {
-            $balanceTime                = 0;
+            $balanceTime                = time();
             $systemConfigurationsTimers = [];
 
             $connection              = $dbPool->borrow();
@@ -24,26 +24,25 @@ class RequestBalance
                 $dbPool->return($connection);
 
                 if ($response) {
-                    $balanceTime = $response;
+                    $settlementTime = $response;
                 }
-
                 System::sleep(1);
             }
         } catch (Exception $e) {
-            logger('error', 'app', 'Something went wrong', $e);
+            logger('error', 'app', 'Balance: Something went wrong', $e);
         }
 
     }
 
-    public static function logicHandler($connection, $swooleTable, $balanceTime, $refreshDBInterval, &$systemConfigurationsTimers)
+    public static function logicHandler($connection, $swooleTable, &$balanceTime, $refreshDBInterval, &$systemConfigurationsTimers)
     {
         if (empty($refreshDBInterval)) {
-            $balanceTime++;
-            logger('error', 'app', 'No refresh DB interval');
+            $balanceTime = time();
+            logger('error', 'app', 'Balance: No refresh DB interval');
             return $balanceTime;
         }
 
-        if ($balanceTime % $refreshDBInterval == 0) {
+        if (((time() - $balanceTime) % $refreshDBInterval == 0) or empty($systemConfigurationsTimers)) {
             $betNormalResult = SystemConfiguration::getBetConfig($connection, 'BET_NORMAL');
             $betNormal       = $connection->fetchArray($betNormalResult);
             if ($betNormal) {
@@ -54,24 +53,23 @@ class RequestBalance
             if ($betVIP) {
                 $systemConfigurationsTimers['BET_VIP'] = $betVIP['value'];
             }
-
-            logger('info', 'app', 'refresh request interval');
         }
 
-        if (!empty($systemConfigurationsTimers)) {
+        if ($systemConfigurationsTimers) {
             foreach ($systemConfigurationsTimers as $key => $systemConfigurationsTimer) {
-                if ($balanceTime % (int) $systemConfigurationsTimer == 0) {
+                // logger('info', 'app', 'Balance: balanceTime % systemConfigurationsTimer==' . (time() - $balanceTime) .' == ' . ((time() - $balanceTime) % (int) $systemConfigurationsTimer));
+                if ((time() - $balanceTime) % (int) $systemConfigurationsTimer == 0) {
                     self::sendKafkaPayload($swooleTable, getenv('KAFKA_SCRAPE_BALANCE_POSTFIX', '_balance_req'), 'balance', 'scrape');
+                    $balanceTime = time();
                     break;
                 }
             }
         }
 
-        $balanceTime++;
         return $balanceTime;
     }
 
-    public static function sendKafkaPayload($swooleTable, $topic, $command, $subcommand, $sportId = null)
+    public static function sendKafkaPayload ($swooleTable, $topic, $command, $subcommand, $sportId = null)
     {
         $providerAccountsTable = $swooleTable['providerAccounts'];
         $maintenanceTable      = $swooleTable['maintenance'];
@@ -90,11 +88,11 @@ class RequestBalance
             }
 
             if ($maintenanceTable->exists($provider) && empty($maintenanceTable[$provider]['under_maintenance'])) {
-                kafkaPush($provider . $topic, $payload, $payload['request_uid']);
-
-                logger('info', 'app', $provider . $topic . " Payload Sent", $payload);
-
-                System::sleep(1);
+                go(function () use ($provider, $topic, $payload) {
+                    System::sleep(rand(1, 10));
+                    kafkaPush($provider . $topic, $payload, $payload['request_uid']);
+                    logger('info', 'app', $provider . $topic . " Balance: Payload Sent", $payload);
+                });
             }
         }
     }
