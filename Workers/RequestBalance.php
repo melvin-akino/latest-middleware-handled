@@ -56,13 +56,13 @@ class RequestBalance
         }
 
         if ($systemConfigurationsTimers) {
-            foreach ($systemConfigurationsTimers as $key => $systemConfigurationsTimer) {
-                // logger('info', 'app', 'Balance: balanceTime % systemConfigurationsTimer==' . (time() - $balanceTime) .' == ' . ((time() - $balanceTime) % (int) $systemConfigurationsTimer));
-                if ((time() - $balanceTime) % (int) $systemConfigurationsTimer == 0) {
+            // logger('info', 'app', 'Balance: balanceTime % systemConfigurationsTimer==' . (time() - $balanceTime) .' == ' . ((time() - $balanceTime) % (int) $systemConfigurationsTimer));
+            if ((time() - $balanceTime) % (int) $systemConfigurationsTimer == 0) {
+                foreach ($systemConfigurationsTimers as $key => $systemConfigurationsTimer) {
                     self::sendKafkaPayload($swooleTable, getenv('KAFKA_SCRAPE_BALANCE_POSTFIX', '_balance_req'), 'balance', 'scrape');
-                    $balanceTime = time();
                     break;
                 }
+                $balanceTime = time();
             }
         }
 

@@ -10,7 +10,7 @@ class RequestOpenOrder
     public static function handle($dbPool, $swooleTable)
     {
         try {
-            $openOrderTime                = 0;
+            $openOrderTime                = time();
             $systemConfigurationsTimer = null;
 
             $connection              = $dbPool->borrow();
@@ -35,32 +35,33 @@ class RequestOpenOrder
 
     }
 
-    public static function logicHandler($connection, $swooleTable, $openOrderTime, $refreshDBInterval, &$systemConfigurationsTimers)
+    public static function logicHandler($connection, $swooleTable, &$openOrderTime, $refreshDBInterval, &$systemConfigurationsTimers)
     {
         if (empty($refreshDBInterval)) {
-            $openOrderTime++;
-            logger('error', 'app', 'No refresh DB interval');
+            $openOrderTime = time();
+            logger('error', 'app', 'Open Orders: No refresh DB interval');
             return $openOrderTime;
         }
 
-        if ($openOrderTime % $refreshDBInterval == 0) {
+        if (($openOrderTime % $refreshDBInterval == 0) or empty($systemConfigurationsTimer)) {
             $openOrderTimerResult = SystemConfiguration::getOpenOrderRequestTimer($connection);
             $openOrderTimer = $connection->fetchArray($openOrderTimerResult);
             if ($openOrderTimer) {
                 $systemConfigurationsTimer = $openOrderTimer['value'];
             }
 
-            logger('error', 'app', 'refresh request interval');
+            logger('error', 'app', 'Open Orders: refresh request interval');
         }
 
         if ($systemConfigurationsTimer) {
-            foreach ($swooleTable['enabledSports'] as $key => $row) {
-                if ($openOrderTime % (int) $systemConfigurationsTimer == 0) {
+            // logger('info', 'app', 'Open Orders: openOrderTime % systemConfigurationsTimer==' . (time() - $openOrderTime) .' == ' . ((time() - $openOrderTime) % (int) $systemConfigurationsTimer));
+            if ((time() - $openOrderTime) % (int) $systemConfigurationsTimer == 0) {
+                foreach ($swooleTable['enabledSports'] as $key => $row) {
                     self::sendKafkaPayload($swooleTable, getenv('KAFKA_SCRAPE_OPEN_ORDERS_POSTFIX', '_openorder_req'), 'orders', 'scrape', $key);
                 }
+                $openOrderTime = time();
             }
         }
-        $openOrderTime++;
         return $openOrderTime;
     }
 
@@ -83,9 +84,11 @@ class RequestOpenOrder
             }
 
             if ($maintenanceTable->exists($provider) && empty($maintenanceTable[$provider]['under_maintenance'])) {
-                kafkaPush($provider . $topic, $payload, $payload['request_uid']);
-
-                logger('info', 'app', $provider . $topic . " Payload Sent", $payload);
+                go(function () use ($provider, $topic, $payload) {
+                    System::sleep(rand(1, 10));
+                    kafkaPush($provider . $topic, $payload, $payload['request_uid']);
+                    logger('info', 'app', $provider . $topic . "Open Orders: Payload Sent", $payload);
+                });
             }
         }
     }
