@@ -81,7 +81,7 @@ class ProcessEvent
                 $eventIndexHash = md5(implode(':', [$sportId, $providerId, $k]));
 
                 if ($eT["provider_id"] == $providerId && $eT["sport_id"] == $sportId && $eT["game_schedule"] == $schedule) {
-                    if (!in_array($eT['event_identifier'], $payloadEventIDs)) {
+                    if (!in_array($eT['event_identifier'], $payloadEventIDs) && !empty($eT['event_identifier'])) {
                         $eventsTable->incr($eventIndexHash, 'missing_count', 1);
                         if ($eventsTable[$eventIndexHash]["missing_count"] >= $missingCount->value) {
                             $eventsTable->del($eventIndexHash);
