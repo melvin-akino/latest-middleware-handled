@@ -18,8 +18,8 @@ class ProcessSettlement
 {
     private static $swooleTable;
 
-    const TYPE_CHARGE           = 'Credit';
-    const TYPE_DISCHARGE        = 'Debit';
+    const TYPE_CHARGE    = 'Credit';
+    const TYPE_DISCHARGE = 'Debit';
 
     public static function handle($connection, $swooleTable, $message, $offset)
     {
@@ -28,10 +28,10 @@ class ProcessSettlement
             $orders              = $swooleTable['activeOrders'];
             $providersTable      = $swooleTable['enabledProviders'];
             $settlements         = $message['data'];
-
             $result              = OddType::getColMinusOne($connection);
             $colMinusOneFetchAll = $connection->fetchAll($result);
-            $colMinusOne         = [];
+
+            $colMinusOne = [];
             foreach ($colMinusOneFetchAll as $data) {
                 $colMinusOne[] = $data['id'];
             }
@@ -39,31 +39,30 @@ class ProcessSettlement
             $sourceResult      = Source::getByReturnStake($connection);
             $returnBetSourceId = $connection->fetchAssoc($sourceResult);
 
-            foreach ($orders as $key => $order) {
-                foreach ($settlements as $settlement) {
+            foreach ($settlements as $settlement) {
+                foreach ($orders as $key => $order) {
                     if (!$providersTable->exists($settlement['provider'])) {
                         logger('info', 'settlements', 'Invalid Provider', $settlement);
                         continue;
                     }
+
                     $providerId         = $providersTable->get($settlement['provider'])['value'];
                     $providerCurrencyId = $providersTable->get($settlement['provider'])['currencyId'];
 
                     preg_match_all('!\d+!', $order['betId'], $mlBetIdArray);
                     preg_match_all('!\d+!', $settlement['bet_id'], $providerBetIdArray);
 
-                    $mlBetIdArrayIndex0 = $mlBetIdArray[0];
-                    $mlBetId            = end($mlBetIdArrayIndex0);
-
+                    $mlBetIdArrayIndex0       = $mlBetIdArray[0];
+                    $mlBetId                  = end($mlBetIdArrayIndex0);
                     $providerBetIdArrayIndex0 = $providerBetIdArray[0];
                     $providerBetId            = end($providerBetIdArrayIndex0);
 
                     if ($mlBetId == $providerBetId) {
                         if ($order['status'] == 'SUCCESS' || ($order['status'] == 'PENDING' && !empty($order['betId']))) {
-
                             self::settledBets($connection, $settlement, $providerId, $providerCurrencyId, $colMinusOne, $providerBetId, $returnBetSourceId);
-
                             $orders->del($key);
                         }
+
                         break;
                     }
                 }
@@ -92,11 +91,19 @@ class ProcessSettlement
             $status = "LOSE";
         }
 
-        $orderResult = Order::getDataByBetId($connection, $providerBetId);
-        $order       = $connection->fetchAssoc($orderResult);
-
+        $orderResult        = Order::getDataByBetId($connection, $providerBetId, true);
+        $order              = $connection->fetchAssoc($orderResult);
         $exchangeRateResult = ExchangeRate::getRate($connection, $providerCurrencyId, $order['currency_id']);
         $exchangeRate       = $connection->fetchAssoc($exchangeRateResult);
+
+        // SPECIAL CASE for ISN Provider
+        if (strtolower($data['provider']) == 'isn') {
+            if (($data['status'] == strtolower('win')) && ($data['profit_loss'] == ($order['ato_win'] / 2))) {
+                $status = 'HALF WIN';
+            } else if (($data['status'] == strtolower('lose')) && ($order['astake'] / 2 == abs($data['profit_loss']))) {
+                $status = 'HALF LOSE';
+            }
+        }
 
         switch ($status) {
             case 'WIN':
@@ -140,21 +147,20 @@ class ProcessSettlement
                 $balance        = 0;
                 $charge         = 'Credit';
                 $transferAmount = $order['stake'];
+
                 break;
         }
 
-        $balance           = $balance != 0 ? $balance * $exchangeRate['exchange_rate'] : 0;
-        $sourceResult      = Source::getBySourceName($connection, $sourceName);
-        $source          = $connection->fetchAssoc($orderResult);
-        $sourceId            = $source['id'];
-
-        $score = !empty($data['score']) ? $data['score'] : "0 - 0";
-        $score = explode("-", $score);
-        $finalScore = trim($score[0]) . ' - ' . trim($score[1]);
+        $sourceResult = Source::getBySourceName($connection, $sourceName);
+        $source       = $connection->fetchAssoc($orderResult);
+        $sourceId     = $source['id'];
+        $score        = !empty($data['score']) ? $data['score'] : "0 - 0";
+        $score        = array_map('trim', explode("-", $score));
+        $finalScore   = $score[0] . ' - ' . $score[1];
 
         try {
             $orderUpdate = Order::updateByBetIdNumber($connection, $providerBetId, [
-                'status'       => strtoupper($data['status']),
+                'status'       => strtoupper($status),
                 'profit_loss'  => $balance,
                 'reason'       => $data['reason'],
                 'settled_date' => Carbon::now(),
@@ -177,15 +183,13 @@ class ProcessSettlement
                 'updated_at'    => Carbon::now(),
             ]);
 
-            $orderLogResult = OrderLog::lastInsertedData($connection);
-            $orderLog       = $connection->fetchArray($orderLogResult);
-
+            $orderLogResult    = OrderLog::lastInsertedData($connection);
+            $orderLog          = $connection->fetchArray($orderLogResult);
             $orderLogsId       = $orderLog['id'];
             $chargeType        = $charge;
             $receiver          = $order['user_id'];
             $transferAmount    = $transferAmount == 0 ? 0 : $transferAmount;
             $currency          = $order['currency_id'];
-            
             $creditDebitReason = "[{$sourceName}] - transaction for order id " . $order['id'];
             $ledger            = self::makeTransaction($connection, $order, $transferAmount, $currency, $sourceId, $chargeType, $creditDebitReason);
 
@@ -251,17 +255,14 @@ class ProcessSettlement
     {
         global $wallet;
 
-        $swooleTable = self::$swooleTable;
-        $uuid        = $receiver['uuid'];
-        $debit       = doubleval(0);
-        $credit      = doubleval(0);
-
+        $swooleTable        = self::$swooleTable;
+        $uuid               = $receiver['uuid'];
+        $debit              = doubleval(0);
+        $credit             = doubleval(0);
         $walletClientsTable = $swooleTable['walletClients'];
         $accessToken        = $walletClientsTable['ml-users']['token'];
-
-        $currencyCode = trim(strtoupper($receiver['code']));
-
-        $getBalance = $wallet->getBalance($accessToken, $uuid, $currencyCode);
+        $currencyCode       = trim(strtoupper($receiver['code']));
+        $getBalance         = $wallet->getBalance($accessToken, $uuid, $currencyCode);
 
         if (!$getBalance->status) {
             if($type == self::TYPE_DISCHARGE) {

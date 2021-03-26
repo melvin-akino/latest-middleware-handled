@@ -6,12 +6,26 @@ class Order
 {
     private static $table = 'orders';
 
-    public static function getDataByBetId($connection, $providerBetId)
+    public static function getDataByBetId($connection, $providerBetId, bool $withProviderAccountOrders = false)
     {
-        $sql = "SELECT o.*, u.currency_id, u.uuid, c.code FROM " . self::$table . " as o
-                JOIN users as u ON u.id = o.user_id
-                JOIN currency as c ON c.id = u.currency_id
-                WHERE bet_id LIKE '%{$providerBetId}' ORDER BY id LIMIT 1";
+        $select = "";
+        $join   = "";
+
+        if ($withProviderAccountOrders) {
+            $select .= ", ol.id AS order_log_id, pao.exchange_rate AS exchange_rate, pao.actual_stake AS astake, pao.actual_to_win AS ato_win";
+            $join   .= "LEFT JOIN order_logs AS ol ON ol.order_id = o.id AND ol.status = 'SUCCESS'
+                LEFT JOIN provider_account_orders AS pao ON pao.order_log_id = ol.id";
+        }
+
+        $sql = "SELECT o.*, u.currency_id, u.uuid, c.code{$select}
+            FROM " . self::$table . " as o
+            JOIN users as u ON u.id = o.user_id
+            JOIN currency as c ON c.id = u.currency_id
+            {$join}
+            WHERE o.bet_id LIKE '%{$providerBetId}'
+            ORDER BY o.id
+            LIMIT 1";
+
         return $connection->query($sql);
     }
 
