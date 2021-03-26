@@ -497,6 +497,11 @@ class ProcessOdds
                     'event_identifier' => $eventIdentifier
                 ];
             }
+
+            if (empty($eventId)) {
+                logger('error', 'odds', 'Event ID is empty', $message);
+                return;
+            }
             /* end events */
 
             $isEventMatched = false;

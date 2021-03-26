@@ -70,6 +70,8 @@ class ProcessEvent
                             'provider_id'      => $providerId,
                             'sport_id'         => $sportId
                         ]);
+
+                        $eventsTable[$eventIndexHash]['id'] = $myEvent['id'];
                     }
                 }
             }
