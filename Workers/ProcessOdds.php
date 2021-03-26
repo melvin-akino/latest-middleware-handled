@@ -711,7 +711,17 @@ class ProcessOdds
                                                 'market_event_identifier' => $event["eventId"]
                                             ]);
                                         } catch (Exception $e) {
-                                            logger('error', 'odds', 'Another worker already updated the event market');
+                                            logger('error', 'odds', 'Another worker already updated the event market ' . $eventMarketId, [
+                                                'event_id'                => $eventId,
+                                                'odd_type_id'             => $oddTypeId,
+                                                'odds'                    => $odds,
+                                                'odd_label'               => $points,
+                                                'bet_identifier'          => $marketId,
+                                                'is_main'                 => $marketType,
+                                                'market_flag'             => $marketFlag,
+                                                'provider_id'             => $providerId,
+                                                'market_event_identifier' => $event["eventId"]
+                                            ]);
                                             return;
                                         }
                                     } else {
@@ -731,7 +741,19 @@ class ProcessOdds
                                             ], 'id');
                                             $eventMarket       = $connection->fetchArray($eventMarketResult);
                                         } catch (Exception $e) {
-                                            logger('error', 'odds', 'Another worker already created the event market');
+                                            logger('error', 'odds', 'Another worker already created the event market', [
+                                                'event_id'                => $eventId,
+                                                'odd_type_id'             => $oddTypeId,
+                                                'odds'                    => $odds,
+                                                'odd_label'               => $points,
+                                                'bet_identifier'          => $marketId,
+                                                'is_main'                 => $marketType,
+                                                'market_flag'             => $marketFlag,
+                                                'provider_id'             => $providerId,
+                                                'market_event_identifier' => $event["eventId"],
+                                                'deleted_at'              => null,
+                                                'created_at'              => $timestamp
+                                            ]);
                                             return;
                                         }
                                         $eventMarketId = $eventMarket['id'];
@@ -769,6 +791,10 @@ class ProcessOdds
 
                                 $newMarkets[] = $marketId;
                                 $eventMarketListTable->set($eventId, ['marketIDs' => implode(',', $newMarkets)]);
+
+                                if (empty($masterEventId)) {
+                                    continue;
+                                }
 
                                 $masterEventMarketId = null;
                                 if ($isEventMatched) {
