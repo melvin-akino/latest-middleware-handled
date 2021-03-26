@@ -39,8 +39,8 @@ class ProcessSettlement
             $sourceResult      = Source::getByReturnStake($connection);
             $returnBetSourceId = $connection->fetchAssoc($sourceResult);
 
-            foreach ($orders as $key => $order) {
-                foreach ($settlements as $settlement) {
+            foreach ($settlements as $settlement) {
+                foreach ($orders as $key => $order) {
                     if (!$providersTable->exists($settlement['provider'])) {
                         logger('info', 'settlements', 'Invalid Provider', $settlement);
                         continue;
@@ -91,10 +91,19 @@ class ProcessSettlement
             $status = "LOSE";
         }
 
-        $orderResult        = Order::getDataByBetId($connection, $providerBetId);
+        $orderResult        = Order::getDataByBetId($connection, $providerBetId, true);
         $order              = $connection->fetchAssoc($orderResult);
         $exchangeRateResult = ExchangeRate::getRate($connection, $providerCurrencyId, $order['currency_id']);
         $exchangeRate       = $connection->fetchAssoc($exchangeRateResult);
+
+        // SPECIAL CASE for ISN Provider
+        if (strtolower($data['provider']) == 'isn') {
+            if (($data['status'] == strtolower('win')) && ($data['profit_loss'] == ($order['ato_win'] / 2))) {
+                $status = 'HALF WIN';
+            } else if (($data['status'] == strtolower('lose')) && ($order['astake'] / 2 == abs($data['profit_loss']))) {
+                $status = 'HALF LOSE';
+            }
+        }
 
         switch ($status) {
             case 'WIN':
@@ -151,7 +160,7 @@ class ProcessSettlement
 
         try {
             $orderUpdate = Order::updateByBetIdNumber($connection, $providerBetId, [
-                'status'       => strtoupper($data['status']),
+                'status'       => strtoupper($status),
                 'profit_loss'  => $balance,
                 'reason'       => $data['reason'],
                 'settled_date' => Carbon::now(),
