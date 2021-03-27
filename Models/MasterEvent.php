@@ -20,4 +20,10 @@ class MasterEvent extends Model
                 . " AND " . static::$table . ".deleted_at IS NULL ORDER BY events.created_at DESC LIMIT 1";
         return $connection->query($sql);
     }
+
+    public static function checkIfExists($connection, $masterEventUniqueId)
+    {
+        $sql = "SELECT " . static::$table . " FROM " . static::$table . " WHERE master_event_unique_id = '{$masterEventUniqueId}'";
+        return $connection->query($sql);
+    }
 }
