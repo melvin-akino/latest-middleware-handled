@@ -512,15 +512,31 @@ class ProcessOdds
                 if (strtolower($primaryProvider['value']) == strtolower($provider)) {
                     $masterEventUniqueId = date('Ymd', strtotime($referenceSchedule)) . '-' . $sportId . '-' . $masterLeagueId . '-' . $eventIdentifier;
                     try {
-                        $masterEventResult = MasterEvent::create($connection, [
-                            'sport_id'               => $sportId,
-                            'master_event_unique_id' => $masterEventUniqueId,
-                            'master_league_id'       => $masterLeagueId,
-                            'master_team_home_id'    => $masterTeamHomeId,
-                            'master_team_away_id'    => $masterTeamAwayId,
-                            'created_at'             => $timestamp
-                        ], 'id');
-                        $masterEvent       = $connection->fetchArray($masterEventResult);
+
+                        $masterEventResult = MasterEvent::checkIfExists($connection, $masterEventUniqueId);
+                        if ($connection->numRows($masterEventResult)) {
+                            $masterEvent       = $connection->fetchArray($masterEventResult);
+
+                            $masterEventResult = MasterEvent::update($connection, [
+                                'sport_id'               => $sportId,
+                                'master_league_id'       => $masterLeagueId,
+                                'master_team_home_id'    => $masterTeamHomeId,
+                                'master_team_away_id'    => $masterTeamAwayId,
+                                'updated_at'             => $timestamp
+                            ], [
+                                'id' => $masterEvent['id']
+                            ]);
+                        } else {
+                            $masterEventResult = MasterEvent::create($connection, [
+                                'sport_id'               => $sportId,
+                                'master_event_unique_id' => $masterEventUniqueId,
+                                'master_league_id'       => $masterLeagueId,
+                                'master_team_home_id'    => $masterTeamHomeId,
+                                'master_team_away_id'    => $masterTeamAwayId,
+                                'created_at'             => $timestamp
+                            ], 'id');
+                            $masterEvent       = $connection->fetchArray($masterEventResult);
+                        }
 
                         $masterEventId = $masterEvent['id'];
 
