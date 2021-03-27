@@ -51,7 +51,7 @@ Class ProviderAccount
 
     public static function updateToInactive($connection, $providerAccountId)
     {
-        $sql = "UPDATE " . self::$table . " SET deleted_at = NOW(), is_idle = false, is_enabled = false WHERE id = '{$providerAccountId}'";
+        $sql = "UPDATE " . self::$table . " SET deleted_at = null, is_idle = false, is_enabled = false WHERE id = '{$providerAccountId}'";
         return $connection->query($sql);
     }
 }
