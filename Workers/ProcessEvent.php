@@ -5,6 +5,7 @@ namespace Workers;
 use Exception;
 use Carbon\Carbon;
 use Models\{
+    MasterLeague,
     SystemConfiguration,
     Event,
     EventMarket
@@ -132,16 +133,18 @@ class ProcessEvent
                 }
             }
 
-            $sidebarLeagues = MasterLeague::getSideBarLeaguesBySportAndGameSchedule(
-                $connection,
-                $sportId,
-                $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value'],
-                $swooleTable['systemConfig']['EVENT_VALID_MAX_MISSING_COUNT']['value'],
-                $schedule
-            );
-            $sidebarResult = $connection->fetchArray($sidebarLeagues);
+            if ($message["data"]["provider"] == $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']) {
+                $sidebarLeagues = MasterLeague::getSideBarLeaguesBySportAndGameSchedule(
+                    $connection,
+                    $sportId,
+                    $swooleTable['enabledProviders'][$swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']]["value"],
+                    $swooleTable['systemConfig']['EVENT_VALID_MAX_MISSING_COUNT']['value'],
+                    $schedule
+                );
+                $sidebarResult = $connection->fetchAll($sidebarLeagues);
 
-            self::sendToKafka($sidebarResult, $schedule);
+                self::sendToKafka($sidebarResult, $schedule);
+            }
 
             logger('info', 'event', 'Process Event ended ' . $offset);
         } catch (Exception $e) {
@@ -160,6 +163,7 @@ class ProcessEvent
             'data'        => $data,
         ];
 
-        kafkaPush(env('KAFKA-SIDEBAR-LEAGUES', 'SIDEBAR-LEAGUES'), $payload, $payload['request_uid']);
+        kafkaPush('SIDEBAR-LEAGUES', $payload, $payload['request_uid']);
+        logger('info', 'event', '[SIDEBAR-LEAGUES] Payload sent: ' . $payload['request_uid']);
     }
 }

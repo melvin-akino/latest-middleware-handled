@@ -8,7 +8,7 @@ class SystemConfiguration
 
     public static function getAllConfig($connection)
     {
-        $sql = "SELECT type, value FROM " . self::table;
+        $sql = "SELECT type, value FROM " . self::$table;
         return $connection->query($sql);
     }
 

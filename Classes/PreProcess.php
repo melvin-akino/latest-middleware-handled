@@ -250,7 +250,9 @@ class PreProcess
 
         $result = SystemConfiguration::getAllConfig(self::$connection);
         while ($data = self::$connection->fetchAssoc($result)) {
-            $swooleTable['systemConfig'][$data['type']] = $data['value'];
+            $swooleTable['systemConfig']->set($data['type'], [
+                'value' => $data['value']
+            ]);
         }
     }
 }
