@@ -10,7 +10,8 @@ use Models\{
     Event,
     EventGroup,
     EventMarket,
-    EventMarketGroup
+    EventMarketGroup,
+    UnmatchedData
 };
 use Ramsey\Uuid\Uuid;
 
@@ -102,13 +103,18 @@ class ProcessEvent
                                 $myMasterEventResult = EventGroup::getDataByEventId($connection, $eventId);
                                 $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
 
+                                $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
+                                $myMatchedEvents = $connection->fetchArray($myMatchedEventsResult);
+
+                                foreach ($myMatchedEvents as $matchedEvent) {
+                                    UnmatchedData::create($connection, [
+                                        'provider_id' => $providerId,
+                                        'data_type' => 'event',
+                                        'data_id' => $matchedEvent['event_id']
+                                    ]);
+                                }
+
                                 EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
-                                
-                                UnmatchedData::create($connection, [
-                                    'provider_id' => $providerId,
-                                    'data_type' => 'event',
-                                    'data_id' => $eventId
-                                ]);
 
                                 Event::update($connection, [
                                     'deleted_at' => Carbon::now()
