@@ -103,6 +103,12 @@ class ProcessEvent
                                 $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
 
                                 EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
+                                
+                                UnmatchedData::create($connection, [
+                                    'provider_id' => $providerId,
+                                    'data_type' => 'event',
+                                    'data_id' => $eventId
+                                ]);
 
                                 Event::update($connection, [
                                     'deleted_at' => Carbon::now()
