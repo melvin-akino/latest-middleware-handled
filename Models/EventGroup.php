@@ -27,4 +27,10 @@ class EventGroup extends Model
         $sql = "SELECT * FROM " . self::$table . " WHERE event_id = '{$eventId}' LIMIT 1";
         return $connection->query($sql);
     }
+
+    public static function deleteMatchesOfEvent($connection, $masterEventId, $eventId)
+    {
+        $sql = "DELETE FROM " . self::$table . " WHERE master_event_id = {$masterEventId} AND event_id != {$eventId}";
+        return $connection->query($sql);
+    }
 }

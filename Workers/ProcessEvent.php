@@ -8,7 +8,9 @@ use Models\{
     MasterLeague,
     SystemConfiguration,
     Event,
-    EventMarket
+    EventGroup,
+    EventMarket,
+    EventMarketGroup
 };
 use Ramsey\Uuid\Uuid;
 
@@ -97,6 +99,11 @@ class ProcessEvent
 
                                 $eventId = $myEvent['id'];
 
+                                $myMasterEventResult = EventGroup::getDataByEventId($connection, $eventId);
+                                $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
+
+                                EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
+
                                 Event::update($connection, [
                                     'deleted_at' => Carbon::now()
                                 ], [
@@ -108,6 +115,15 @@ class ProcessEvent
                                 $activeEventMarkets = explode(',', $eventMarketListTable->get($eventId, 'marketIDs'));
                                 foreach ($activeEventMarkets as $marketId) {
                                     if (!empty($marketId)) {
+
+                                        $myEventMarketResult = EventMarket::getDataByBetIdentifier($connection, $marketId);
+                                        $myEventMarket = $connection->fetchAssoc($myEventMarketResult);
+
+                                        $myEventMarketGroupResult = EventMarketGroup::getDataByEventMarketId($connection, $myEventMarket['id']);
+                                        $myEventMarketGroup = $connection->fetchAssoc($myEventMarketGroupResult);
+
+                                        EventMarketGroup::deleteMatchesOfEventMarket($connection, $myEventMarketGroup['master_event_market_id'], $myEventMarket['id']);
+
                                         EventMarket::update($connection, [
                                             'deleted_at' => Carbon::now()
                                         ], [
