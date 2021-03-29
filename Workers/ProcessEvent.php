@@ -134,6 +134,7 @@ class ProcessEvent
 
             $sidebarLeagues = MasterLeague::getSideBarLeaguesBySportAndGameSchedule(
                 $connection,
+                $sportId,
                 $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value'],
                 $swooleTable['systemConfig']['EVENT_VALID_MAX_MISSING_COUNT']['value'],
                 $schedule
