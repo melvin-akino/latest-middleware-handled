@@ -57,7 +57,7 @@ class ProcessSessionTransform
 
                     $providerAccountId = $providerAccount['id'];
                     if (in_array($inactiveAccount['category'], $categoryTypes)) {
-                        $resultUpdate = ProviderAccount::updateToInActive($connection, $providerAccountId);
+                        $resultUpdate = ProviderAccount::updateToInactive($connection, $providerAccountId);
                         if ($resultUpdate) {
                             $providerAccountsTable->del($providerAccountId);
                         } else {
