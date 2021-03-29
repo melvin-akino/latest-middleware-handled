@@ -11,6 +11,7 @@ use Models\{
     EventGroup,
     EventMarket,
     EventMarketGroup,
+    MasterEventMarket,
     UnmatchedData
 };
 use Ramsey\Uuid\Uuid;
@@ -123,8 +124,6 @@ class ProcessEvent
                                     'provider_id'      => $providerId,
                                     'sport_id'         => $sportId
                                 ]);
-                                
-                                MasterEventMarket::deleteMasterEventMarketByMasterEventId($connection, $myMasterEvent['master_event_id']);
 
                                 $activeEventMarkets = explode(',', $eventMarketListTable->get($eventId, 'marketIDs'));
                                 foreach ($activeEventMarkets as $marketId) {
@@ -148,6 +147,9 @@ class ProcessEvent
                                         $eventMarketsTable->del(md5(implode(':', [$providerId, $marketId])));
                                     }
                                 }
+                                
+                                MasterEventMarket::deleteMasterEventMarketByMasterEventId($connection, $myMasterEvent['master_event_id']);
+                                
                                 logger('info', 'event', 'Event deleted event identifier ' . $eT['event_identifier']);
                             }
                         } else {
