@@ -104,7 +104,7 @@ class ProcessEvent
                                 $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
 
                                 $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
-                                $myMatchedEvents = $connection->fetchArray($myMatchedEventsResult);
+                                $myMatchedEvents = $connection->fetchAll($myMatchedEventsResult);
 
                                 foreach ($myMatchedEvents as $matchedEvent) {
                                     UnmatchedData::create($connection, [
@@ -123,6 +123,8 @@ class ProcessEvent
                                     'provider_id'      => $providerId,
                                     'sport_id'         => $sportId
                                 ]);
+                                
+                                MasterEventMarket::deleteMasterEventMarketByMasterEventId($connection, $myMasterEvent['master_event_id']);
 
                                 $activeEventMarkets = explode(',', $eventMarketListTable->get($eventId, 'marketIDs'));
                                 foreach ($activeEventMarkets as $marketId) {
@@ -134,7 +136,7 @@ class ProcessEvent
                                         $myEventMarketGroupResult = EventMarketGroup::getDataByEventMarketId($connection, $myEventMarket['id']);
                                         $myEventMarketGroup = $connection->fetchAssoc($myEventMarketGroupResult);
 
-                                        EventMarketGroup::deleteMatchesOfEventMarket($connection, $myEventMarketGroup['master_event_market_id'], $myEventMarket['id']);
+                                        EventMarketGroup::deleteMatchesOfEventMarket($connection, $myEventMarketGroup['master_event_market_id']);
 
                                         EventMarket::update($connection, [
                                             'deleted_at' => Carbon::now()

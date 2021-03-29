@@ -20,9 +20,9 @@ class EventMarketGroup extends Model
         return $connection->query($sql);
     }
 
-    public static function deleteMatchesOfEventMarket($connection, $masterEventMarketId, $eventMarketId)
+    public static function deleteMatchesOfEventMarket($connection, $masterEventMarketId)
     {
-        $sql = "DELETE FROM " . self::$table . " WHERE master_event_market_id = {$masterEventMarketId} AND event_market_id != {$eventMarketId}";
+        $sql = "DELETE FROM " . self::$table . " WHERE master_event_market_id = {$masterEventMarketId}";
         return $connection->query($sql);
     }
 }
