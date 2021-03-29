@@ -9,6 +9,7 @@ use Models\{
     Event,
     EventMarket
 };
+use Ramsey\Uuid\Uuid;
 
 class ProcessEvent
 {
@@ -130,9 +131,34 @@ class ProcessEvent
                     }
                 }
             }
+
+            $sidebarLeagues = MasterLeague::getSideBarLeaguesBySportAndGameSchedule(
+                $connection,
+                $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value'],
+                $swooleTable['systemConfig']['EVENT_VALID_MAX_MISSING_COUNT']['value'],
+                $schedule
+            );
+            $sidebarResult = $connection->fetchArray($sidebarLeagues);
+
+            self::sendToKafka($sidebarResult, $schedule);
+
             logger('info', 'event', 'Process Event ended ' . $offset);
         } catch (Exception $e) {
             logger('error', 'event', 'Exception Error', $e);
         }
+    }
+
+    private function sendToKafka($message, $gameSchedule)
+    {
+        $data[$gameSchedule] = $message;
+        $payload             = [
+            'request_uid' => (string) Uuid::uuid4(),
+            'request_ts'  => getMilliseconds(),
+            'command'     => 'sidebar',
+            'sub_command' => 'transform',
+            'data'        => $data,
+        ];
+
+        kafkaPush(env('KAFKA-SIDEBAR-LEAGUES', 'SIDEBAR-LEAGUES'), $payload, $payload['request_uid']);
     }
 }

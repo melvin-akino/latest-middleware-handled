@@ -15,7 +15,6 @@ use Models\{
     EventMarketGroup,
     Sport,
     SportOddType
-
 };
 
 class PreProcess
@@ -26,7 +25,6 @@ class PreProcess
     {
         self::$connection = $connection;
     }
-
 
     public static function loadEnabledSports()
     {
@@ -239,6 +237,20 @@ class PreProcess
             $provider         = strtolower($maintenanceTypes[0]);
 
             $swooleTable['maintenance']->set($provider, ['under_maintenance' => $maintenance['value']]);
+        }
+    }
+
+    public static function loadSystemConfig()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['systemConfig'] AS $key => $value) {
+            $swooleTable['systemConfig']->del($key);
+        }
+
+        $result = SystemConfiguration::getAllConfig(self::$connection);
+        while ($data = self::$connection->fetchAssoc($result)) {
+            $swooleTable['systemConfig'][$data['type']] = $data['value'];
         }
     }
 }
