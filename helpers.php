@@ -178,3 +178,133 @@ function lockProcess(string $hash, string $type)
         $swooleTable['lockHashData'][$hash]['type'] == $type
     );
 }
+
+function swooleStats($timer, $which)
+{
+    global $swooleTable;
+    if ($which == "events") {
+        logger('info', 'stats', "**************** start swoole table dump ****************");
+        foreach ($swooleTable['statsCountEventsPerSecond'] as $k => $s) {
+            if ($k > (time() - 60)) {
+                logger('info', 'stats', $k);
+                logger('info', 'stats', json_encode($s));
+                logger('info', 'stats', json_encode($swooleTable['statsTimeEventsPerSecond'][$k]));
+            } else {
+                $swooleTable['statsCountEventsPerSecond']->del($k);
+                $swooleTable['statsTimeEventsPerSecond']->del($k);
+            }
+        }
+        logger('info', 'stats', "**************** end swoole table dump ****************");
+    } else if ($which == 'odds') {
+        logger('info', 'stats', "**************** start swoole table dump ****************");
+        foreach ($swooleTable['statsCountOddsPerSecond'] as $k => $s) {
+            if ($k > (time() - 60)) {
+                logger('info', 'stats', $k);
+                logger('info', 'stats', json_encode($s));
+                logger('info', 'stats', json_encode($swooleTable['statsTimeOddsPerSecond'][$k]));
+            } else {
+                $swooleTable['statsCountOddsPerSecond']->del($k);
+                $swooleTable['statsTimeOddsPerSecond']->del($k);
+            }
+        }
+        logger('info', 'stats', "**************** end swoole table dump ****************");
+    }
+}
+
+function addStats($what)
+{
+    global $swooleTable;
+    
+    $type = $what["type"];
+
+    if ($type == "events") {
+        $statsTable = $swooleTable['statsCountEventsPerSecond'];
+        $timeTable  = $swooleTable['statsTimeEventsPerSecond'];
+        $now        = time();
+    } else if ($type == "odds") {
+        $statsTable = $swooleTable['statsCountOddsPerSecond'];
+        $timeTable  = $swooleTable['statsTimeOddsPerSecond'];
+        $now        = time();
+    }
+
+    if (in_array($type, ['odds', 'events'])) {
+        if (!$statsTable->exists($now)) {
+            $statsTable->set($now, [
+                "total"            => 0,
+                "processed"        => 0,
+                "error"            => 0,
+                "timestamp"        => 0,
+                "payload"          => 0,
+                "hash"             => 0,
+                "inactiveSport"    => 0,
+                "inactiveProvider" => 0,
+            ]);
+        }
+        if (!$timeTable->exists($now)) {
+            $timeTable->set($now, [
+                "total"            => 0,
+                "processed"        => 0,
+                "error"            => 0,
+                "timestamp"        => 0,
+                "payload"          => 0,
+                "hash"             => 0,
+                "inactiveSport"    => 0,
+                "inactiveProvider" => 0,
+            ]);
+        }
+
+
+        $totalCount               = $statsTable[$now]["total"];
+        $avgTime                  = $timeTable[$now]["total"];
+        $allTime                  = ($avgTime * $totalCount) + $what["time"];
+        $timeTable[$now]["total"] = $allTime / ($totalCount + 1);
+        $statsTable->incr($now, "total", 1);
+        switch ($what["status"]) {
+            case 'NO_ERROR':
+                $avgTime                      = $timeTable[$now]["processed"];
+                $allTime                      = ($avgTime * $totalCount) + $what["time"];
+                $timeTable[$now]["processed"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "processed", 1);
+                break;
+            case 'TIMESTAMP_ERROR':
+                $avgTime                  = $timeTable[$now]["error"];
+                $allTime                  = ($avgTime * $totalCount) + $what["time"];
+                $timeTable[$now]["timestamp"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "timestamp", 1);
+                break;
+            case 'PAYLOAD_ERROR':
+                $avgTime                  = $timeTable[$now]["error"];
+                $allTime                  = ($avgTime * $totalCount) + $what["time"];
+                $timeTable[$now]["payload"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "payload", 1);
+                break;
+            case 'HASH_ERROR':
+                $avgTime                  = $timeTable[$now]["error"];
+                $allTime                  = ($avgTime * $totalCount) + $what["time"];
+                $timeTable[$now]["hash"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "hash", 1);
+                break;
+            case 'ERROR':
+                $avgTime                  = $timeTable[$now]["error"];
+                $allTime                  = ($avgTime * $totalCount) + $what["time"];
+                $timeTable[$now]["error"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "error", 1);
+                break;
+            case 'SPORT_ERROR':
+                $avgTime                          = $timeTable[$now]["inactiveSport"];
+                $allTime                          = ($avgTime * $totalCount) + $what["time"];
+                $timeTable[$now]["inactiveSport"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "inactiveSport", 1);
+                break;
+            case 'PROVIDER_ERROR':
+                $avgTime                             = $timeTable[$now]["inactiveProvider"];
+                $allTime                             = ($avgTime * $totalCount) + $what["time"];
+                $timeTable[$now]["inactiveProvider"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "inactiveProvider", 1);
+                break;
+            default:
+                logger('error', 'stats', 'Odds stats got a status that was NOT correct!');
+                break;
+        }
+    }
+}

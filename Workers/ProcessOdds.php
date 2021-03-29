@@ -30,6 +30,17 @@ class ProcessOdds
     public static function handle($connection, $swooleTable, $message, $offset)
     {
         logger('info', 'odds', 'Process Odds starting ' . $offset);
+
+        $start = microtime(true);
+        $statsArray = [
+            "type"        => "odds",
+            "status"      => 'NO_ERROR',
+            "time"        => 0,
+            "request_uid" => $message["request_uid"],
+            "request_ts"  => $message["request_ts"],
+            "offset"      => $offset,
+        ];
+
         try {
             $leaguesTable         = $swooleTable['leagues'];
             $teamsTable           = $swooleTable['teams'];
@@ -80,6 +91,10 @@ class ProcessOdds
                     ], 'id');
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the league');
+
+                    $statsArray['status'] = "ERROR";
+                    $statsArray["time"] = microtime(true) - $startTime;
+                    addStats($statsArray);
                     return;
                 }
 
@@ -133,6 +148,10 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master league');
+
+                        $statsArray['status'] = "ERROR";
+                        $statsArray["time"] = microtime(true) - $startTime;
+                        addStats($statsArray);
                         return;
                     }
 
@@ -147,6 +166,10 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the league group');
+
+                        $statsArray['status'] = "ERROR";
+                        $statsArray["time"] = microtime(true) - $startTime;
+                        addStats($statsArray);
                         return;
                     }
                 } else {
@@ -174,6 +197,10 @@ class ProcessOdds
                     ], 'id');
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the team');
+
+                    $statsArray['status'] = "ERROR";
+                    $statsArray["time"] = microtime(true) - $startTime;
+                    addStats($statsArray);
                     return;
                 }
 
@@ -225,6 +252,10 @@ class ProcessOdds
                         logger('info', 'odds', 'Master Team Created ' . $masterTeamHomeId);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master team');
+
+                        $statsArray['status'] = "ERROR";
+                        $statsArray["time"] = microtime(true) - $startTime;
+                        addStats($statsArray);
                         return;
                     }
 
@@ -245,6 +276,10 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the team group');
+
+                        $statsArray['status'] = "ERROR";
+                        $statsArray["time"] = microtime(true) - $startTime;
+                        addStats($statsArray);
                         return;
                     }
                 } else {
@@ -271,6 +306,10 @@ class ProcessOdds
                     ], 'id');
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the team');
+
+                    $statsArray['status'] = "ERROR";
+                    $statsArray["time"] = microtime(true) - $startTime;
+                    addStats($statsArray);
                     return;
                 }
 
@@ -323,6 +362,10 @@ class ProcessOdds
                         logger('info', 'odds', 'Master Team Created ' . $masterTeamAwayId);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master team');
+
+                        $statsArray['status'] = "ERROR";
+                        $statsArray["time"] = microtime(true) - $startTime;
+                        addStats($statsArray);
                         return;
                     }
 
@@ -343,6 +386,10 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the team group');
+
+                        $statsArray['status'] = "ERROR";
+                        $statsArray["time"] = microtime(true) - $startTime;
+                        addStats($statsArray);
                         return;
                     }
                 } else {
@@ -359,11 +406,19 @@ class ProcessOdds
 
                 if ($gameSchedule == self::SCHEDULE_EARLY && $eventsTable[$eventIndexHash]['game_schedule'] == self::SCHEDULE_TODAY) {
                     logger('error', 'odds', 'Event is already in today', $message);
+
+                    $statsArray['status'] = "ERROR";
+                    $statsArray["time"] = microtime(true) - $startTime;
+                    addStats($statsArray);
                     return;
                 }
 
                 if ($gameSchedule == self::SCHEDULE_TODAY && $eventsTable[$eventIndexHash]['game_schedule'] == self::SCHEDULE_INPLAY) {
                     logger('error', 'odds', 'Event is already in play', $message);
+
+                    $statsArray['status'] = "ERROR";
+                    $statsArray["time"] = microtime(true) - $startTime;
+                    addStats($statsArray);
                     return;
                 }
 
@@ -479,6 +534,10 @@ class ProcessOdds
                     }
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the event');
+
+                    $statsArray['status'] = "ERROR";
+                    $statsArray["time"] = microtime(true) - $startTime;
+                    addStats($statsArray);
                     return;
                 }
 
@@ -500,6 +559,10 @@ class ProcessOdds
 
             if (empty($eventId)) {
                 logger('error', 'odds', 'Event ID is empty', $message);
+
+                $statsArray['status'] = "ERROR";
+                $statsArray["time"] = microtime(true) - $startTime;
+                addStats($statsArray);
                 return;
             }
             /* end events */
@@ -549,6 +612,10 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master event');
+
+                        $statsArray['status'] = "ERROR";
+                        $statsArray["time"] = microtime(true) - $startTime;
+                        addStats($statsArray);
                         return;
                     }
 
@@ -564,6 +631,10 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the event group');
+
+                        $statsArray['status'] = "ERROR";
+                        $statsArray["time"] = microtime(true) - $startTime;
+                        addStats($statsArray);
                         return;
                     }
 
@@ -613,6 +684,10 @@ class ProcessOdds
                         //TODO: how do we fill this table??
                         if (!$sportsOddTypesTable->exists($sportId . '-' . $odd["oddsType"])) {
                             logger('error', 'odds', 'Odds Type doesn\'t exist', $message);
+
+                            $statsArray['status'] = "ERROR";
+                            $statsArray["time"] = microtime(true) - $startTime;
+                            addStats($statsArray);
                             return;
                         }
 
@@ -698,6 +773,10 @@ class ProcessOdds
                                         }
                                     } catch (Exception $e) {
                                         logger('error', 'odds', 'Another worker already updated the event market');
+
+                                        $statsArray['status'] = "ERROR";
+                                        $statsArray["time"] = microtime(true) - $startTime;
+                                        addStats($statsArray);
                                         return;
                                     }
                                 } else {
@@ -743,6 +822,10 @@ class ProcessOdds
                                                 'provider_id'             => $providerId,
                                                 'market_event_identifier' => $event["eventId"]
                                             ]);
+
+                                            $statsArray['status'] = "ERROR";
+                                            $statsArray["time"] = microtime(true) - $startTime;
+                                            addStats($statsArray);
                                             return;
                                         }
                                     } else {
@@ -775,6 +858,10 @@ class ProcessOdds
                                                 'deleted_at'              => null,
                                                 'created_at'              => $timestamp
                                             ]);
+
+                                            $statsArray['status'] = "ERROR";
+                                            $statsArray["time"] = microtime(true) - $startTime;
+                                            addStats($statsArray);
                                             return;
                                         }
                                         $eventMarketId = $eventMarket['id'];
@@ -844,6 +931,10 @@ class ProcessOdds
                                             ]);
                                         } catch (Exception $e) {
                                             logger('error', 'odds', 'Another worker already created the master event market');
+
+                                            $statsArray['status'] = "ERROR";
+                                            $statsArray["time"] = microtime(true) - $startTime;
+                                            addStats($statsArray);
                                             return;
                                         }
 
@@ -864,6 +955,10 @@ class ProcessOdds
                                             ]);
                                         } catch (Exception $e) {
                                             logger('error', 'odds', 'Another worker already created the event market group');
+
+                                            $statsArray['status'] = "ERROR";
+                                            $statsArray["time"] = microtime(true) - $startTime;
+                                            addStats($statsArray);
                                             return;
                                         }
                                     } else {
@@ -901,5 +996,8 @@ class ProcessOdds
         } catch (Exception $e) {
             logger('error', 'odds', $e, $message);
         }
+
+        $statsArray["time"] = microtime(true) - $startTime;
+        addStats($statsArray);
     }
 }

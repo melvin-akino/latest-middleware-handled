@@ -145,6 +145,58 @@ $config = [
                 ["name" => "type", "type" => \Swoole\Table::TYPE_STRING, 'size' => 10],
             ]
         ],
+        'statsCountEventsPerSecond' => [
+            "size"   => 400,
+            "column" => [
+                ["name" => "total", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "processed", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "error", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "timestamp", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "payload", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "hash", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "inactiveSport", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "inactiveProvider", "type" => \Swoole\Table::TYPE_FLOAT],
+            ]
+        ],
+        'statsTimeEventsPerSecond'  => [
+            "size"   => 400,
+            "column" => [
+                ["name" => "total", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "processed", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "error", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "timestamp", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "payload", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "hash", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "inactiveSport", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "inactiveProvider", "type" => \Swoole\Table::TYPE_FLOAT],
+            ]
+        ],
+        'statsCountOddsPerSecond'   => [
+            "size"   => 400,
+            "column" => [
+                ["name" => "total", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "processed", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "error", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "timestamp", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "payload", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "hash", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "inactiveSport", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "inactiveProvider", "type" => \Swoole\Table::TYPE_FLOAT],
+            ]
+        ],
+        'statsTimeOddsPerSecond'    => [
+            "size"   => 400,
+            "column" => [
+                ["name" => "total", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "processed", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "error", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "timestamp", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "payload", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "hash", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "inactiveSport", "type" => \Swoole\Table::TYPE_FLOAT],
+                ["name" => "inactiveProvider", "type" => \Swoole\Table::TYPE_FLOAT],
+            ]
+        ],
     ],
     'logger'        => [
         'app'                 => [
@@ -201,6 +253,10 @@ $config = [
         ],
         'matching'         => [
             'name'  => 'matching.log',
+            'level' => 'debug'
+        ],
+        'stats'         => [
+            'name'  => 'stats.log',
             'level' => 'debug'
         ],
     ]
