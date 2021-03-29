@@ -55,9 +55,9 @@ function preProcess()
     PreProcess::loadEnabledSports();
     PreProcess::loadSportsOddTypes();
     preProcess::loadMaintenance();
+    preProcess::loadSystemConfig();
 
     $dbPool->return($connection);
-
 }
 
 function reactor($queue)

@@ -5,10 +5,12 @@ namespace Workers;
 use Exception;
 use Carbon\Carbon;
 use Models\{
+    MasterLeague,
     SystemConfiguration,
     Event,
     EventMarket
 };
+use Ramsey\Uuid\Uuid;
 
 class ProcessEvent
 {
@@ -130,9 +132,38 @@ class ProcessEvent
                     }
                 }
             }
+
+            if ($message["data"]["provider"] == $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']) {
+                $sidebarLeagues = MasterLeague::getSideBarLeaguesBySportAndGameSchedule(
+                    $connection,
+                    $sportId,
+                    $swooleTable['enabledProviders'][$swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']]["value"],
+                    $swooleTable['systemConfig']['EVENT_VALID_MAX_MISSING_COUNT']['value'],
+                    $schedule
+                );
+                $sidebarResult = $connection->fetchAll($sidebarLeagues);
+
+                self::sendToKafka($sidebarResult, $schedule);
+            }
+
             logger('info', 'event', 'Process Event ended ' . $offset);
         } catch (Exception $e) {
             logger('error', 'event', 'Exception Error', $e);
         }
+    }
+
+    private function sendToKafka($message, $gameSchedule)
+    {
+        $data[$gameSchedule] = $message;
+        $payload             = [
+            'request_uid' => (string) Uuid::uuid4(),
+            'request_ts'  => getMilliseconds(),
+            'command'     => 'sidebar',
+            'sub_command' => 'transform',
+            'data'        => $data,
+        ];
+
+        kafkaPush(getenv('KAFKA_SIDEBAR_LEAGUES'), $payload, $payload['request_uid']);
+        logger('info', 'event', '[SIDEBAR-LEAGUES] Payload sent: ' . $payload['request_uid']);
     }
 }

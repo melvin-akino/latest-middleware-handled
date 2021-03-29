@@ -145,6 +145,12 @@ $config = [
                 ["name" => "type", "type" => \Swoole\Table::TYPE_STRING, 'size' => 10],
             ]
         ],
+        'systemConfig' => [
+            'size' => 100,
+            'column' => [
+                [ 'name' => 'value', 'type' => \Swoole\Table::TYPE_STRING, 'size' => 255 ],
+            ],
+        ],
     ],
     'logger'        => [
         'app'                 => [
