@@ -163,7 +163,7 @@ class ProcessEvent
             'data'        => $data,
         ];
 
-        kafkaPush(getenv('KAFKA_SIDEBAR_LEAGUES', 'SIDEBAR-LEAGUES'), $payload, $payload['request_uid']);
+        kafkaPush(getenv('KAFKA_SIDEBAR_LEAGUES'), $payload, $payload['request_uid']);
         logger('info', 'event', '[SIDEBAR-LEAGUES] Payload sent: ' . $payload['request_uid']);
     }
 }
