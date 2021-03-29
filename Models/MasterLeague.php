@@ -10,7 +10,7 @@ class MasterLeague extends Model
 
     public static function getSideBarLeaguesBySportAndGameSchedule($connection, int $sportId, int $primaryProviderId, int $maxMissingCount, string $gameSchedule)
     {
-        $sql = "SELECT name, COUNT(name) AS match_count
+        $sql = "SELECT name, COUNT(name) AS match_count, me.id AS master_league_id
             FROM (
                 SELECT COALESCE(ml.name, l.name) as name
                 FROM " . static::$table . " as ml
