@@ -43,9 +43,9 @@ class ProcessOdds
             $sportId           = $messageData["sport"];
             $provider          = $messageData["provider"];
             $providerId        = $providersTable[$provider]['value'];
-            $homeTeam          = $messageData["homeTeam"];
-            $awayTeam          = $messageData["awayTeam"];
-            $leagueName        = $messageData["leagueName"];
+            $homeTeam          = trim($messageData["homeTeam"]);
+            $awayTeam          = trim($messageData["awayTeam"]);
+            $leagueName        = trim($messageData["leagueName"]);
             $gameSchedule      = $messageData["schedule"];
             $referenceSchedule = date("Y-m-d H:i:s", strtotime($messageData["referenceSchedule"]));
             $homescore         = $messageData["home_score"];
