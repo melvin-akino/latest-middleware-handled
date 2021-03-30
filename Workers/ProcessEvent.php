@@ -186,7 +186,7 @@ class ProcessEvent
 
     private function sendToKafka($message, $gameSchedule)
     {
-        $data[$gameSchedule] = $message;
+        $data[$gameSchedule] = $message ? $message : [];
         $payload             = [
             'request_uid' => (string) Uuid::uuid4(),
             'request_ts'  => getMilliseconds(),
