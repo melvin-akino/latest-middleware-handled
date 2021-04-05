@@ -4,6 +4,7 @@ use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
 use Swoole\Coroutine\PostgreSQL;
 use Workers\{
+    MatchLeague,
     MatchEvent,
     MatchEventMarket,
 };
@@ -24,6 +25,13 @@ Co\run(function () use ($queue) {
         $dbPool->close();
     });
 
+    /**
+     * Co-Routine Asynchronous Worker for handling
+     * Leagues Auto-matching.
+     */
+    go(function () use ($dbPool, $swooleTable) {
+        MatchLeague::handle($dbPool, $swooleTable);
+    });
 
     go(function () use ($dbPool, $swooleTable) {
         MatchEvent::handle($dbPool, $swooleTable);
