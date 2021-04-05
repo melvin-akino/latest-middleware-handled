@@ -54,9 +54,9 @@ class ProcessOdds
             $sportId           = $messageData["sport"];
             $provider          = $messageData["provider"];
             $providerId        = $providersTable[$provider]['value'];
-            $homeTeam          = $messageData["homeTeam"];
-            $awayTeam          = $messageData["awayTeam"];
-            $leagueName        = $messageData["leagueName"];
+            $homeTeam          = trim($messageData["homeTeam"]);
+            $awayTeam          = trim($messageData["awayTeam"]);
+            $leagueName        = trim($messageData["leagueName"]);
             $gameSchedule      = $messageData["schedule"];
             $referenceSchedule = date("Y-m-d H:i:s", strtotime($messageData["referenceSchedule"]));
             $homescore         = $messageData["home_score"];
@@ -909,7 +909,7 @@ class ProcessOdds
                                     $memUID                 = md5($eventId . strtoupper($marketFlag) . $marketId);
                                     $eventMarketGroupResult = EventMarketGroup::checkIfMatched($connection, $eventMarketId);
                                     $eventMarketGroupData   = $connection->fetchArray($eventMarketGroupResult);
-                                    if (!$eventMarketGroupData) {
+                                    if (!$eventMarketGroupData && (strtolower($primaryProvider['value']) == strtolower($provider))) {
                                         try {
                                             $masterEventMarketResult = MasterEventMarket::checkIfMemUIDExists($connection, $memUID);
                                             if ($connection->numRows($masterEventMarketResult)) {

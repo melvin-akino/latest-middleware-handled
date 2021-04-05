@@ -126,6 +126,10 @@ function settlementeHandler($message, $offset)
     }
 }
 
+function reloadActiveOrders(){
+    PreProcess::loadActiveOrders();
+}
+
 $activeProcesses   = 0;
 $topics            = [
                         getenv('KAFKA_SCRAPING_SETTLEMENTS', 'SCRAPING-SETTLEMENTS'),
@@ -144,7 +148,6 @@ Co\run(function() use ($queue, $activeProcesses) {
 
 	$count = 0;
 
-    // Swoole\Timer::tick(1000, "checkRate");
     $dbPool = databaseConnectionPool();
 
     $dbPool->init();
@@ -155,5 +158,6 @@ Co\run(function() use ($queue, $activeProcesses) {
     });
 
     preProcess();
+    Swoole\Timer::tick(300000, "reloadActiveOrders");  // 5 mins reload
     reactor($queue);
 });

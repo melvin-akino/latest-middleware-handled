@@ -5,10 +5,16 @@ namespace Workers;
 use Exception;
 use Carbon\Carbon;
 use Models\{
+    MasterLeague,
     SystemConfiguration,
     Event,
-    EventMarket
+    EventGroup,
+    EventMarket,
+    EventMarketGroup,
+    MasterEventMarket,
+    UnmatchedData
 };
+use Ramsey\Uuid\Uuid;
 
 class ProcessEvent
 {
@@ -108,6 +114,22 @@ class ProcessEvent
 
                                 $eventId = $myEvent['id'];
 
+                                $myMasterEventResult = EventGroup::getDataByEventId($connection, $eventId);
+                                $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
+
+                                $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
+                                $myMatchedEvents = $connection->fetchAll($myMatchedEventsResult);
+
+                                foreach ($myMatchedEvents as $matchedEvent) {
+                                    UnmatchedData::create($connection, [
+                                        'provider_id' => $providerId,
+                                        'data_type' => 'event',
+                                        'data_id' => $matchedEvent['event_id']
+                                    ]);
+                                }
+
+                                EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
+
                                 Event::update($connection, [
                                     'deleted_at' => Carbon::now()
                                 ], [
@@ -119,6 +141,15 @@ class ProcessEvent
                                 $activeEventMarkets = explode(',', $eventMarketListTable->get($eventId, 'marketIDs'));
                                 foreach ($activeEventMarkets as $marketId) {
                                     if (!empty($marketId)) {
+
+                                        $myEventMarketResult = EventMarket::getDataByBetIdentifier($connection, $marketId);
+                                        $myEventMarket = $connection->fetchAssoc($myEventMarketResult);
+
+                                        $myEventMarketGroupResult = EventMarketGroup::getDataByEventMarketId($connection, $myEventMarket['id']);
+                                        $myEventMarketGroup = $connection->fetchAssoc($myEventMarketGroupResult);
+
+                                        EventMarketGroup::deleteMatchesOfEventMarket($connection, $myEventMarketGroup['master_event_market_id']);
+
                                         EventMarket::update($connection, [
                                             'deleted_at' => Carbon::now()
                                         ], [
@@ -129,6 +160,9 @@ class ProcessEvent
                                         $eventMarketsTable->del(md5(implode(':', [$providerId, $marketId])));
                                     }
                                 }
+                                
+                                MasterEventMarket::deleteMasterEventMarketByMasterEventId($connection, $myMasterEvent['master_event_id']);
+                                
                                 logger('info', 'event', 'Event deleted event identifier ' . $eT['event_identifier']);
                             }
                         } else {
@@ -143,6 +177,20 @@ class ProcessEvent
                     }
                 }
             }
+
+            if ($message["data"]["provider"] == $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']) {
+                $sidebarLeagues = MasterLeague::getSideBarLeaguesBySportAndGameSchedule(
+                    $connection,
+                    $sportId,
+                    $swooleTable['enabledProviders'][$swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']]["value"],
+                    $swooleTable['systemConfig']['EVENT_VALID_MAX_MISSING_COUNT']['value'],
+                    $schedule
+                );
+                $sidebarResult = $connection->fetchAll($sidebarLeagues);
+
+                self::sendToKafka($sidebarResult, $schedule);
+            }
+
             logger('info', 'event', 'Process Event ended ' . $offset);
         } catch (Exception $e) {
             logger('error', 'event', 'Exception Error', $e);
@@ -150,5 +198,20 @@ class ProcessEvent
 
         $statsArray["time"] = microtime(true) - $startTime;
         addStats($statsArray);
+    }
+
+    private function sendToKafka($message, $gameSchedule)
+    {
+        $data[$gameSchedule] = $message ? $message : [];
+        $payload             = [
+            'request_uid' => (string) Uuid::uuid4(),
+            'request_ts'  => getMilliseconds(),
+            'command'     => 'sidebar',
+            'sub_command' => 'transform',
+            'data'        => $data,
+        ];
+
+        kafkaPush(getenv('KAFKA_SIDEBAR_LEAGUES'), $payload, $payload['request_uid']);
+        logger('info', 'event', '[SIDEBAR-LEAGUES] Payload sent: ' . $payload['request_uid']);
     }
 }

@@ -6,6 +6,12 @@ class SystemConfiguration
 {
     private static $table = 'system_configurations';
 
+    public static function getAllConfig($connection)
+    {
+        $sql = "SELECT type, value FROM " . self::$table;
+        return $connection->query($sql);
+    }
+
     public static function getProviderMaintenanceConfigData($connection)
     {
         $sql = "SELECT type, value FROM " . self::$table . " WHERE type LIKE '%_MAINTENANCE'";
