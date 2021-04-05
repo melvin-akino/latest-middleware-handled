@@ -92,7 +92,6 @@ class ProcessEvent
                     if (!in_array($eT['event_identifier'], $payloadEventIDs) && !empty($eT['event_identifier'])) {
                         $eventsTable->incr($eventIndexHash, 'missing_count', 1);
                         if ($eventsTable[$eventIndexHash]["missing_count"] >= $missingCount->value) {
-                            $eventsTable->del($eventIndexHash);
 
                             $myEventResult = Event::getEventByProviderParam($connection, $eT['event_identifier'], $providerId, $sportId);
                             $myEvent       = $connection->fetchArray($myEventResult);
@@ -101,21 +100,24 @@ class ProcessEvent
 
                                 $eventId = $myEvent['id'];
 
-                                $myMasterEventResult = EventGroup::getDataByEventId($connection, $eventId);
-                                $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
+                                if ($message["data"]["provider"] == $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']) {
 
-                                $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
-                                $myMatchedEvents = $connection->fetchAll($myMatchedEventsResult);
+                                    $myMasterEventResult = EventGroup::getDataByEventId($connection, $eventId);
+                                    $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
 
-                                foreach ($myMatchedEvents as $matchedEvent) {
-                                    UnmatchedData::create($connection, [
-                                        'provider_id' => $providerId,
-                                        'data_type' => 'event',
-                                        'data_id' => $matchedEvent['event_id']
-                                    ]);
+                                    $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
+                                    $myMatchedEvents = $connection->fetchAll($myMatchedEventsResult);
+
+                                    foreach ($myMatchedEvents as $matchedEvent) {
+                                        UnmatchedData::create($connection, [
+                                            'provider_id' => $providerId,
+                                            'data_type' => 'event',
+                                            'data_id' => $matchedEvent['event_id']
+                                        ]);
+                                    }
+
+                                    EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
                                 }
-
-                                EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
 
                                 Event::update($connection, [
                                     'deleted_at' => Carbon::now()
@@ -152,6 +154,8 @@ class ProcessEvent
                                 
                                 logger('info', 'event', 'Event deleted event identifier ' . $eT['event_identifier']);
                             }
+
+                            $eventsTable->del($eventIndexHash);
                         } else {
                             Event::update($connection, [
                                 'missing_count' => $eventsTable[$k]["missing_count"]
