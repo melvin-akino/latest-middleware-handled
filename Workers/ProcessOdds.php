@@ -123,63 +123,7 @@ class ProcessOdds
                 }
             }
 
-            $swooleTable['lockHashData']->del($leagueIndexHash);
-            /** end league **/
-
-            /** master league **/
-            $masterLeagueId = null;
-            if (strtolower($primaryProvider['value']) == strtolower($provider)) {
-                $leagueGroupResult = LeagueGroup::checkIfMatched($connection, $leagueId);
-                $leagueGroupData   = $connection->fetchArray($leagueGroupResult);
-
-                if (!$leagueGroupData) {
-                    try {
-                        $masterLeagueResult = MasterLeague::create($connection, [
-                            'sport_id'   => $sportId,
-                            'name'       => null,
-                            'created_at' => $timestamp
-                        ], 'id');
-                        $masterLeague       = $connection->fetchArray($masterLeagueResult);
-                        $masterLeagueId = $masterLeague['id'];
-                        logger('info', 'odds', 'Master League Created ' . $masterLeagueId, [
-                            'sport_id'   => $sportId,
-                            'name'       => null,
-                            'created_at' => $timestamp
-                        ]);
-                    } catch (Exception $e) {
-                        logger('error', 'odds', 'Another worker already created the master league');
-
-                        $statsArray['status'] = "ERROR";
-                        $statsArray["time"] = microtime(true) - $startTime;
-                        addStats($statsArray);
-                        return;
-                    }
-
-                    try {
-                        LeagueGroup::create($connection, [
-                            'league_id'        => $leagueId,
-                            'master_league_id' => $masterLeagueId
-                        ]);
-                        logger('info', 'odds', 'League Group Created', [
-                            'league_id'        => $leagueId,
-                            'master_league_id' => $masterLeagueId
-                        ]);
-                    } catch (Exception $e) {
-                        logger('error', 'odds', 'Another worker already created the league group');
-
-                        $statsArray['status'] = "ERROR";
-                        $statsArray["time"] = microtime(true) - $startTime;
-                        addStats($statsArray);
-                        return;
-                    }
-                } else {
-                    $masterLeagueId = $leagueGroupData['master_league_id'];
-                }
-            }
-
-
             /** home team **/
-            /** teams **/
             $teamHomeId    = null;
             $teamIndexHash = md5($homeTeam . ':' . $sportId . ':' . $providerId);
             lockProcess($teamIndexHash, 'team');
@@ -232,63 +176,7 @@ class ProcessOdds
             $swooleTable['lockHashData']->del($teamIndexHash);
             /** end home team **/
 
-            /** master teams **/
-            $masterTeamHomeId = null;
-            if (strtolower($primaryProvider['value']) == strtolower($provider)) {
-                $teamGroupResult = TeamGroup::checkIfMatched($connection, $teamHomeId);
-                $teamGroupData   = $connection->fetchArray($teamGroupResult);
-
-                if (!$teamGroupData) {
-                    try {
-                        $masterTeamResult = MasterTeam::create($connection, [
-                            'sport_id'   => $sportId,
-                            'name'       => null,
-                            'created_at' => $timestamp
-                        ], 'id');
-                        $masterTeam       = $connection->fetchArray($masterTeamResult);
-
-                        $masterTeamHomeId = $masterTeam['id'];
-
-                        logger('info', 'odds', 'Master Team Created ' . $masterTeamHomeId);
-                    } catch (Exception $e) {
-                        logger('error', 'odds', 'Another worker already created the master team');
-
-                        $statsArray['status'] = "ERROR";
-                        $statsArray["time"] = microtime(true) - $startTime;
-                        addStats($statsArray);
-                        return;
-                    }
-
-                    try {
-                        TeamGroup::create($connection, [
-                            'team_id'        => $teamHomeId,
-                            'master_team_id' => $masterTeamHomeId
-                        ]);
-
-                        $teamGroupsTable[$teamIndexHash] = [
-                            'team_id'        => $teamHomeId,
-                            'master_team_id' => $masterTeamHomeId,
-                        ];
-
-                        logger('info', 'odds', 'Team Groups Created', [
-                            'team_id'        => $teamHomeId,
-                            'master_team_id' => $masterTeamHomeId
-                        ]);
-                    } catch (Exception $e) {
-                        logger('error', 'odds', 'Another worker already created the team group');
-
-                        $statsArray['status'] = "ERROR";
-                        $statsArray["time"] = microtime(true) - $startTime;
-                        addStats($statsArray);
-                        return;
-                    }
-                } else {
-                    $masterTeamHomeId = $teamGroupData['master_team_id'];
-                }
-            }
-
             /** away team **/
-            /** teams **/
             $teamAwayId    = null;
             $teamIndexHash = md5($awayTeam . ':' . $sportId . ':' . $providerId);
             lockProcess($teamIndexHash, 'team');
@@ -337,66 +225,7 @@ class ProcessOdds
                     ]);
                 }
             }
-
-            $swooleTable['lockHashData']->del($teamIndexHash);
-            /** end master away team **/
-
-            /** master away teams **/
-            $masterTeamAwayId = null;
-            if (strtolower($primaryProvider['value']) == strtolower($provider)) {
-                $teamGroupResult = TeamGroup::checkIfMatched($connection, $teamAwayId);
-                $teamGroupData   = $connection->fetchArray($teamGroupResult);
-
-                if (!$teamGroupData) {
-                    try {
-                        $masterTeamResult = MasterTeam::create($connection, [
-                            'sport_id'   => $sportId,
-                            'name'       => null,
-                            'created_at' => $timestamp
-                        ], 'id');
-
-                        $masterTeam       = $connection->fetchArray($masterTeamResult);
-
-                        $masterTeamAwayId = $masterTeam['id'];
-
-                        logger('info', 'odds', 'Master Team Created ' . $masterTeamAwayId);
-                    } catch (Exception $e) {
-                        logger('error', 'odds', 'Another worker already created the master team');
-
-                        $statsArray['status'] = "ERROR";
-                        $statsArray["time"] = microtime(true) - $startTime;
-                        addStats($statsArray);
-                        return;
-                    }
-
-                    try {
-                        TeamGroup::create($connection, [
-                            'team_id'        => $teamAwayId,
-                            'master_team_id' => $masterTeamAwayId,
-                        ]);
-
-                        $teamGroupsTable[$teamIndexHash] = [
-                            'team_id'        => $teamAwayId,
-                            'master_team_id' => $masterTeamAwayId,
-                        ];
-
-                        logger('info', 'odds', 'Team Groups Created', [
-                            'team_id'        => $teamAwayId,
-                            'master_team_id' => $masterTeamAwayId
-                        ]);
-                    } catch (Exception $e) {
-                        logger('error', 'odds', 'Another worker already created the team group');
-
-                        $statsArray['status'] = "ERROR";
-                        $statsArray["time"] = microtime(true) - $startTime;
-                        addStats($statsArray);
-                        return;
-                    }
-                } else {
-                    $masterTeamAwayId = $teamGroupData['master_team_id'];
-                }
-            }
-            /** end master away team **/
+            /** end away team **/
 
             /* events */
             $eventId        = null;
@@ -542,108 +371,23 @@ class ProcessOdds
                 }
 
                 $eventId = $event['id'];
-
-                $eventsTable[$eventIndexHash] = [
-                    'id'               => $eventId,
-                    'sport_id'         => $sportId,
-                    'provider_id'      => $providerId,
-                    'missing_count'    => $missingCount,
-                    'league_id'        => $leagueId,
-                    'team_home_id'     => $teamHomeId,
-                    'team_away_id'     => $teamAwayId,
-                    'ref_schedule'     => $referenceSchedule,
-                    'game_schedule'    => $gameSchedule,
-                    'event_identifier' => $eventIdentifier
-                ];
-            }
-
-            if (empty($eventId)) {
-                logger('error', 'odds', 'Event ID is empty', $message);
-
-                $statsArray['status'] = "ERROR";
-                $statsArray["time"] = microtime(true) - $startTime;
-                addStats($statsArray);
-                return;
             }
             /* end events */
 
-            $isEventMatched = false;
-            $masterEventId = null;
-            $eventGroupResult = EventGroup::checkIfMatched($connection, $eventId);
-            $eventGroupData   = $connection->fetchArray($eventGroupResult);
-            if (!$eventGroupData) {
-                if (strtolower($primaryProvider['value']) == strtolower($provider)) {
-                    $masterEventUniqueId = date('Ymd', strtotime($referenceSchedule)) . '-' . $sportId . '-' . $masterLeagueId . '-' . $eventIdentifier;
-                    try {
 
-                        $masterEventResult = MasterEvent::checkIfExists($connection, $masterEventUniqueId);
-                        if ($connection->numRows($masterEventResult)) {
-                            $masterEvent       = $connection->fetchArray($masterEventResult);
-
-                            $masterEventResult = MasterEvent::update($connection, [
-                                'sport_id'               => $sportId,
-                                'master_league_id'       => $masterLeagueId,
-                                'master_team_home_id'    => $masterTeamHomeId,
-                                'master_team_away_id'    => $masterTeamAwayId,
-                                'updated_at'             => $timestamp
-                            ], [
-                                'id' => $masterEvent['id']
-                            ]);
-                        } else {
-                            $masterEventResult = MasterEvent::create($connection, [
-                                'sport_id'               => $sportId,
-                                'master_event_unique_id' => $masterEventUniqueId,
-                                'master_league_id'       => $masterLeagueId,
-                                'master_team_home_id'    => $masterTeamHomeId,
-                                'master_team_away_id'    => $masterTeamAwayId,
-                                'created_at'             => $timestamp
-                            ], 'id');
-                            $masterEvent       = $connection->fetchArray($masterEventResult);
-                        }
-
-                        $masterEventId = $masterEvent['id'];
-
-                        logger('info', 'odds', 'Master Event Created ' . $masterEventId, [
-                            'sport_id'               => $sportId,
-                            'master_event_unique_id' => $masterEventUniqueId,
-                            'master_league_id'       => $masterLeagueId,
-                            'master_team_home_id'    => $masterTeamHomeId,
-                            'master_team_away_id'    => $masterTeamAwayId
-                        ]);
-                    } catch (Exception $e) {
-                        logger('error', 'odds', 'Another worker already created the master event');
-
-                        $statsArray['status'] = "ERROR";
-                        $statsArray["time"] = microtime(true) - $startTime;
-                        addStats($statsArray);
-                        return;
-                    }
-
-                    try {
-                        EventGroup::create($connection, [
-                            'event_id'        => $eventId,
-                            'master_event_id' => $masterEventId,
-                        ]);
-
-                        logger('info', 'odds', 'Event Groups Created', [
-                            'event_id'        => $eventId,
-                            'master_event_id' => $masterEventId
-                        ]);
-                    } catch (Exception $e) {
-                        logger('error', 'odds', 'Another worker already created the event group');
-
-                        $statsArray['status'] = "ERROR";
-                        $statsArray["time"] = microtime(true) - $startTime;
-                        addStats($statsArray);
-                        return;
-                    }
-
-                    $isEventMatched = true;
-                } 
-            } else {
-                $isEventMatched = true;
-                $masterEventId = $eventGroupData['master_event_id'];
-            }
+            $eventsTable[$eventIndexHash] = [
+                'id'               => $eventId,
+                'sport_id'         => $sportId,
+                'provider_id'      => $providerId,
+                'missing_count'    => $missingCount,
+                'league_id'        => $leagueId,
+                'team_home_id'     => $teamHomeId,
+                'team_away_id'     => $teamAwayId,
+                'ref_schedule'     => $referenceSchedule,
+                'game_schedule'    => $gameSchedule,
+                'event_identifier' => $eventIdentifier
+            ];
+            /* end events */
 
             $currentMarketsParsed     = [];
             $activeEventMarkets       = [];
@@ -659,7 +403,7 @@ class ProcessOdds
                 }
             }
 
-            /* master event market  and event market*/
+            /* event market*/
             foreach ($events as $event) {
                 if (!empty($event)) {
                     $marketEventIdentifiers[] = $event["eventId"];
@@ -899,72 +643,6 @@ class ProcessOdds
 
                                 $newMarkets[] = $marketId;
                                 $eventMarketListTable->set($eventId, ['marketIDs' => implode(',', $newMarkets)]);
-
-                                if (empty($masterEventId)) {
-                                    continue;
-                                }
-
-                                $masterEventMarketId = null;
-                                if ($isEventMatched) {
-                                    $memUID                 = md5($eventId . strtoupper($marketFlag) . $marketId);
-                                    $eventMarketGroupResult = EventMarketGroup::checkIfMatched($connection, $eventMarketId);
-                                    $eventMarketGroupData   = $connection->fetchArray($eventMarketGroupResult);
-                                    if (!$eventMarketGroupData && (strtolower($primaryProvider['value']) == strtolower($provider))) {
-                                        try {
-                                            $masterEventMarketResult = MasterEventMarket::checkIfMemUIDExists($connection, $memUID);
-                                            if ($connection->numRows($masterEventMarketResult)) {
-                                                $masterEventMarket = $connection->fetchArray($masterEventMarketResult);
-                                            } else {
-                                                $masterEventMarketResult = MasterEventMarket::create($connection, [
-                                                    'master_event_id'               => $masterEventId,
-                                                    'master_event_market_unique_id' => $memUID,
-                                                    'created_at'                    => $timestamp
-                                                ], 'id');
-
-                                                $masterEventMarket       = $connection->fetchArray($masterEventMarketResult);
-                                            }
-                                            $masterEventMarketId = $masterEventMarket['id'];
-
-                                            logger('info', 'odds', 'Master Event Market Created ' . $masterEventMarketId, [
-                                                'master_event_id'               => $masterEventId,
-                                                'master_event_market_unique_id' => $memUID
-                                            ]);
-                                        } catch (Exception $e) {
-                                            logger('error', 'odds', 'Another worker already created the master event market');
-
-                                            $statsArray['status'] = "ERROR";
-                                            $statsArray["time"] = microtime(true) - $startTime;
-                                            addStats($statsArray);
-                                            return;
-                                        }
-
-                                        try {
-                                            EventMarketGroup::create($connection, [
-                                                'event_market_id'        => $eventMarketId,
-                                                'master_event_market_id' => $masterEventMarketId,
-                                            ]);
-
-                                            $eventMarketGroupsTable[$eventMarketIndexHash] = [
-                                                'event_market_id'        => $eventMarketId,
-                                                'master_event_market_id' => $masterEventMarketId,
-                                            ];
-
-                                            logger('info', 'odds', 'Event Market Groups Created', [
-                                                'event_market_id'        => $eventMarketId,
-                                                'master_event_market_id' => $masterEventMarketId
-                                            ]);
-                                        } catch (Exception $e) {
-                                            logger('error', 'odds', 'Another worker already created the event market group');
-
-                                            $statsArray['status'] = "ERROR";
-                                            $statsArray["time"] = microtime(true) - $startTime;
-                                            addStats($statsArray);
-                                            return;
-                                        }
-                                    } else {
-                                        $masterEventMarketId = $eventMarketGroupData['master_event_market_id'];
-                                    }
-                                }
                             } else {
                                 if (is_array($activeEventMarkets) && in_array($marketId, $activeEventMarkets)) {
                                     EventMarket::softDelete($connection, 'bet_identifier', $marketId);

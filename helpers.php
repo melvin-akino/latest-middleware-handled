@@ -198,7 +198,7 @@ function swooleStats($timer, $which)
     } else if ($which == 'odds') {
         logger('info', 'stats', "**************** start swoole table dump ****************");
         foreach ($swooleTable['statsCountOddsPerSecond'] as $k => $s) {
-            if ($k > (time() - 60)) {
+            if ($k > (time() - 30)) {
                 logger('info', 'stats', $k);
                 logger('info', 'stats', json_encode($s));
                 logger('info', 'stats', json_encode($swooleTable['statsTimeOddsPerSecond'][$k]));
