@@ -15,8 +15,9 @@ Class Provider
 
     public static function getIdByAlias($connection, string $alias)
     {
-        $sql = "SELECT * FROM providers WHERE alias = UPPER('{$alias}')";
-
-        return $connection->query($sql);
+        $sql    = "SELECT * FROM providers WHERE alias = UPPER('{$alias}')";
+        $result = $connection->query($sql);
+    
+        return $connection->fetchArray($result)['id'];
     }
 }

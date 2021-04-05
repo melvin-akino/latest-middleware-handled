@@ -8,7 +8,7 @@ class UnmatchedData extends Model
 {
     protected static $table = 'unmatched_data';
 
-    publi static function getAllUnmatchedWithSport($connection)
+    public static function getAllUnmatchedWithSport($connection)
     {
         $sql = "SELECT ul.data_id, ul.data_type, l.provider_id, l.sport_id FROM " . static::$table . " AS ul
             JOIN leagues AS l ON l.id = ul.data_id AND data_type = 'league'
@@ -24,5 +24,30 @@ class UnmatchedData extends Model
             JOIN events AS e ON e.id = ue.data_id AND data_type = 'event'";
 
         return $connection->query($sql);
+    }
+
+    public static function removeToUnmatchedData($connection, array $cond)
+    {
+      if (!empty($cond)) {
+          $where = "";
+          $ctr   = 0;
+
+          foreach ($cond AS $key => $value) {
+              if ($ctr > 0) {
+                  $where .= " AND ";
+              } else {
+                  $where .= "WHERE ";
+              }
+
+              $where .= "{$key} = '{$value}'";
+              $ctr++;
+          }
+
+          $sql = "DELETE FROM " . static::$table . " {$where}";
+
+          return $connection->query($sql);
+      }
+
+      return false;
     }
 }

@@ -259,18 +259,23 @@ class PreProcess
 
     public static function loadUnmatchedData()
     {
+        global $swooleTable;
+
+        foreach ($swooleTable['unmatchedLeagues'] AS $key => $row) {
+            $swooleTable['unmatchedLeagues']->del($key);
+        }
+
+        foreach ($swooleTable['unmatchedTeams'] AS $key => $row) {
+          $swooleTable['unmatchedTeams']->del($key);
+        }
+
         $getUnmatchedData = UnmatchedData::getAllUnmatchedWithSport(self::$connection);
         $queryResult      = self::$connection->fetchAll($getUnmatchedData);
 
-        if (self::$connection->numRows($queryResult)) {
+        if (self::$connection->numRows($getUnmatchedData)) {
             foreach ($queryResult AS $row) {
                 switch ($row['data_type']) {
                     case 'league':
-                        // Clear `unmatchedLeagues` Swoole Table
-                        foreach ($swooleTable['unmatchedLeagues'] AS $key => $row) {
-                            $swooleTable['unmatchedLeagues']->del($key);
-                        }
-
                         // Setup `unmatchedLeagues` Swoole Table Row Key Identifier
                         $key = implode(':', [
                             'providerId:' . $row['provider_id'],
@@ -284,7 +289,15 @@ class PreProcess
                         ]);
                     break;
                     case 'team':
-                        # code...
+                        $key = implode(':', [
+                          'providerId:' . $row['provider_id'],
+                          'id:' . $row['data_id']
+                        ]);
+                          
+                        $swooleTable['unmatchedTeams']->set($key, [
+                          'id'       => $row['data_id'],
+                          'sport_id' => $row['sport_id']
+                        ]);
                     break;
                     case 'event':
                         # code...

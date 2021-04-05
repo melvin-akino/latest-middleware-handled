@@ -22,7 +22,7 @@ class Model
 
     public static function delete($connection, $columnName, $value)
     {
-        $sql = "DELETE " . static::$table . " WHERE {$columnName} = '{$value}'";
+        $sql = "DELETE FROM" . static::$table . " WHERE {$columnName} = '{$value}'";
         return $connection->query($sql);
     }
 
