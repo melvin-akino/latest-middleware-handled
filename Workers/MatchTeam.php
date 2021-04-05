@@ -28,7 +28,7 @@ class MatchTeam
 
               if ($unmatchedTeams->count()) {
                   foreach($unmatchedTeams as $key => $team) {
-                      if (strpos($key, "providerId:" . $primaryProvider) !== false) {
+                      if (strpos($key, "pId:" . $primaryProvider) !== false) {
                           $newMasterTeam = MasterTeam::create($connection, [
                               'sport_id'   => $team['sport_id'],
                               'name'       => null,

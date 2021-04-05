@@ -151,18 +151,31 @@ $config = [
                 [ 'name' => 'value', 'type' => \Swoole\Table::TYPE_STRING, 'size' => 255 ],
             ],
         ],
+        'matchedLeagues' => [
+            'size' => 10000,
+            'column' => [ // pId:<$providerId>:name:<md5($name)>
+                [ 'name' => 'master_league_id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'league_id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT ],
+            ],
+        ],
         'unmatchedLeagues' => [
             'size' => 10000,
-            'column' => [ // providerId:<$providerId>:id:<$id>
+            'column' => [ // pId:<$providerId>:name:<md5($name)>
                 [ 'name' => 'id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'name', 'type' => \Swoole\Table::TYPE_STRING, 'size' => 80 ],
                 [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT ],
             ],
         ],
         'unmatchedTeams' => [
           'size' => 50000,
-          'column' => [ // providerId:<$providerId>:id:<$id>
-              [ 'name' => 'id', 'type' => \Swoole\Table::TYPE_INT ],
-              [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
+          'column' => [ // pId:<$providerId>:name:<md5($name)>
+                [ 'name' => 'id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'name', 'type' => \Swoole\Table::TYPE_STRING, 'size' => 80 ],
+                [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT ],
           ],
       ],
     ],

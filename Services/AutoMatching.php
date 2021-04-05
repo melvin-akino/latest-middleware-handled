@@ -19,8 +19,10 @@ function preProcess()
     $connection = $dbPool->borrow();
 
     PreProcess::init($connection);
+    PreProcess::loadEnabledProviders();
     PreProcess::loadSystemConfig();
     PreProcess::loadUnmatchedData();
+    PreProcess::loadMatchedLeaguesData();
 
     $dbPool->return($connection);
 }
