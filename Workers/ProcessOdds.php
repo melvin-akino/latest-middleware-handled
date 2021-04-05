@@ -7,18 +7,10 @@ use Carbon\Carbon;
 use Models\{
     SystemConfiguration,
     League,
-    LeagueGroup,
-    MasterLeague,
     Team,
-    TeamGroup,
-    MasterTeam,
     Event,
-    EventGroup,
-    MasterEvent,
     EventMarket,
-    EventMarketGroup,
-    MasterEventMarket,
-    UnmatchedData
+    EventMarketGroup
 };
 
 class ProcessOdds
@@ -113,14 +105,6 @@ class ProcessOdds
                     'provider_id' => $providerId,
                     'name'        => $leagueName,
                 ];
-
-                if (strtolower($primaryProvider['value']) != strtolower($provider)) {
-                    UnmatchedData::create($connection, [
-                        'provider_id' => $providerId,
-                        'data_type' => 'league',
-                        'data_id' => $leagueId
-                    ]);
-                }
             }
 
             /** home team **/
@@ -163,14 +147,6 @@ class ProcessOdds
                     'name'        => $homeTeam,
                     'sport_id'    => $sportId,
                 ];
-
-                if (strtolower($primaryProvider['value']) != strtolower($provider)) {
-                    UnmatchedData::create($connection, [
-                        'provider_id' => $providerId,
-                        'data_type' => 'team',
-                        'data_id' => $teamHomeId
-                    ]);
-                }
             }
 
             $swooleTable['lockHashData']->del($teamIndexHash);
@@ -216,20 +192,15 @@ class ProcessOdds
                     'name'        => $awayTeam,
                     'sport_id'    => $sportId,
                 ];
-
-                if (strtolower($primaryProvider['value']) != strtolower($provider)) {
-                    UnmatchedData::create($connection, [
-                        'provider_id' => $providerId,
-                        'data_type' => 'team',
-                        'data_id' => $teamAwayId
-                    ]);
-                }
             }
+
+            $swooleTable['lockHashData']->del($teamIndexHash);
             /** end away team **/
 
             /* events */
             $eventId        = null;
             $eventIndexHash = md5(implode(':', [$sportId, $providerId, $eventIdentifier]));
+            lockProcess($eventIndexHash, 'event');
             if ($eventsTable->exists($eventIndexHash)) {
                 $eventId = $eventsTable[$eventIndexHash]['id'];
 
@@ -278,6 +249,7 @@ class ProcessOdds
                     'updated_at'    => $timestamp
                 ]);
             } else {
+                $swooleTable['lockHashData'][$eventIndexHash]['type'] = 'event';
                 $eventResult = Event::getEventByProviderParam($connection, $eventIdentifier, $providerId, $sportId);
                 $event       = $connection->fetchArray($eventResult);
 
@@ -352,14 +324,6 @@ class ProcessOdds
                             'home_penalty'     => $homeRedcard,
                             'away_penalty'     => $awayRedcard
                         ]);
-
-                        if (strtolower($primaryProvider['value']) != strtolower($provider)) {
-                            UnmatchedData::create($connection, [
-                                'provider_id' => $providerId,
-                                'data_type' => 'event',
-                                'data_id' => $event['id']
-                            ]);
-                        }
                     }
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the event');
@@ -372,8 +336,6 @@ class ProcessOdds
 
                 $eventId = $event['id'];
             }
-            /* end events */
-
 
             $eventsTable[$eventIndexHash] = [
                 'id'               => $eventId,
@@ -387,6 +349,8 @@ class ProcessOdds
                 'game_schedule'    => $gameSchedule,
                 'event_identifier' => $eventIdentifier
             ];
+
+            $swooleTable['lockHashData']->del($eventIndexHash);
             /* end events */
 
             $currentMarketsParsed     = [];
