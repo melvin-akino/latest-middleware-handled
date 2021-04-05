@@ -21,6 +21,17 @@ class ProcessEvent
     public static function handle($connection, $swooleTable, $message, $offset)
     {
         logger('info', 'event', 'Process Event starting ' . $offset);
+
+        $start = microtime(true);
+        $statsArray = [
+            "type"        => "events",
+            "status"      => 'NO_ERROR',
+            "time"        => 0,
+            "request_uid" => $message["request_uid"],
+            "request_ts"  => $message["request_ts"],
+            "offset"      => $offset,
+        ];
+
         try {
             $eventsTable          = $swooleTable['events'];
             $eventMarketListTable = $swooleTable['eventMarketList'];
@@ -33,6 +44,8 @@ class ProcessEvent
 
             if (!$providerId) {
                 logger('error', 'event', 'Got event message with no Provider ID on offset ' . $offset);
+
+                $statsArray['status'] = "ERROR";
                 return;
             }
             // Next we get the events in the message, and error out if they are missing.
@@ -186,6 +199,9 @@ class ProcessEvent
         } catch (Exception $e) {
             logger('error', 'event', 'Exception Error', $e);
         }
+
+        $statsArray["time"] = microtime(true) - $startTime;
+        addStats($statsArray);
     }
 
     private function sendToKafka($message, $gameSchedule)
