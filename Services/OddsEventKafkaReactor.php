@@ -118,6 +118,19 @@ function oddHandler($message, $offset)
 
         if (empty($message['data'])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Invalid payload', (array) $message);
+
+            $statsArray = [
+                "type"        => "odds",
+                "status"      => 'PAYLOAD_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+
+            freeUpProcess();
             return;
         }
 
@@ -126,13 +139,35 @@ function oddHandler($message, $offset)
 
         if ($messageTS < $previousTS) {
             logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
-            // return;
+            $statsArray = [
+                "type"        => "odds",
+                "status"      => 'TIMESTAMP_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+
+            freeUpProcess();
+            return;
         }
 
         $swooleTable['timestamps']['odds:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'] = $messageTS;
 
         if (!is_array($message["data"]) || empty($message["data"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Invalid Payload', (array) $message);
+            $statsArray = [
+                "type"        => "odds",
+                "status"      => 'PAYLOAD_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
             freeUpProcess();
             return;
         }
@@ -146,6 +181,17 @@ function oddHandler($message, $offset)
 
             if ($swooleTable['eventOddsHash']->exists($eventId) && $swooleTable['eventOddsHash'][$eventId]['hash'] == $caching) {
                 logger('info', 'odds-events-reactor', 'Validation Error: Hash data is the same as with the current hash data', (array) $message);
+                $statsArray = [
+                    "type"        => "odds",
+                    "status"      => 'HASH_ERROR',
+                    "time"        => microtime(true) - $start,
+                    "request_uid" => $message["request_uid"],
+                    "request_ts"  => $message["request_ts"],
+                    "offset"      => $offset,
+                ];
+    
+                addStats($statsArray);
+                
                 freeUpProcess();
                 return;
             }
@@ -154,12 +200,34 @@ function oddHandler($message, $offset)
 
         if (!$swooleTable['enabledSports']->exists($message["data"]["sport"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Sport is inactive', (array) $message);
+            $statsArray = [
+                "type"        => "odds",
+                "status"      => 'SPORT_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+            
             freeUpProcess();
             return;
         }
 
         if (!$swooleTable['enabledProviders']->exists($message["data"]["provider"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Provider is inactive', (array) $message);
+            $statsArray = [
+                "type"        => "odds",
+                "status"      => 'PROVIDER_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+            
             freeUpProcess();
             return;
         }
@@ -189,32 +257,78 @@ function eventHandler($message, $offset)
     global $swooleTable;
     global $dbPool;
 
+    $start = microtime(true);
+
     try {
         $previousTS = $swooleTable['timestamps']['event:' . $message["data"]["schedule"]]['ts'];
         $messageTS  = $message["request_ts"];
 
         if ($messageTS < $previousTS) {
             logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
+            $statsArray = [
+                "type"        => "events",
+                "status"      => 'TIMESTAMP_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+
             freeUpProcess();
-            // return;
+            return;
         }
 
         $swooleTable['timestamps']['event:' . $message["data"]["schedule"]]['ts'] = $messageTS;
 
         if (!is_array($message["data"]) || empty($message["data"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Data should be valid', (array) $message);
+            $statsArray = [
+                "type"        => "events",
+                "status"      => 'PAYLOAD_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+
             freeUpProcess();
             return;
         }
 
         if (!$swooleTable['enabledSports']->exists($message["data"]["sport"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Sport is inactive', (array) $message);
+            $statsArray = [
+                "type"        => "events",
+                "status"      => 'SPORT_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+
             freeUpProcess();
             return;
         }
 
         if (!$swooleTable['enabledProviders']->exists($message["data"]["provider"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Provider is inactive', (array) $message);
+            $statsArray = [
+                "type"        => "events",
+                "status"      => 'PROVIDER_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+
             freeUpProcess();
             return;
         }
@@ -240,7 +354,8 @@ function eventHandler($message, $offset)
 
 }
 
-function checkTableCounts() {
+function checkTableCounts() 
+{
 	global $swooleTable;
 
     logger('info', 'odds-events-reactor', 'Count Leagues:' . $swooleTable['leagues']->count());
@@ -251,6 +366,15 @@ function checkTableCounts() {
     logger('info', 'odds-events-reactor', 'Count Sports:' . $swooleTable['enabledSports']->count());
     logger('info', 'odds-events-reactor', 'Count Sport Odd Types:' . $swooleTable['sportsOddTypes']->count());
     logger('info', 'odds-events-reactor', 'Count Maintenance:' . $swooleTable['maintenance']->count());
+}
+
+function clearHashData() 
+{
+    global $swooleTable;
+
+    foreach ($swooleTable['eventOddsHash'] as $k => $eoh) {
+        $swooleTable['eventOddsHash']->del($k);
+    }
 }
 
 $activeProcesses = 0;
@@ -275,6 +399,8 @@ Co\run(function () use ($queue) {
 
     preProcess();
 
-    Swoole\Timer::tick(10000,"checkTableCounts");
+    Swoole\Timer::tick(10000, "checkTableCounts");
+    Swoole\Timer::tick(360000, "clearHashData");
+    Swoole\Timer::tick(10000, "swooleStats", 'odds');
     reactor($queue, $dbPool);
 });

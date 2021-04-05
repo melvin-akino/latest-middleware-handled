@@ -21,6 +21,17 @@ class ProcessEvent
     public static function handle($connection, $swooleTable, $message, $offset)
     {
         logger('info', 'event', 'Process Event starting ' . $offset);
+
+        $start = microtime(true);
+        $statsArray = [
+            "type"        => "events",
+            "status"      => 'NO_ERROR',
+            "time"        => 0,
+            "request_uid" => $message["request_uid"],
+            "request_ts"  => $message["request_ts"],
+            "offset"      => $offset,
+        ];
+
         try {
             $eventsTable          = $swooleTable['events'];
             $eventMarketListTable = $swooleTable['eventMarketList'];
@@ -33,6 +44,8 @@ class ProcessEvent
 
             if (!$providerId) {
                 logger('error', 'event', 'Got event message with no Provider ID on offset ' . $offset);
+
+                $statsArray['status'] = "ERROR";
                 return;
             }
             // Next we get the events in the message, and error out if they are missing.
@@ -92,7 +105,6 @@ class ProcessEvent
                     if (!in_array($eT['event_identifier'], $payloadEventIDs) && !empty($eT['event_identifier'])) {
                         $eventsTable->incr($eventIndexHash, 'missing_count', 1);
                         if ($eventsTable[$eventIndexHash]["missing_count"] >= $missingCount->value) {
-                            $eventsTable->del($eventIndexHash);
 
                             $myEventResult = Event::getEventByProviderParam($connection, $eT['event_identifier'], $providerId, $sportId);
                             $myEvent       = $connection->fetchArray($myEventResult);
@@ -101,21 +113,24 @@ class ProcessEvent
 
                                 $eventId = $myEvent['id'];
 
-                                $myMasterEventResult = EventGroup::getDataByEventId($connection, $eventId);
-                                $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
+                                if ($message["data"]["provider"] == $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']) {
 
-                                $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
-                                $myMatchedEvents = $connection->fetchAll($myMatchedEventsResult);
+                                    $myMasterEventResult = EventGroup::getDataByEventId($connection, $eventId);
+                                    $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
 
-                                foreach ($myMatchedEvents as $matchedEvent) {
-                                    UnmatchedData::create($connection, [
-                                        'provider_id' => $providerId,
-                                        'data_type' => 'event',
-                                        'data_id' => $matchedEvent['event_id']
-                                    ]);
+                                    $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
+                                    $myMatchedEvents = $connection->fetchAll($myMatchedEventsResult);
+
+                                    foreach ($myMatchedEvents as $matchedEvent) {
+                                        UnmatchedData::create($connection, [
+                                            'provider_id' => $providerId,
+                                            'data_type' => 'event',
+                                            'data_id' => $matchedEvent['event_id']
+                                        ]);
+                                    }
+
+                                    EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
                                 }
-
-                                EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
 
                                 Event::update($connection, [
                                     'deleted_at' => Carbon::now()
@@ -152,6 +167,8 @@ class ProcessEvent
                                 
                                 logger('info', 'event', 'Event deleted event identifier ' . $eT['event_identifier']);
                             }
+
+                            $eventsTable->del($eventIndexHash);
                         } else {
                             Event::update($connection, [
                                 'missing_count' => $eventsTable[$k]["missing_count"]
@@ -182,6 +199,9 @@ class ProcessEvent
         } catch (Exception $e) {
             logger('error', 'event', 'Exception Error', $e);
         }
+
+        $statsArray["time"] = microtime(true) - $startTime;
+        addStats($statsArray);
     }
 
     private function sendToKafka($message, $gameSchedule)
