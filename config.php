@@ -202,6 +202,13 @@ $config = [
                 ["name" => "inactiveSport", "type" => \Swoole\Table::TYPE_FLOAT],
                 ["name" => "inactiveProvider", "type" => \Swoole\Table::TYPE_FLOAT],
             ]
+        ],
+        'unmatchedLeagues' => [
+            'size' => 10000,
+            'column' => [ // providerId:<$providerId>:id:<$id>
+                [ 'name' => 'id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
+            ],
         ]
     ],
     'logger'        => [
