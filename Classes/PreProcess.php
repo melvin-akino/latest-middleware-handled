@@ -14,7 +14,8 @@ use Models\{
     EventMarket,
     EventMarketGroup,
     Sport,
-    SportOddType
+    SportOddType,
+    UnmatchedData
 };
 
 class PreProcess
@@ -253,6 +254,43 @@ class PreProcess
             $swooleTable['systemConfig']->set($data['type'], [
                 'value' => $data['value']
             ]);
+        }
+    }
+
+    public static function loadUnmatchedData()
+    {
+        $getUnmatchedData = UnmatchedData::getAllUnmatchedWithSport(self::$connection);
+        $queryResult      = self::$connection->fetchAll($getUnmatchedData);
+
+        if (self::$connection->numRows($queryResult)) {
+            foreach ($queryResult AS $row) {
+                switch ($row['data_type']) {
+                    case 'league':
+                        // Clear `unmatchedLeagues` Swoole Table
+                        foreach ($swooleTable['unmatchedLeagues'] AS $key => $row) {
+                            $swooleTable['unmatchedLeagues']->del($key);
+                        }
+
+                        // Setup `unmatchedLeagues` Swoole Table Row Key Identifier
+                        $key = implode(':', [
+                            'providerId:' . $row['provider_id'],
+                            'id:' . $row['data_id']
+                        ]);
+
+                        // Add Row to `unmatchedLeagues` Swoole Table
+                        $swooleTable['unmatchedLeagues']->set($key, [
+                            'id'       => $row['data_id'],
+                            'sport_id' => $row['sport_id']
+                        ]);
+                    break;
+                    case 'team':
+                        # code...
+                    break;
+                    case 'event':
+                        # code...
+                    break;
+                }
+            }
         }
     }
 }

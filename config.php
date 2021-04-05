@@ -151,6 +151,13 @@ $config = [
                 [ 'name' => 'value', 'type' => \Swoole\Table::TYPE_STRING, 'size' => 255 ],
             ],
         ],
+        'unmatchedLeagues' => [
+            'size' => 10000,
+            'column' => [ // providerId:<$providerId>:id:<$id>
+                [ 'name' => 'id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
+            ],
+        ],
     ],
     'logger'        => [
         'app'                 => [
