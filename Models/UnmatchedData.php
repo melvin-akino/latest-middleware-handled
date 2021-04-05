@@ -11,7 +11,7 @@ class UnmatchedData extends Model
     publi static function getAllUnmatchedWithSport($connection)
     {
         $sql = "SELECT ul.data_id, ul.data_type, l.provider_id, l.sport_id FROM " . static::$table . " AS ul
-            JOIN leagues AS l ON l.id = ul.data_id AND data_type = 'leauge'
+            JOIN leagues AS l ON l.id = ul.data_id AND data_type = 'league'
 
             UNION
 
