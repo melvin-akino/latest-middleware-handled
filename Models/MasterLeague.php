@@ -39,4 +39,19 @@ class MasterLeague extends Model
 
         return $connection->query($sql);
     }
+
+    public static function getMatches($connection)
+    {
+        $sql = "SELECT
+                ml.id AS master_league_id,
+                l.id AS league_id,
+                COALESCE(ml.name, l.name) AS name,
+                l.provider_id,
+                l.sport_id
+            FROM master_leagues AS ml
+            JOIN league_groups AS lg ON lg.master_league_id = ml.id
+            JOIN leagues AS l ON l.id = lg.league_id";
+
+        return $connection->query($sql);
+    }
 }

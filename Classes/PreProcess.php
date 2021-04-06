@@ -15,7 +15,8 @@ use Models\{
     EventMarketGroup,
     Sport,
     SportOddType,
-    UnmatchedData
+    UnmatchedData,
+    MasterLeague
 };
 
 class PreProcess
@@ -259,37 +260,82 @@ class PreProcess
 
     public static function loadUnmatchedData()
     {
-        $getUnmatchedData = UnmatchedData::getAllUnmatchedWithSport(self::$connection);
-        $queryResult      = self::$connection->fetchAll($getUnmatchedData);
+        global $swooleTable;
 
-        if (self::$connection->numRows($queryResult)) {
+        foreach ($swooleTable['unmatchedLeagues'] AS $key => $row) {
+            $swooleTable['unmatchedLeagues']->del($key);
+        }
+
+        foreach ($swooleTable['unmatchedTeams'] AS $key => $row) {
+            $swooleTable['unmatchedTeams']->del($key);
+        }
+
+        $getUnmatchedData = UnmatchedData::getAllUnmatchedWithSport(self::$connection);
+
+        if (self::$connection->numRows($getUnmatchedData)) {
+            $queryResult = self::$connection->fetchAll($getUnmatchedData);
+
             foreach ($queryResult AS $row) {
                 switch ($row['data_type']) {
                     case 'league':
-                        // Clear `unmatchedLeagues` Swoole Table
-                        foreach ($swooleTable['unmatchedLeagues'] AS $key => $row) {
-                            $swooleTable['unmatchedLeagues']->del($key);
-                        }
-
-                        // Setup `unmatchedLeagues` Swoole Table Row Key Identifier
                         $key = implode(':', [
-                            'providerId:' . $row['provider_id'],
-                            'id:' . $row['data_id']
+                            'pId:' . $row['provider_id'],
+                            'name:' . md5($row['name']),
                         ]);
 
-                        // Add Row to `unmatchedLeagues` Swoole Table
                         $swooleTable['unmatchedLeagues']->set($key, [
-                            'id'       => $row['data_id'],
-                            'sport_id' => $row['sport_id']
+                            'id'          => $row['data_id'],
+                            'name'        => $row['name'],
+                            'sport_id'    => $row['sport_id'],
+                            'provider_id' => $row['provider_id'],
                         ]);
                     break;
                     case 'team':
-                        # code...
+                        $key = implode(':', [
+                            'pId:' . $row['provider_id'],
+                            'name:' . md5($row['name']),
+                        ]);
+                          
+                        $swooleTable['unmatchedTeams']->set($key, [
+                            'id'          => $row['data_id'],
+                            'name'        => $row['name'],
+                            'sport_id'    => $row['sport_id'],
+                            'provider_id' => $row['provider_id'],
+                        ]);
                     break;
                     case 'event':
-                        # code...
+                        // code...
                     break;
                 }
+            }
+        }
+    }
+
+    public static function loadMatchedLeaguesData()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['matchedLeagues'] AS $key => $row) {
+            $swooleTable['matchedLeagues']->del($key);
+        }
+
+        $getMatchedData = MasterLeague::getMatches(self::$connection);
+
+        if (self::$connection->numRows($getMatchedData)) {
+            $queryResult = self::$connection->fetchAll($getMatchedData);
+
+            foreach ($queryResult AS $row) {
+                $key = implode(':', [
+                    'pId:' . $row['provider_id'],
+                    'name:' . md5($row['name']),
+                ]);
+
+                $swooleTable['matchedLeagues']->set($key, [
+                    'master_league_id' => $row['master_league_id'],
+                    'league_id'        => $row['league_id'],
+                    'sport_id'         => $row['sport_id'],
+                    'provider_id'      => $row['provider_id'],
+                ]);
             }
         }
     }
