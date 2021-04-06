@@ -16,7 +16,8 @@ use Models\{
     Sport,
     SportOddType,
     UnmatchedData,
-    MasterLeague
+    MasterLeague,
+    MasterTeam
 };
 
 class PreProcess
@@ -335,6 +336,34 @@ class PreProcess
                     'league_id'        => $row['league_id'],
                     'sport_id'         => $row['sport_id'],
                     'provider_id'      => $row['provider_id'],
+                ]);
+            }
+        }
+    }
+
+    public static function loadMatchedTeamsData()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['matchedTeams'] AS $key => $row) {
+            $swooleTable['matchedTeams']->del($key);
+        }
+
+        $getMatchedData = MasterTeam::getMatches(self::$connection);
+
+        if (self::$connection->numRows($getMatchedData)) {
+            $queryResult = self::$connection->fetchAll($getMatchedData);
+            foreach ($queryResult AS $row) {
+                $key = implode(':', [
+                    'pId:' . $row['provider_id'],
+                    'name:' . md5($row['name']),
+                ]);
+
+                $swooleTable['matchedTeams']->set($key, [
+                    'master_team_id' => $row['master_team_id'],
+                    'team_id'        => $row['team_id'],
+                    'sport_id'       => $row['sport_id'],
+                    'provider_id'    => $row['provider_id'],
                 ]);
             }
         }

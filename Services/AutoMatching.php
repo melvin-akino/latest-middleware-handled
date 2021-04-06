@@ -23,6 +23,7 @@ function preProcess()
     PreProcess::loadSystemConfig();
     PreProcess::loadUnmatchedData();
     PreProcess::loadMatchedLeaguesData();
+    PreProcess::loadMatchedTeamsData();
 
     $dbPool->return($connection);
 }

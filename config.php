@@ -212,6 +212,15 @@ $config = [
                 [ 'name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT ],
             ],
         ],
+        'matchedTeams' => [
+          'size' => 50000,
+          'column' => [ // pId:<$providerId>:name:<md5($name)>
+              [ 'name' => 'master_team_id', 'type' => \Swoole\Table::TYPE_INT ],
+              [ 'name' => 'team_id', 'type' => \Swoole\Table::TYPE_INT ],
+              [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
+              [ 'name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT ],
+          ],
+        ],
         'unmatchedLeagues' => [
             'size' => 10000,
             'column' => [ // pId:<$providerId>:name:<md5($name)>

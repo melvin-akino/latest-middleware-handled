@@ -50,4 +50,18 @@ class UnmatchedData extends Model
 
       return false;
     }
+
+    public static function checkIfTeamHasMatchedLeague($connection, $providerId, $teamId)
+    {
+      $sql = "SELECT ut.data_id, ut.data_type, t.provider_id, t.sport_id, t.name 
+      FROM unmatched_data AS ut
+      JOIN teams AS t ON t.id = ut.data_id AND data_type = 'team'
+      JOIN events as e ON t.id = e.team_home_id OR t.id = e.team_away_id
+      JOIN league_groups as lg ON e.league_id = lg.league_id
+      WHERE t.provider_id = $providerId AND ut.data_id = $teamId";
+
+      $result = $connection->query($sql);
+
+      return $connection->numRows($result);
+    }
 }
