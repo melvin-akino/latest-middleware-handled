@@ -270,6 +270,10 @@ class PreProcess
             $swooleTable['unmatchedTeams']->del($key);
         }
 
+        foreach ($swooleTable['unmatchedEvents'] AS $key => $row) {
+            $swooleTable['unmatchedEvents']->del($key);
+        }
+
         $getUnmatchedData = UnmatchedData::getAllUnmatchedWithSport(self::$connection);
 
         if (self::$connection->numRows($getUnmatchedData)) {
@@ -304,7 +308,17 @@ class PreProcess
                         ]);
                     break;
                     case 'event':
-                        // code...
+                        $key = implode(':', [
+                            'pId:' . $row['provider_id'],
+                            'event_identifier:' . $row['event_identifier'],
+                        ]);
+                          
+                        $swooleTable['unmatchedTeams']->set($key, [
+                            'id'               => $row['data_id'],
+                            'event_identifier' => $row['event_identifier'],
+                            'sport_id'         => $row['sport_id'],
+                            'provider_id'      => $row['provider_id'],
+                        ]);
                     break;
                 }
             }
