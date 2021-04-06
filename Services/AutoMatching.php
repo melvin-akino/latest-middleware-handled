@@ -24,6 +24,7 @@ function preProcess()
     PreProcess::loadSystemConfig();
     PreProcess::loadUnmatchedData();
     PreProcess::loadMatchedLeaguesData();
+    PreProcess::loadMatchedTeamsData();
 
     $dbPool->return($connection);
 }
@@ -59,9 +60,9 @@ Co\run(function () use ($queue) {
         MatchLeague::handle($dbPool, $swooleTable);
     });
 
-    // go(function () use ($dbPool, $swooleTable) {
-    //     MatchTeam::handle($dbPool, $swooleTable);
-    // });
+    go(function () use ($dbPool, $swooleTable) {
+        MatchTeam::handle($dbPool, $swooleTable);
+    });
 
     go(function () use ($dbPool, $swooleTable) {
         MatchEvent::handle($dbPool, $swooleTable);

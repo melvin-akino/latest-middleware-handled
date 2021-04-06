@@ -29,24 +29,73 @@ class MatchTeam
               if ($unmatchedTeams->count()) {
                   foreach($unmatchedTeams as $key => $team) {
                       if (strpos($key, "pId:" . $primaryProvider) !== false) {
-                          $newMasterTeam = MasterTeam::create($connection, [
-                              'sport_id'   => $team['sport_id'],
-                              'name'       => null,
-                              'created_at' => Carbon::now()
-                          ], 'id');
+                          if(!$swooleTable['matchedTeams']->exists("pId:{$primaryProvider}:name:" . md5($team['name']))) {
+                              $newMasterTeam = MasterTeam::create($connection, [
+                                  'sport_id'   => $team['sport_id'],
+                                  'name'       => null,
+                                  'created_at' => Carbon::now()
+                              ], 'id');
 
-                          $masterTeamId = $connection->fetchArray($newMasterTeam)['id'];
+                              $masterTeamId = $connection->fetchArray($newMasterTeam)['id'];
 
-                          TeamGroup::create($connection, [
-                              'master_team_id' => $masterTeamId,
-                              'team_id'        => $team['id']
-                          ]);
+                              TeamGroup::create($connection, [
+                                  'master_team_id' => $masterTeamId,
+                                  'team_id'        => $team['id']
+                              ]);
+
+                              $checkIfTeamHasMatchedLeague = UnmatchedData::checkIfTeamHasMatchedLeague($connection, $team['provider_id'], $team['id'], null, true);
+                              $masterLeagueIds = $connection->fetchArray($checkIfTeamHasMatchedLeague)['master_league_ids'];
+
+                              $swooleTable['matchedTeams']->set("pId:{$primaryProvider}:name:" . md5($team['name']), [
+                                'master_league_id'  => $masterTeamId,
+                                'league_id'         => $team['id'],
+                                'sport_id'          => $team['sport_id'],
+                                'provider_id'       => $team['provider_id'],
+                                'master_league_ids' => $masterLeagueIds
+                              ]);
+                          }
 
                           UnmatchedData::removeToUnmatchedData($connection, [
                             'data_id'   => $team['id'],
                             'data_type' => 'team'
                           ]);
+
                           $swooleTable['unmatchedTeams']->del($key);
+                      }
+
+                      if($primaryProvider != $team['provider_id']) {
+              
+                        if(!$swooleTable['matchedTeams']->exists("pId:" . $team['provider_id'] . ":name:" . md5($team['name']))) {
+
+                          if($swooleTable['matchedTeams']->exists("pId:{$primaryProvider}:name:" . md5($team['name']))) {
+                            $matchedTeam = $swooleTable['matchedTeams']["pId:{$primaryProvider}:name:" . md5($team['name'])];
+                            $checkIfTeamHasMatchedLeague = UnmatchedData::checkIfTeamHasMatchedLeague($connection, $team['provider_id'], $team['id'], $matchedTeam['master_league_ids'], false);
+            
+                            if($connection->numRows($checkIfTeamHasMatchedLeague) == 1) {
+                                TeamGroup::create($connection, [
+                                    'master_team_id' => $matchedTeam['master_team_id'],
+                                    'team_id'        => $team['id']
+                                ]);
+
+                                $swooleTable['matchedTeams']->set("pId:" . $team['provider_id'] . ":name:" . md5($team['name']), [
+                                    'master_team_id'    => $matchedTeam['master_team_id'],
+                                    'team_id'           => $team['id'],
+                                    'sport_id'          => $team['sport_id'],
+                                    'provider_id'       => $team['provider_id'],
+                                    'master_league_ids' => $matchedTeam['master_league_ids']
+                                ]);
+                            }
+                          } else {
+                              continue;
+                          }
+                        }
+
+                        UnmatchedData::removeToUnmatchedData($connection, [
+                            'data_id'   => $team['id'],
+                            'data_type' => 'team'
+                        ]);
+
+                        $swooleTable['unmatchedTeams']->del("pId:" . $team['provider_id'] . ":name:" . md5($team['name']));
                       }
                   }
 
