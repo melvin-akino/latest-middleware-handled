@@ -43,11 +43,15 @@ class MatchTeam
                                   'team_id'        => $team['id']
                               ]);
 
+                              $checkIfTeamHasMatchedLeague = UnmatchedData::checkIfTeamHasMatchedLeague($connection, $team['provider_id'], $team['id'], null, true);
+                              $masterLeagueIds = $connection->fetchArray($checkIfTeamHasMatchedLeague)['master_league_ids'];
+
                               $swooleTable['matchedTeams']->set("pId:{$primaryProvider}:name:" . md5($team['name']), [
-                                'master_league_id' => $masterTeamId,
-                                'league_id'        => $team['id'],
-                                'sport_id'         => $team['sport_id'],
-                                'provider_id'      => $team['provider_id'],
+                                'master_league_id'  => $masterTeamId,
+                                'league_id'         => $team['id'],
+                                'sport_id'          => $team['sport_id'],
+                                'provider_id'       => $team['provider_id'],
+                                'master_league_ids' => $masterLeagueIds
                               ]);
                           }
 
@@ -65,19 +69,20 @@ class MatchTeam
 
                           if($swooleTable['matchedTeams']->exists("pId:{$primaryProvider}:name:" . md5($team['name']))) {
                             $matchedTeam = $swooleTable['matchedTeams']["pId:{$primaryProvider}:name:" . md5($team['name'])];
-                            $checkIfTeamHasMatchedLeague = UnmatchedData::checkIfTeamHasMatchedLeague($connection, $team['provider_id'], $team['id'], $matchedTeam['master_league_ids']);
+                            $checkIfTeamHasMatchedLeague = UnmatchedData::checkIfTeamHasMatchedLeague($connection, $team['provider_id'], $team['id'], $matchedTeam['master_league_ids'], false);
             
-                            if($checkIfTeamHasMatchedLeague == 1) {
+                            if($connection->numRows($checkIfTeamHasMatchedLeague) == 1) {
                                 TeamGroup::create($connection, [
                                     'master_team_id' => $matchedTeam['master_team_id'],
                                     'team_id'        => $team['id']
                                 ]);
 
                                 $swooleTable['matchedTeams']->set("pId:" . $team['provider_id'] . ":name:" . md5($team['name']), [
-                                    'master_team_id'   => $matchedTeam['master_team_id'],
-                                    'team_id'          => $team['id'],
-                                    'sport_id'         => $team['sport_id'],
-                                    'provider_id'      => $team['provider_id'],
+                                    'master_team_id'    => $matchedTeam['master_team_id'],
+                                    'team_id'           => $team['id'],
+                                    'sport_id'          => $team['sport_id'],
+                                    'provider_id'       => $team['provider_id'],
+                                    'master_league_ids' => $matchedTeam['master_league_ids']
                                 ]);
                             }
                           } else {

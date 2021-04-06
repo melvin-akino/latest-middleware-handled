@@ -51,17 +51,30 @@ class UnmatchedData extends Model
       return false;
     }
 
-    public static function checkIfTeamHasMatchedLeague($connection, $providerId, $teamId, $masterLeagueIds)
+    public static function checkIfTeamHasMatchedLeague($connection, $providerId, $teamId, $masterLeagueIds = null, $primaryProvider = false)
     {
-      $sql = "SELECT ut.data_id, ut.data_type, t.provider_id, t.sport_id, t.name 
+      $leagueIds = "";
+      $where = "";
+      $groupBy = "";
+
+      if(!empty($primaryProvider)) {
+        $leagueIds = "string_agg(lg.master_league_id::text, ',')";
+        $where = "t.provider_id = $providerId AND ut.data_id = $teamId";
+        $groupBy = "GROUP BY ut.data_id, ut.data_type, t.provider_id, t.sport_id, t.name";
+      } else {
+        $leagueIds = "''";
+        $where = "t.provider_id = $providerId AND ut.data_id = $teamId AND lg.master_league_id IN ($masterLeagueIds)";
+        $groupBy = "";
+      }
+
+      $sql = "SELECT ut.data_id, ut.data_type, t.provider_id, t.sport_id, t.name, {$leagueIds} as master_league_ids
       FROM unmatched_data AS ut
       JOIN teams AS t ON t.id = ut.data_id AND data_type = 'team'
       JOIN events as e ON t.id = e.team_home_id OR t.id = e.team_away_id
       JOIN league_groups as lg ON e.league_id = lg.league_id
-      WHERE t.provider_id = $providerId AND ut.data_id = $teamId AND lg.master_league_id IN ($masterLeagueIds)";
+      WHERE {$where}
+      {$groupBy}";
 
-      $result = $connection->query($sql);
-
-      return $connection->numRows($result);
+      return $connection->query($sql);
     }
 }
