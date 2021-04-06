@@ -19,4 +19,11 @@ class League extends Model
         $sql = "SELECT * FROM " . self::$table . " WHERE id = $leagueId";
         return $connection->query($sql);
     }
+
+    public static function getUnmatchedLeagues($connection)
+    {
+        $sql = "SELECT * FROM " . self::$table . " as l
+                WHERE NOT EXISTS (SELECT null FROM league_groups as lg WHERE lg.league_id = l.id)";
+        return $connection->query($sql);
+    }
 }
