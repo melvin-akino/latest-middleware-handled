@@ -230,6 +230,15 @@ $config = [
                 [ 'name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT ],
             ],
         ],
+        'unmatchedEvents' => [
+            'size' => 50000,
+            'column' => [ // pId:<$providerId>:event_identifier:<$eventIdentifier>
+                [ 'name' => 'id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'event_identifier', 'type' => \Swoole\Table::TYPE_STRING, 'size' => 80 ],
+                [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT ],
+            ],
+        ],
     ],
     'logger'        => [
         'app'                 => [
@@ -290,6 +299,10 @@ $config = [
         ],
         'stats'         => [
             'name'  => 'stats.log',
+            'level' => 'debug'
+        ],
+        'unmatch'         => [
+            'name'  => 'unmatch.log',
             'level' => 'debug'
         ],
     ]

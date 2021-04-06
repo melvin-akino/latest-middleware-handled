@@ -43,4 +43,11 @@ class Event extends Model
                 LEFT JOIN event_groups as eg ON eg.event_id = e.id WHERE id = '{$eventId}'";
         return $connection->query($sql);
     }
+
+    public static function getUnmatchedEvents($connection)
+    {
+        $sql = "SELECT * FROM " . self::$table . " as e
+                WHERE NOT EXISTS (SELECT null FROM event_groups as eg WHERE eg.event_id = e.id)";
+        return $connection->query($sql);
+    }
 }

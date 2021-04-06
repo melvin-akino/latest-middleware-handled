@@ -26,4 +26,11 @@ class MasterEvent extends Model
         $sql = "SELECT " . static::$table . " FROM " . static::$table . " WHERE master_event_unique_id = '{$masterEventUniqueId}'";
         return $connection->query($sql);
     }
+
+    public static function checkIfHasMaster($connection, $masterEventUniqueId)
+    {
+        $sql = "SELECT * FROM " . static::$table . "
+                WHERE master_event_unique_id = '{$masterEventUniqueId}' LIMIT 1";
+        return $connection->query($sql);
+    }
 }
