@@ -219,7 +219,7 @@ $config = [
               [ 'name' => 'team_id', 'type' => \Swoole\Table::TYPE_INT ],
               [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
               [ 'name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT ],
-              [ 'name' => 'master_league_ids', 'type' => \Swoole\Table::TYPE_STRING, 'size' => 80 ],
+              [ 'name' => 'master_league_ids', 'type' => \Swoole\Table::TYPE_STRING, 'size' => 255 ],
           ],
         ],
         'unmatchedLeagues' => [
