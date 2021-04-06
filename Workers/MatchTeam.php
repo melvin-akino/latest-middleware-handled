@@ -60,23 +60,26 @@ class MatchTeam
                       }
 
                       if($primaryProvider != $team['provider_id']) {
-                        $checkIfTeamHasMatchedLeague = UnmatchedData::checkIfTeamHasMatchedLeague($connection, $team['provider_id'], $team['id']);
-                        
+              
                         if(!$swooleTable['matchedTeams']->exists("pId:" . $team['provider_id'] . ":name:" . md5($team['name']))) {
-                          $matchedTeam = $swooleTable['matchedTeams']["pId:{$primaryProvider}:name:" . md5($team['name'])];
 
-                          if($swooleTable['matchedTeams']->exists("pId:{$primaryProvider}:name:" . md5($team['name'])) && $checkIfTeamHasMatchedLeague == 1) {
-                              TeamGroup::create($connection, [
-                                  'master_team_id' => $matchedTeam['master_team_id'],
-                                  'team_id'        => $team['id']
-                              ]);
+                          if($swooleTable['matchedTeams']->exists("pId:{$primaryProvider}:name:" . md5($team['name']))) {
+                            $matchedTeam = $swooleTable['matchedTeams']["pId:{$primaryProvider}:name:" . md5($team['name'])];
+                            $checkIfTeamHasMatchedLeague = UnmatchedData::checkIfTeamHasMatchedLeague($connection, $team['provider_id'], $team['id'], $matchedTeam['master_league_ids']);
+            
+                            if($checkIfTeamHasMatchedLeague == 1) {
+                                TeamGroup::create($connection, [
+                                    'master_team_id' => $matchedTeam['master_team_id'],
+                                    'team_id'        => $team['id']
+                                ]);
 
-                              $swooleTable['matchedTeams']->set("pId:" . $team['provider_id'] . ":name:" . md5($team['name']), [
-                                  'master_team_id'   => $matchedTeam['master_team_id'],
-                                  'team_id'          => $team['id'],
-                                  'sport_id'         => $team['sport_id'],
-                                  'provider_id'      => $team['provider_id'],
-                              ]);
+                                $swooleTable['matchedTeams']->set("pId:" . $team['provider_id'] . ":name:" . md5($team['name']), [
+                                    'master_team_id'   => $matchedTeam['master_team_id'],
+                                    'team_id'          => $team['id'],
+                                    'sport_id'         => $team['sport_id'],
+                                    'provider_id'      => $team['provider_id'],
+                                ]);
+                            }
                           } else {
                               continue;
                           }

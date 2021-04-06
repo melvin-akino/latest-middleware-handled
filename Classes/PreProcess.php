@@ -360,10 +360,11 @@ class PreProcess
                 ]);
 
                 $swooleTable['matchedTeams']->set($key, [
-                    'master_team_id' => $row['master_team_id'],
-                    'team_id'        => $row['team_id'],
-                    'sport_id'       => $row['sport_id'],
-                    'provider_id'    => $row['provider_id'],
+                    'master_team_id'    => $row['master_team_id'],
+                    'team_id'           => $row['team_id'],
+                    'sport_id'          => $row['sport_id'],
+                    'provider_id'       => $row['provider_id'],
+                    'master_league_ids' => $row['master_league_ids']
                 ]);
             }
         }
