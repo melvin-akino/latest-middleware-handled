@@ -179,7 +179,7 @@ function oddHandler($message, $offset)
             return;
         }
 
-        if (!in_array($message['request_uid'], $oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']])) {
+        if (empty($oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']]) || !in_array($message['request_uid'], $oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Request is old', (array) $message);
             $statsArray = [
                 "type"        => "odds",
@@ -301,7 +301,7 @@ function eventHandler($message, $offset)
             return;
         }
 
-        if (!in_array($message['request_uid'], $oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']])) {
+        if (empty($oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']]) || !in_array($message['request_uid'], $oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Request is old', (array) $message);
             $statsArray = [
                 "type"        => "events",
