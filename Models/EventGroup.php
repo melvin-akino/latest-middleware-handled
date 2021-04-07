@@ -39,4 +39,12 @@ class EventGroup extends Model
         $sql = "DELETE FROM " . self::$table . " WHERE master_event_id = {$masterEventId} AND event_id != {$eventId}";
         return $connection->query($sql);
     }
+
+    public static function getAllActive($connection)
+    {
+        $sql = "SELECT eg.*, e.provider_id, e.sport_id FROM " . self::$table . " as eg
+                JOIN events as e ON e.id = eg.event_id
+                WHERE e.deleted_at is null";
+        return $connection->query($sql);
+    }
 }

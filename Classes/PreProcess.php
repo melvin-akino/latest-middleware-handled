@@ -383,4 +383,27 @@ class PreProcess
             }
         }
     }
+
+    public static function loadMatchedEventsData()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['matchedEvents'] AS $key => $row) {
+            $swooleTable['matchedEvents']->del($key);
+        }
+
+        $getMatchedData = EventGroup::getAllActive(self::$connection);
+
+        if (self::$connection->numRows($getMatchedData)) {
+            $queryResult = self::$connection->fetchAll($getMatchedData);
+            foreach ($queryResult AS $row) {
+                $swooleTable['matchedEvents']->set($row['event_id'], [
+                    'master_event_id' => $row['master_event_id'],
+                    'event_id'        => $row['event_id'],
+                    'sport_id'        => $row['sport_id'],
+                    'provider_id'     => $row['provider_id']
+                ]);
+            }
+        }
+    }
 }

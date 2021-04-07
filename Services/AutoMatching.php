@@ -25,6 +25,7 @@ function preProcess()
     PreProcess::loadUnmatchedData();
     PreProcess::loadMatchedLeaguesData();
     PreProcess::loadMatchedTeamsData();
+    PreProcess::loadEventMarkets();
 
     $dbPool->return($connection);
 }

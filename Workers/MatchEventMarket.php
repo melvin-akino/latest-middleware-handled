@@ -5,11 +5,14 @@ namespace Workers;
 use Models\{
     EventMarket,
     EventMarketGroup,
+    MasterEventMarket,
     Event,
-    EventGroup
+    EventGroup,
+    Provider
 };
 use Co\System;
 use Exception;
+use Carbon\Carbon;
 
 class MatchEventMarket
 {
@@ -19,6 +22,48 @@ class MatchEventMarket
 
             try {
                 $connection = $dbPool->borrow();
+
+                $primaryProviderId    = Provider::getIdByAlias($connection, $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']);
+
+                $primaryEventMarkets = [];
+                $rawActiveEventMarkets = $swooleTable['eventMarkets'];
+                if ($rawActiveEventMarkets->count() > 0) {
+                    foreach ($rawActiveEventMarkets as $eventMarket) {
+                        if ($eventMarket['provider_id'] == $primaryProviderId) {
+                            $primaryEventMarkets[$eventMarket['id']] = $eventMarket['id'];
+                        }
+                    }
+
+                    if (!empty($primaryEventMarkets)) {
+                        $unmatchedMarketResult = EventMarket::getUnmatchedMarketByIds($connection, $primaryEventMarkets);
+                        if ($connection->numRows($unmatchedMarketResult)) {
+                            $unmatchedMarkets = $connection->fetchAll($unmatchedMarketResult);
+                            if (is_array($unmatchedMarkets)) {
+                                foreach ($unmatchedMarkets as $unmatchMarket) {
+                                    $memUID = md5($unmatchMarket['event_id'] . strtoupper($unmatchMarket['market_flag']) . $unmatchMarket['bet_identifier']);
+                                    $matchedEvent = $swooleTable['matchedEvents'][$unmatchMarket['event_id']];
+                                    if ($matchedEvent && !empty($matchedEvent['master_event_id'])) {
+                                        $masterEventMarketResult = MasterEventMarket::create($connection, [
+                                            'master_event_id'               => $matchedEvent['master_event_id'],
+                                            'master_event_market_unique_id' => $memUID,
+                                            'created_at'                    => Carbon::now()
+                                        ], 'id');
+
+                                        $masterEventMarket = $connection->fetchArray($masterEventMarketResult);
+                                        $toMatchData = [
+                                            'master_event_market_id' => $masterEventMarket['id'],
+                                            'event_market_id'        => $unmatchMarket['id']
+                                        ];
+                                        $eventMarketGroupResult = EventMarketGroup::create($connection, $toMatchData);
+                                        if ($eventMarketGroupResult) {
+                                            logger('info', 'matching', 'Market matched', $toMatchData);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 $unmatchedMarketsResult = EventMarket::getAllUnmatchedMarketWithMatchedEvents($connection);
                 if ($connection->numRows($unmatchedMarketsResult)) {
