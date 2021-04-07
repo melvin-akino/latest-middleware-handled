@@ -28,73 +28,75 @@ class MatchEvent
                 $unmatchedEventResult = Event::getAllUnmatchedEvents($connection);
                 $unmatchedEvents      = $connection->fetchAll($unmatchedEventResult);
 
-                foreach($unmatchedEvents as $unmatchedEvent) {
-                    if ($unmatchedEvent['provider_id'] == $primaryProviderId && !empty($unmatchedEvent['event_identifier'])) {
-                        foreach ($swooleTable['matchedLeagues'] as $ml) {
-                            if ($ml['league_id'] == $unmatchedEvent['league_id']) {
-                                $masterLeagueId = $ml['master_league_id'];
+                if(is_array($unmatchedEvents)) {
+                  foreach($unmatchedEvents as $unmatchedEvent) {
+                      if ($unmatchedEvent['provider_id'] == $primaryProviderId && !empty($unmatchedEvent['event_identifier'])) {
+                          foreach ($swooleTable['matchedLeagues'] as $ml) {
+                              if ($ml['league_id'] == $unmatchedEvent['league_id']) {
+                                  $masterLeagueId = $ml['master_league_id'];
 
-                                $masterEventUniqueId = implode('-', [
-                                    date("Ymd", strtotime($unmatchedEvent['ref_schedule'])),
-                                    $unmatchedEvent['sport_id'],
-                                    $masterLeagueId,
-                                    $unmatchedEvent['event_identifier']
-                                ]);
+                                  $masterEventUniqueId = implode('-', [
+                                      date("Ymd", strtotime($unmatchedEvent['ref_schedule'])),
+                                      $unmatchedEvent['sport_id'],
+                                      $masterLeagueId,
+                                      $unmatchedEvent['event_identifier']
+                                  ]);
 
-                                $eventHasMasterResult = MasterEvent::checkIfHasMaster($connection, $masterEventUniqueId);
+                                  $eventHasMasterResult = MasterEvent::checkIfHasMaster($connection, $masterEventUniqueId);
 
-                                if (!$connection->numRows($eventHasMasterResult)) {
-                                    $masterTeamHomeResult = TeamGroup::checkIfMatched($connection, $unmatchedEvent['team_home_id']);
-                                    if (!$connection->numRows($masterTeamHomeResult)) {
-                                        continue 2;
-                                    }
-                                    $masterTeamHome = $connection->fetchArray($masterTeamHomeResult);
+                                  if (!$connection->numRows($eventHasMasterResult)) {
+                                      $masterTeamHomeResult = TeamGroup::checkIfMatched($connection, $unmatchedEvent['team_home_id']);
+                                      if (!$connection->numRows($masterTeamHomeResult)) {
+                                          continue 2;
+                                      }
+                                      $masterTeamHome = $connection->fetchArray($masterTeamHomeResult);
 
-                                    $masterTeamAwayResult = TeamGroup::checkIfMatched($connection, $unmatchedEvent['team_home_id']);
-                                    if (!$connection->numRows($masterTeamAwayResult)) {
-                                        continue 2;
-                                    }
+                                      $masterTeamAwayResult = TeamGroup::checkIfMatched($connection, $unmatchedEvent['team_away_id']);
+                                      if (!$connection->numRows($masterTeamAwayResult)) {
+                                          continue 2;
+                                      }
 
-                                    $masterTeamAway = $connection->fetchArray($masterTeamAwayResult);
+                                      $masterTeamAway = $connection->fetchArray($masterTeamAwayResult);
 
-                                    $masterEventResult = MasterEvent::create($connection, [
-                                        'master_event_unique_id' => $masterEventUniqueId,
-                                        'master_league_id'       => $masterLeagueId,
-                                        'master_team_home_id'    => $masterTeamHome['master_team_id'],
-                                        'master_team_away_id'    => $masterTeamAway['master_team_id'],
-                                        'sport_id'               => $unmatchedEvent['sport_id'],
-                                        'created_at'             => Carbon::now()
-                                    ], 'id');
+                                      $masterEventResult = MasterEvent::create($connection, [
+                                          'master_event_unique_id' => $masterEventUniqueId,
+                                          'master_league_id'       => $masterLeagueId,
+                                          'master_team_home_id'    => $masterTeamHome['master_team_id'],
+                                          'master_team_away_id'    => $masterTeamAway['master_team_id'],
+                                          'sport_id'               => $unmatchedEvent['sport_id'],
+                                          'created_at'             => Carbon::now()
+                                      ], 'id');
 
-                                    $masterEvent = $connection->fetchArray($masterEventResult);
+                                      $masterEvent = $connection->fetchArray($masterEventResult);
 
-                                    EventGroup::create($connection, [
-                                        'master_event_id' => $masterEvent['id'],
-                                        'event_id'        => $unmatchedEvent['id']
-                                    ]);
-                                } else {
-                                    $eventHasMaster = $connection->fetchArray($eventHasMasterResult);
-                                    $masterEventId  = $eventHasMaster['id'];
-                                    EventGroup::create($connection, [
-                                        'master_event_id' => $masterEventId,
-                                        'event_id'        => $unmatchedEvent['id']
-                                    ]);
-                                }
+                                      EventGroup::create($connection, [
+                                          'master_event_id' => $masterEvent['id'],
+                                          'event_id'        => $unmatchedEvent['id']
+                                      ]);
+                                  } else {
+                                      $eventHasMaster = $connection->fetchArray($eventHasMasterResult);
+                                      $masterEventId  = $eventHasMaster['id'];
+                                      EventGroup::create($connection, [
+                                          'master_event_id' => $masterEventId,
+                                          'event_id'        => $unmatchedEvent['id']
+                                      ]);
+                                  }
 
-                                $key = implode(':', [
-                                    'pId:' . $unmatchedEvent['provider_id'],
-                                    'event_identifier:' . $unmatchedEvent['event_identifier'],
-                                ]);
+                                  $key = implode(':', [
+                                      'pId:' . $unmatchedEvent['provider_id'],
+                                      'event_identifier:' . $unmatchedEvent['event_identifier'],
+                                  ]);
 
-                                UnmatchedData::removeToUnmatchedData($connection, [
-                                    'data_id'   => $unmatchedEvent['id'],
-                                    'data_type' => 'event'
-                                ]);
-                                $swooleTable['unmatchedEvents']->del($key);
-                                continue 2;
-                            }
-                        }
-                    }
+                                  UnmatchedData::removeToUnmatchedData($connection, [
+                                      'data_id'   => $unmatchedEvent['id'],
+                                      'data_type' => 'event'
+                                  ]);
+                                  $swooleTable['unmatchedEvents']->del($key);
+                                  continue 2;
+                              }
+                          }
+                      }
+                  }
                 }
 
                 $unmatchedEvents = Event::getAllGroupVerifiedUnmatchedEvents($connection);

@@ -314,7 +314,7 @@ class PreProcess
                             'event_identifier:' . $row['event_identifier'],
                         ]);
                           
-                        $swooleTable['unmatchedTeams']->set($key, [
+                        $swooleTable['unmatchedEvents']->set($key, [
                             'id'               => $row['data_id'],
                             'event_identifier' => $row['event_identifier'],
                             'sport_id'         => $row['sport_id'],
