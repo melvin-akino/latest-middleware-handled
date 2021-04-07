@@ -40,6 +40,11 @@ class ProcessSettlement
             $returnBetSourceId = $connection->fetchAssoc($sourceResult);
 
             foreach ($settlements as $settlement) {
+                if (empty($settlement['status'])) {
+                    logger('error', 'settlements', 'Empty Settlement Status', $settlement);
+                    continue;
+                }
+
                 foreach ($orders as $key => $order) {
                     if (!$providersTable->exists($settlement['provider'])) {
                         logger('info', 'settlements', 'Invalid Provider', $settlement);
