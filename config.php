@@ -222,6 +222,15 @@ $config = [
               [ 'name' => 'master_league_ids', 'type' => \Swoole\Table::TYPE_STRING, 'size' => 100 ],
           ],
         ],
+        'matchedEvents' => [
+            'size' => 50000,
+            'column' => [ // $eventId
+                [ 'name' => 'master_event_id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'event_id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT ],
+                [ 'name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT ]
+            ],
+          ],
         'unmatchedLeagues' => [
             'size' => 10000,
             'column' => [ // pId:<$providerId>:name:<md5($name)>

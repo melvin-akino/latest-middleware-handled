@@ -57,4 +57,13 @@ class EventMarket extends Model
                 JOIN event_groups as eg ON eg.event_id = em.event_id WHERE eg.master_event_id = '{$masterEventId}' AND em.deleted_at is null";
         return $connection->query($sql);
     }
+
+    public static function getUnmatchedMarketByIds($connection, $eventMarketIds)
+    {
+        $whereIn = implode("','", $eventMarketIds);
+        $sql = "SELECT em.* FROM " . static::$table . " as em 
+                WHERE NOT EXISTS (SELECT null FROM event_market_groups as emg WHERE emg.event_market_id IN ('{$whereIn}'))";
+
+        return $connection->query($sql);
+    }
 }
