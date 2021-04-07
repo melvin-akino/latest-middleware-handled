@@ -40,31 +40,35 @@ class ProcessSettlement
             $returnBetSourceId = $connection->fetchAssoc($sourceResult);
 
             foreach ($settlements as $settlement) {
-                foreach ($orders as $key => $order) {
-                    if (!$providersTable->exists($settlement['provider'])) {
-                        logger('info', 'settlements', 'Invalid Provider', $settlement);
-                        continue;
-                    }
-
-                    $providerId         = $providersTable->get($settlement['provider'])['value'];
-                    $providerCurrencyId = $providersTable->get($settlement['provider'])['currencyId'];
-
-                    preg_match_all('!\d+!', $order['betId'], $mlBetIdArray);
-                    preg_match_all('!\d+!', $settlement['bet_id'], $providerBetIdArray);
-
-                    $mlBetIdArrayIndex0       = $mlBetIdArray[0];
-                    $mlBetId                  = end($mlBetIdArrayIndex0);
-                    $providerBetIdArrayIndex0 = $providerBetIdArray[0];
-                    $providerBetId            = end($providerBetIdArrayIndex0);
-
-                    if ($mlBetId == $providerBetId) {
-                        if ($order['status'] == 'SUCCESS' || ($order['status'] == 'PENDING' && !empty($order['betId']))) {
-                            self::settledBets($connection, $settlement, $providerId, $providerCurrencyId, $colMinusOne, $providerBetId, $returnBetSourceId);
-                            $orders->del($key);
+                if (!empty($settlement['status'])) {
+                    foreach ($orders as $key => $order) {
+                        if (!$providersTable->exists($settlement['provider'])) {
+                            logger('info', 'settlements', 'Invalid Provider', $settlement);
+                            continue;
                         }
 
-                        break;
+                        $providerId         = $providersTable->get($settlement['provider'])['value'];
+                        $providerCurrencyId = $providersTable->get($settlement['provider'])['currencyId'];
+
+                        preg_match_all('!\d+!', $order['betId'], $mlBetIdArray);
+                        preg_match_all('!\d+!', $settlement['bet_id'], $providerBetIdArray);
+
+                        $mlBetIdArrayIndex0       = $mlBetIdArray[0];
+                        $mlBetId                  = end($mlBetIdArrayIndex0);
+                        $providerBetIdArrayIndex0 = $providerBetIdArray[0];
+                        $providerBetId            = end($providerBetIdArrayIndex0);
+
+                        if ($mlBetId == $providerBetId) {
+                            if ($order['status'] == 'SUCCESS' || ($order['status'] == 'PENDING' && !empty($order['betId']))) {
+                                self::settledBets($connection, $settlement, $providerId, $providerCurrencyId, $colMinusOne, $providerBetId, $returnBetSourceId);
+                                $orders->del($key);
+                            }
+
+                            break;
+                        }
                     }
+                } else {
+                    logger('error', 'settlements', 'Empty Settlement Status', $settlement);
                 }
             }
 
