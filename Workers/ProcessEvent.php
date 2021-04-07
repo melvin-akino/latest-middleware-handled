@@ -121,15 +121,17 @@ class ProcessEvent
                                     $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
                                     $myMatchedEvents = $connection->fetchAll($myMatchedEventsResult);
 
-                                    foreach ($myMatchedEvents as $matchedEvent) {
-                                        UnmatchedData::create($connection, [
-                                            'provider_id' => $providerId,
-                                            'data_type' => 'event',
-                                            'data_id' => $matchedEvent['event_id']
-                                        ]);
+                                    if (is_array($myMatchedEvents)) {
+                                        foreach ($myMatchedEvents as $matchedEvent) {
+                                            UnmatchedData::create($connection, [
+                                                'provider_id' => $providerId,
+                                                'data_type' => 'event',
+                                                'data_id' => $matchedEvent['event_id']
+                                            ]);
+                                        }
+    
+                                        EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
                                     }
-
-                                    EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
                                 }
 
                                 Event::update($connection, [
