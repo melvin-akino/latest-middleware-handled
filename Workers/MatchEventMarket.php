@@ -60,8 +60,14 @@ class MatchEventMarket
                                         }
                                     }
                                 }
+                            } else {
+                                logger('info', 'matching', 'Nothing to match');
                             }
+                        } else {
+                            logger('info', 'matching', 'Nothing to match');
                         }
+                    } else {
+                        logger('info', 'matching', 'Nothing to match');
                     }
                 }
 
