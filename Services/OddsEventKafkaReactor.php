@@ -116,46 +116,6 @@ function oddHandler($message, $offset)
 
     try {
 
-        if (empty($message['data'])) {
-            logger('info', 'odds-events-reactor', 'Validation Error: Invalid payload', (array) $message);
-
-            $statsArray = [
-                "type"        => "odds",
-                "status"      => 'PAYLOAD_ERROR',
-                "time"        => microtime(true) - $start,
-                "request_uid" => $message["request_uid"],
-                "request_ts"  => $message["request_ts"],
-                "offset"      => $offset,
-            ];
-
-            addStats($statsArray);
-
-            freeUpProcess();
-            return;
-        }
-
-        $previousTS = $swooleTable['timestamps']['odds:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'];
-        $messageTS  = $message["request_ts"];
-
-        if ($messageTS < $previousTS) {
-            logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
-            $statsArray = [
-                "type"        => "odds",
-                "status"      => 'TIMESTAMP_ERROR',
-                "time"        => microtime(true) - $start,
-                "request_uid" => $message["request_uid"],
-                "request_ts"  => $message["request_ts"],
-                "offset"      => $offset,
-            ];
-
-            addStats($statsArray);
-
-            freeUpProcess();
-            return;
-        }
-
-        $swooleTable['timestamps']['odds:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'] = $messageTS;
-
         if (!is_array($message["data"]) || empty($message["data"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Invalid Payload', (array) $message);
             $statsArray = [
@@ -171,32 +131,6 @@ function oddHandler($message, $offset)
             freeUpProcess();
             return;
         }
-
-        $toHashMessage = $message["data"];
-        unset($toHashMessage['runningtime'], $toHashMessage['id']);
-        $caching = 'odds-' . md5(json_encode((array) $toHashMessage));
-
-        if (!empty($toHashMessage['events'][0]['eventId'])) {
-            $eventId = $toHashMessage['events'][0]['eventId'];
-
-            if ($swooleTable['eventOddsHash']->exists($eventId) && $swooleTable['eventOddsHash'][$eventId]['hash'] == $caching) {
-                logger('info', 'odds-events-reactor', 'Validation Error: Hash data is the same as with the current hash data', (array) $message);
-                $statsArray = [
-                    "type"        => "odds",
-                    "status"      => 'HASH_ERROR',
-                    "time"        => microtime(true) - $start,
-                    "request_uid" => $message["request_uid"],
-                    "request_ts"  => $message["request_ts"],
-                    "offset"      => $offset,
-                ];
-    
-                addStats($statsArray);
-                
-                freeUpProcess();
-                return;
-            }
-        }
-        $swooleTable['eventOddsHash'][$eventId] = ['hash' => $caching];
 
         if (!$swooleTable['enabledSports']->exists($message["data"]["sport"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Sport is inactive', (array) $message);
@@ -232,6 +166,54 @@ function oddHandler($message, $offset)
             return;
         }
 
+        $previousTS = $swooleTable['timestamps']['odds:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'];
+        $messageTS  = $message["request_ts"];
+
+        if ($messageTS < $previousTS) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
+            $statsArray = [
+                "type"        => "odds",
+                "status"      => 'TIMESTAMP_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+
+            freeUpProcess();
+            return;
+        }
+
+        $swooleTable['timestamps']['odds:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'] = $messageTS;
+
+        $toHashMessage = $message["data"];
+        unset($toHashMessage['runningtime'], $toHashMessage['id']);
+        $caching = 'odds-' . md5(json_encode((array) $toHashMessage));
+
+        if (!empty($toHashMessage['events'][0]['eventId'])) {
+            $eventId = $toHashMessage['events'][0]['eventId'];
+
+            if ($swooleTable['eventOddsHash']->exists($eventId) && $swooleTable['eventOddsHash'][$eventId]['hash'] == $caching) {
+                logger('info', 'odds-events-reactor', 'Validation Error: Hash data is the same as with the current hash data', (array) $message);
+                $statsArray = [
+                    "type"        => "odds",
+                    "status"      => 'HASH_ERROR',
+                    "time"        => microtime(true) - $start,
+                    "request_uid" => $message["request_uid"],
+                    "request_ts"  => $message["request_ts"],
+                    "offset"      => $offset,
+                ];
+    
+                addStats($statsArray);
+                
+                freeUpProcess();
+                return;
+            }
+        }
+        $swooleTable['eventOddsHash'][$eventId] = ['hash' => $caching];
+
         go(function () use ($dbPool, $swooleTable, $message, $offset) {
             try {
                 $connection = $dbPool->borrow();
@@ -260,28 +242,6 @@ function eventHandler($message, $offset)
     $start = microtime(true);
 
     try {
-        $previousTS = $swooleTable['timestamps']['event:' . $message["data"]["schedule"]]['ts'];
-        $messageTS  = $message["request_ts"];
-
-        if ($messageTS < $previousTS) {
-            logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
-            $statsArray = [
-                "type"        => "events",
-                "status"      => 'TIMESTAMP_ERROR',
-                "time"        => microtime(true) - $start,
-                "request_uid" => $message["request_uid"],
-                "request_ts"  => $message["request_ts"],
-                "offset"      => $offset,
-            ];
-
-            addStats($statsArray);
-
-            freeUpProcess();
-            return;
-        }
-
-        $swooleTable['timestamps']['event:' . $message["data"]["schedule"]]['ts'] = $messageTS;
-
         if (!is_array($message["data"]) || empty($message["data"])) {
             logger('info', 'odds-events-reactor', 'Validation Error: Data should be valid', (array) $message);
             $statsArray = [
@@ -332,6 +292,28 @@ function eventHandler($message, $offset)
             freeUpProcess();
             return;
         }
+
+        $previousTS = $swooleTable['timestamps']['event:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'];
+        $messageTS  = $message["request_ts"];
+
+        if ($messageTS < $previousTS) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
+            $statsArray = [
+                "type"        => "events",
+                "status"      => 'TIMESTAMP_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+
+            freeUpProcess();
+            return;
+        }
+
+        $swooleTable['timestamps']['event:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'] = $messageTS;
 
         go(function () use ($dbPool, $swooleTable, $message, $offset) {
             try {
