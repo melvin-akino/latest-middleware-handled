@@ -33,7 +33,14 @@ function preProcess()
 
 function resetProcess()
 {
+    global $dbPool;
+
+    $connection = $dbPool->borrow();
+
+    PreProcess::loadEventMarkets();
     PreProcess::loadUnmatchedData();
+
+    $dbPool->return($connection);
 }
 
 $dbPool = null;
