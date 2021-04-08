@@ -62,7 +62,7 @@ class EventMarket extends Model
     {
         $whereIn = implode("','", $eventMarketIds);
         $sql = "SELECT em.* FROM " . static::$table . " as em 
-                WHERE NOT EXISTS (SELECT null FROM event_market_groups as emg WHERE emg.event_market_id IN ('{$whereIn}'))";
+                WHERE NOT EXISTS (SELECT null FROM event_market_groups as emg WHERE emg.event_market_id = em.id) AND em.id IN ('{$whereIn}')";
 
         return $connection->query($sql);
     }

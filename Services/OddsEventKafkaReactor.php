@@ -11,11 +11,19 @@ require_once __DIR__ . '/../Bootstrap.php';
 
 function makeConsumer()
 {
+    global $swooleTable;
+
     // LOW LEVEL CONSUMER
     $topics = [
         getenv('KAFKA_SCRAPING_ODDS', 'SCRAPING-ODDS'),
         getenv('KAFKA_SCRAPING_EVENTS', 'SCRAPING-PROVIDER-EVENTS')
     ];
+
+    if ($swooleTable['enabledProviders']->count() > 0) {
+        foreach ($swooleTable['enabledProviders'] as $k => $st) {
+            $topics[] = $k . '_req';
+        }
+    }
 
     $conf = new Conf();
     $conf->set('group.id', getenv('KAFKA_GROUP_ID', 'ml-db'));
@@ -64,6 +72,7 @@ function reactor($queue)
 {
     global $count;
     global $activeProcesses;
+    global $oddsEventQueue;
 
     while (true) {
         $message = $queue->consume(0);
@@ -77,8 +86,17 @@ function reactor($queue)
                         $payload = json_decode($message->payload, true);
                         switch ($payload['command']) {
                             case 'odd':
-                                // go("oddHandler", $key, $payload, $message->offset);
-                                oddHandler($payload, $message->offset);
+                                if ($payload['sub_command'] == 'transform') {
+                                    oddHandler($payload, $message->offset);
+                                } else if ($payload['sub_command'] == 'scrape') {
+                                    if (!empty($oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']]) && 
+                                    count($oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']]) % 10 == 0) {
+                                        array_shift($oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']]);
+                                    }
+                                    $oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']][] = $payload['request_uid'];
+                                    logger('info', 'odds-events-reactor', 'Request UIDs', $oddsEventQueue);
+                                }
+                                
                                 break;
                             case 'event':
                             default:
@@ -111,6 +129,7 @@ function oddHandler($message, $offset)
 {
     global $swooleTable;
     global $dbPool;
+    global $oddsEventQueue;
 
     $start = microtime(true);
 
@@ -166,11 +185,8 @@ function oddHandler($message, $offset)
             return;
         }
 
-        $previousTS = $swooleTable['timestamps']['odds:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'];
-        $messageTS  = $message["request_ts"];
-
-        if ($messageTS < $previousTS) {
-            logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
+        if (empty($oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']]) || !in_array($message['request_uid'], $oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']])) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Request is old', (array) $message);
             $statsArray = [
                 "type"        => "odds",
                 "status"      => 'TIMESTAMP_ERROR',
@@ -181,12 +197,9 @@ function oddHandler($message, $offset)
             ];
 
             addStats($statsArray);
-
             freeUpProcess();
             return;
         }
-
-        $swooleTable['timestamps']['odds:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'] = $messageTS;
 
         $toHashMessage = $message["data"];
         unset($toHashMessage['runningtime'], $toHashMessage['id']);
@@ -238,6 +251,7 @@ function eventHandler($message, $offset)
 {
     global $swooleTable;
     global $dbPool;
+    global $oddsEventQueue;
 
     $start = microtime(true);
 
@@ -293,11 +307,8 @@ function eventHandler($message, $offset)
             return;
         }
 
-        $previousTS = $swooleTable['timestamps']['event:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'];
-        $messageTS  = $message["request_ts"];
-
-        if ($messageTS < $previousTS) {
-            logger('info', 'odds-events-reactor', 'Validation Error: Timestamp is old', (array) $message);
+        if (empty($oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']]) || !in_array($message['request_uid'], $oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']])) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Request is old', (array) $message);
             $statsArray = [
                 "type"        => "events",
                 "status"      => 'TIMESTAMP_ERROR',
@@ -308,12 +319,9 @@ function eventHandler($message, $offset)
             ];
 
             addStats($statsArray);
-
             freeUpProcess();
             return;
         }
-
-        $swooleTable['timestamps']['event:' . $message["data"]["schedule"] . ':' . $message["data"]["provider"] . ':' . $message["data"]["sport"]]['ts'] = $messageTS;
 
         go(function () use ($dbPool, $swooleTable, $message, $offset) {
             try {
@@ -360,12 +368,11 @@ function clearHashData()
 }
 
 $activeProcesses = 0;
-$count = 0;
-$queue           = makeConsumer();
+$count           = 0;
 $dbPool          = null;
-makeProcess();
+$oddsEventQueue  = [];
 
-Co\run(function () use ($queue) {
+Co\run(function () {
     global $dbPool;
 
 
@@ -380,6 +387,7 @@ Co\run(function () use ($queue) {
     });
 
     preProcess();
+    $queue = makeConsumer();
 
     Swoole\Timer::tick(10000, "checkTableCounts");
     Swoole\Timer::tick(360000, "clearHashData");
