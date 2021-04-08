@@ -11,13 +11,19 @@ require_once __DIR__ . '/../Bootstrap.php';
 
 function makeConsumer()
 {
+    global $swooleTable;
+
     // LOW LEVEL CONSUMER
     $topics = [
         getenv('KAFKA_SCRAPING_ODDS', 'SCRAPING-ODDS'),
-        getenv('KAFKA_SCRAPING_EVENTS', 'SCRAPING-PROVIDER-EVENTS'),
-        'hg_req',
-        'isn_req'
+        getenv('KAFKA_SCRAPING_EVENTS', 'SCRAPING-PROVIDER-EVENTS')
     ];
+
+    if ($swooleTable['enabledProviders']->count() > 0) {
+        foreach ($swooleTable['enabledProviders'] as $k => $st) {
+            $topics[] = $k . '_req';
+        }
+    }
 
     $conf = new Conf();
     $conf->set('group.id', getenv('KAFKA_GROUP_ID', 'ml-db'));
@@ -84,7 +90,7 @@ function reactor($queue)
                                     oddHandler($payload, $message->offset);
                                 } else if ($payload['sub_command'] == 'scrape') {
                                     if (!empty($oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']]) && 
-                                    count($oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']]) % 5 == 0) {
+                                    count($oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']]) % 10 == 0) {
                                         array_shift($oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']]);
                                     }
                                     $oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']][] = $payload['request_uid'];
@@ -362,13 +368,11 @@ function clearHashData()
 }
 
 $activeProcesses = 0;
-$count = 0;
-$queue           = makeConsumer();
+$count           = 0;
 $dbPool          = null;
 $oddsEventQueue  = [];
-makeProcess();
 
-Co\run(function () use ($queue) {
+Co\run(function () {
     global $dbPool;
 
 
@@ -383,6 +387,7 @@ Co\run(function () use ($queue) {
     });
 
     preProcess();
+    $queue = makeConsumer();
 
     Swoole\Timer::tick(10000, "checkTableCounts");
     Swoole\Timer::tick(360000, "clearHashData");
