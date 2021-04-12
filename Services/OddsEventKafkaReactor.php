@@ -165,6 +165,8 @@ function oddHandler($message, $offset)
         }
 
         go(function () use ($dbPool, $swooleTable, $message, $offset) {
+            $maxReconnection = 20;
+            $connectionCount = 0;
             do {
                 try {
                     $connected = true;
@@ -176,9 +178,10 @@ function oddHandler($message, $offset)
                 } catch(BorrowConnectionTimeoutException $be) {
                     $connected = false;
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    $dbPool->return($connection);
                 }
-            } while (!$connected);
+                $connectionCount++;
+            } while (!$connected && $connectionCount < $maxReconnection);
         });
     } catch (Exception $e) {
         logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
@@ -224,6 +227,8 @@ function eventHandler($message, $offset)
         }
 
         go(function () use ($dbPool, $swooleTable, $message, $offset) {
+            $maxReconnection = 20;
+            $connectionCount = 0;
             do {
                 try {
                     $connected = true;
@@ -235,9 +240,11 @@ function eventHandler($message, $offset)
                 } catch(BorrowConnectionTimeoutException $be) {
                     $connected = false;
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    $dbPool->return($connection);
                 }
-            } while (!$connected);
+                $connectionCount++;
+                Co\System::sleep(0.01);
+            } while (!$connected && $connectionCount < $maxReconnection);
         });
     } catch (Exception $e) {
         logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
