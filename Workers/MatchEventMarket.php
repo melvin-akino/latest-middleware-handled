@@ -53,14 +53,12 @@ class MatchEventMarket
                         }
                     }
                 }
-                
-                
-                $dbPool->return($connection);
             } catch (Exception $e) {
                 logger('error', 'Something went wrong', (array) $e);
+            } finally {
+                $dbPool->return($connection);
+                System::sleep(5);
             }
-            
-            System::sleep(10);
         }
     }
 }

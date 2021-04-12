@@ -80,7 +80,7 @@ class ProcessOdds
                     ], 'id');
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the league');
-                    return;
+                    throw new Exception('Return DB pool connection');
                 }
 
                 $league   = $connection->fetchArray($leagueResult);
@@ -133,7 +133,7 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master league');
-                        return;
+                        throw new Exception('Return DB pool connection');
                     }
 
                     try {
@@ -147,7 +147,7 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the league group');
-                        return;
+                        throw new Exception('Return DB pool connection');
                     }
                 } else {
                     $masterLeagueId = $leagueGroupData['master_league_id'];
@@ -174,7 +174,7 @@ class ProcessOdds
                     ], 'id');
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the team');
-                    return;
+                    throw new Exception('Return DB pool connection');
                 }
 
                 $team       = $connection->fetchArray($teamResult);
@@ -225,7 +225,7 @@ class ProcessOdds
                         logger('info', 'odds', 'Master Team Created ' . $masterTeamHomeId);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master team');
-                        return;
+                        throw new Exception('Return DB pool connection');
                     }
 
                     try {
@@ -245,7 +245,7 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the team group');
-                        return;
+                        throw new Exception('Return DB pool connection');
                     }
                 } else {
                     $masterTeamHomeId = $teamGroupData['master_team_id'];
@@ -271,7 +271,7 @@ class ProcessOdds
                     ], 'id');
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the team');
-                    return;
+                    throw new Exception('Return DB pool connection');
                 }
 
                 $team       = $connection->fetchArray($teamResult);
@@ -323,7 +323,7 @@ class ProcessOdds
                         logger('info', 'odds', 'Master Team Created ' . $masterTeamAwayId);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master team');
-                        return;
+                        throw new Exception('Return DB pool connection');
                     }
 
                     try {
@@ -343,7 +343,7 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the team group');
-                        return;
+                        throw new Exception('Return DB pool connection');
                     }
                 } else {
                     $masterTeamAwayId = $teamGroupData['master_team_id'];
@@ -359,12 +359,12 @@ class ProcessOdds
 
                 if ($gameSchedule == self::SCHEDULE_EARLY && $eventsTable[$eventIndexHash]['game_schedule'] == self::SCHEDULE_TODAY) {
                     logger('error', 'odds', 'Event is already in today', $message);
-                    return;
+                    throw new Exception('Return DB pool connection');
                 }
 
                 if ($gameSchedule == self::SCHEDULE_TODAY && $eventsTable[$eventIndexHash]['game_schedule'] == self::SCHEDULE_INPLAY) {
                     logger('error', 'odds', 'Event is already in play', $message);
-                    return;
+                    throw new Exception('Return DB pool connection');
                 }
 
                 $missingCount = 0;
@@ -479,7 +479,7 @@ class ProcessOdds
                     }
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the event');
-                    return;
+                    throw new Exception('Return DB pool connection');
                 }
 
                 $eventId = $event['id'];
@@ -500,7 +500,7 @@ class ProcessOdds
 
             if (empty($eventId)) {
                 logger('error', 'odds', 'Event ID is empty', $message);
-                return;
+                throw new Exception('Return DB pool connection');
             }
             /* end events */
 
@@ -549,7 +549,7 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the master event');
-                        return;
+                        throw new Exception('Return DB pool connection');
                     }
 
                     try {
@@ -564,7 +564,7 @@ class ProcessOdds
                         ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the event group');
-                        return;
+                        throw new Exception('Return DB pool connection');
                     }
 
                     $isEventMatched = true;
@@ -613,7 +613,7 @@ class ProcessOdds
                         //TODO: how do we fill this table??
                         if (!$sportsOddTypesTable->exists($sportId . '-' . $odd["oddsType"])) {
                             logger('error', 'odds', 'Odds Type doesn\'t exist', $message);
-                            return;
+                            throw new Exception('Return DB pool connection');
                         }
 
                         $oddTypeId = $sportsOddTypesTable[$sportId . '-' . $odd["oddsType"]]['value'];
@@ -698,7 +698,7 @@ class ProcessOdds
                                         }
                                     } catch (Exception $e) {
                                         logger('error', 'odds', 'Another worker already updated the event market');
-                                        return;
+                                        throw new Exception('Return DB pool connection');
                                     }
                                 } else {
                                     $eventMarketResult = EventMarket::getDataByBetIdentifier($connection, $marketId);
@@ -743,7 +743,7 @@ class ProcessOdds
                                                 'provider_id'             => $providerId,
                                                 'market_event_identifier' => $event["eventId"]
                                             ]);
-                                            return;
+                                            throw new Exception('Return DB pool connection');
                                         }
                                     } else {
                                         try {
@@ -775,7 +775,7 @@ class ProcessOdds
                                                 'deleted_at'              => null,
                                                 'created_at'              => $timestamp
                                             ]);
-                                            return;
+                                            throw new Exception('Return DB pool connection');
                                         }
                                         $eventMarketId = $eventMarket['id'];
 
@@ -844,7 +844,7 @@ class ProcessOdds
                                             ]);
                                         } catch (Exception $e) {
                                             logger('error', 'odds', 'Another worker already created the master event market');
-                                            return;
+                                            throw new Exception('Return DB pool connection');
                                         }
 
                                         try {
@@ -864,7 +864,7 @@ class ProcessOdds
                                             ]);
                                         } catch (Exception $e) {
                                             logger('error', 'odds', 'Another worker already created the event market group');
-                                            return;
+                                            throw new Exception('Return DB pool connection');
                                         }
                                     } else {
                                         $masterEventMarketId = $eventMarketGroupData['master_event_market_id'];
