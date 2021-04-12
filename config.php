@@ -105,7 +105,7 @@ $config = [
             ],
         ],
         "activeOrders"     => [
-            "size"   => 1000,
+            "size"   => 10000,
             "column" => [
                 ["name" => "createdAt", "type" => \Swoole\Table::TYPE_STRING, "size" => 50],
                 ["name" => "betId", "type" => \Swoole\Table::TYPE_STRING, "size" => 30],

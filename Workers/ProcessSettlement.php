@@ -40,6 +40,11 @@ class ProcessSettlement
             $returnBetSourceId = $connection->fetchAssoc($sourceResult);
 
             foreach ($settlements as $settlement) {
+                if (empty($settlement['status'])) {
+                    logger('error', 'settlements', 'Empty Settlement Status', $settlement);
+                    continue;
+                }
+
                 foreach ($orders as $key => $order) {
                     if (!$providersTable->exists($settlement['provider'])) {
                         logger('info', 'settlements', 'Invalid Provider', $settlement);
@@ -98,9 +103,9 @@ class ProcessSettlement
 
         // SPECIAL CASE for ISN Provider
         if (strtolower($data['provider']) == 'isn') {
-            if (($data['status'] == strtolower('win')) && ($data['profit_loss'] == ($order['ato_win'] / 2))) {
+            if ((strtolower($data['status']) == 'win') && ($data['profit_loss'] == ($order['ato_win'] / 2))) {
                 $status = 'HALF WIN';
-            } else if (($data['status'] == strtolower('lose')) && ($order['astake'] / 2 == abs($data['profit_loss']))) {
+            } else if ((strtolower($data['status']) == 'lose') && ($order['astake'] / 2 == abs($data['profit_loss']))) {
                 $status = 'HALF LOSE';
             }
         }

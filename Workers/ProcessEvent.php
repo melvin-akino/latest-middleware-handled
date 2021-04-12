@@ -116,21 +116,23 @@ class ProcessEvent
                                 if ($message["data"]["provider"] == $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']) {
 
                                     $myMasterEventResult = EventGroup::getDataByEventId($connection, $eventId);
-                                    $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
+                                    if ($connection->numRows($myMasterEventResult) > 0) {
+                                        $myMasterEvent = $connection->fetchAssoc($myMasterEventResult);
 
-                                    $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
-                                    $myMatchedEvents = $connection->fetchAll($myMatchedEventsResult);
+                                        $myMatchedEventsResult = EventGroup::getMatchedEvents($connection, $myMasterEvent['master_event_id'], $eventId);
+                                        $myMatchedEvents = $connection->fetchAll($myMatchedEventsResult);
 
-                                    if (is_array($myMatchedEvents)) {
-                                        foreach ($myMatchedEvents as $matchedEvent) {
-                                            UnmatchedData::create($connection, [
-                                                'provider_id' => $providerId,
-                                                'data_type' => 'event',
-                                                'data_id' => $matchedEvent['event_id']
-                                            ]);
+                                        if (is_array($myMatchedEvents)) {
+                                            foreach ($myMatchedEvents as $matchedEvent) {
+                                                UnmatchedData::create($connection, [
+                                                    'provider_id' => $providerId,
+                                                    'data_type' => 'event',
+                                                    'data_id' => $matchedEvent['event_id']
+                                                ]);
+                                            }
+        
+                                            EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
                                         }
-    
-                                        EventGroup::deleteMatchesOfEvent($connection, $myMasterEvent['master_event_id'], $eventId);
                                     }
                                 }
 
@@ -147,12 +149,15 @@ class ProcessEvent
                                     if (!empty($marketId)) {
 
                                         $myEventMarketResult = EventMarket::getDataByBetIdentifier($connection, $marketId);
-                                        $myEventMarket = $connection->fetchAssoc($myEventMarketResult);
+                                        if ($connection->numRows($myEventMarketResult)) {
+                                            $myEventMarket = $connection->fetchAssoc($myEventMarketResult);
 
-                                        $myEventMarketGroupResult = EventMarketGroup::getDataByEventMarketId($connection, $myEventMarket['id']);
-                                        $myEventMarketGroup = $connection->fetchAssoc($myEventMarketGroupResult);
-
-                                        EventMarketGroup::deleteMatchesOfEventMarket($connection, $myEventMarketGroup['master_event_market_id']);
+                                            $myEventMarketGroupResult = EventMarketGroup::getDataByEventMarketId($connection, $myEventMarket['id']);
+                                            if ($connection->numRows($myEventMarketGroupResult)) {
+                                                $myEventMarketGroup = $connection->fetchAssoc($myEventMarketGroupResult);
+                                                EventMarketGroup::deleteMatchesOfEventMarket($connection, $myEventMarketGroup['master_event_market_id']);
+                                            }
+                                        }
 
                                         EventMarket::update($connection, [
                                             'deleted_at' => Carbon::now()

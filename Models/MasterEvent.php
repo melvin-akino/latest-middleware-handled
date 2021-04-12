@@ -16,7 +16,8 @@ class MasterEvent extends Model
                 . " WHERE master_league_id = '{$masterLeagueId}'"
                 . " AND master_team_home_id = '{$masterHomeTeamId}'"
                 . " AND master_team_away_id = '{$masterAwayTeamId}'" 
-                . " AND events.ref_schedule = '{$refSchedule}'"
+                . " AND events.ref_schedule = '{$refSchedule}'" 
+                . " AND events.deleted_at IS NULL"
                 . " AND " . static::$table . ".deleted_at IS NULL ORDER BY events.created_at DESC LIMIT 1";
         return $connection->query($sql);
     }

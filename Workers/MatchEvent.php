@@ -125,21 +125,24 @@ class MatchEvent
                         //if a master event is returned
                         if ($connection->numRows($masterEventResult))
                         {
-                            
                             $masterEvent = $connection->fetchAssoc($masterEventResult);
 
-                            //create a new record in the pivot table event_groups
-                            $eventGroup = [
-                                'master_event_id'   => $masterEvent['id'],
-                                'event_id'          => $event['event_id']
-                            ];
-                            $eventGroupResult = EventGroup::create($connection, $eventGroup);
+                            $eventGroupResult = EventGroup::checkIfMatched($connection, $event['event_id']);
+                            $eventGroupData   = $connection->fetchArray($eventGroupResult);
+                            if (!$eventGroupData) {
+                                //create a new record in the pivot table event_groups
+                                $eventGroup = [
+                                    'master_event_id'   => $masterEvent['id'],
+                                    'event_id'          => $event['event_id']
+                                ];
+                                $eventGroupResult = EventGroup::create($connection, $eventGroup);
 
-                            //Delete it from the unmatched table
-                            UnmatchedEvent::deleteUnmatched($connection, $event['event_id']);
-                        } else {
-                            logger('info', 'matching', "Event remained unmatched", $event);
-                            continue;    
+                                //Delete it from the unmatched table
+                                UnmatchedEvent::deleteUnmatched($connection, $event['event_id']);
+                            } else {
+                                logger('info', 'matching', "Event remained unmatched", $event);
+                                continue;    
+                            }
                         }
                     }
                 }
