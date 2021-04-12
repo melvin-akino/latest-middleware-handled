@@ -165,16 +165,20 @@ function oddHandler($message, $offset)
         }
 
         go(function () use ($dbPool, $swooleTable, $message, $offset) {
-            try {
-                $connection = $dbPool->borrow();
+            do {
+                try {
+                    $connected = true;
+                    $connection = $dbPool->borrow();
 
-                ProcessOdds::handle($connection, $swooleTable, $message, $offset);
-
-                $dbPool->return($connection);
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
-
+                    ProcessOdds::handle($connection, $swooleTable, $message, $offset);
+    
+                    $dbPool->return($connection);
+                } catch(BorrowConnectionTimeoutException $be) {
+                    $connected = false;
+                } catch (Exception $e) {
+                    echo $e->getMessage();
+                }
+            } while (!$connected);
         });
     } catch (Exception $e) {
         logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
@@ -220,15 +224,20 @@ function eventHandler($message, $offset)
         }
 
         go(function () use ($dbPool, $swooleTable, $message, $offset) {
-            try {
-                $connection = $dbPool->borrow();
-
-                ProcessEvent::handle($connection, $swooleTable, $message, $offset);
-
-                $dbPool->return($connection);
-            } catch (Exception $e) {
-                echo $e->getMessage();
-            }
+            do {
+                try {
+                    $connected = true;
+                    $connection = $dbPool->borrow();
+                    
+                    ProcessEvent::handle($connection, $swooleTable, $message, $offset);
+    
+                    $dbPool->return($connection);
+                } catch(BorrowConnectionTimeoutException $be) {
+                    $connected = false;
+                } catch (Exception $e) {
+                    echo $e->getMessage();
+                }
+            } while (!$connected);
         });
     } catch (Exception $e) {
         logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
