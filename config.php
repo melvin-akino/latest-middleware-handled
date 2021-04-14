@@ -4,10 +4,10 @@ $config = [
     'database'      => [
         'connection_pool' => [
             'minActive'         => 10,
-            'maxActive'         => 20,
+            'maxActive'         => 10,
             'maxWaitTime'       => 100,
             'maxIdleTime'       => 300,
-            'idleCheckInterval' => 10,
+            'idleCheckInterval' => 5,
         ],
         'pgsql'           => [
             'host'     => getenv('DB_HOST', '127.0.0.1'),
