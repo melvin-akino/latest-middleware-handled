@@ -262,10 +262,8 @@ makeProcess();
 Co\run(function () use ($queue) {
     global $dbPool;
 
-
-
     // Swoole\Timer::tick(1000, "checkRate");
-    $dbPool = databaseConnectionPool();
+    $dbPool = databaseConnectionPool(true);
 
     $dbPool->init();
     defer(function () use ($dbPool) {
