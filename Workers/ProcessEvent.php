@@ -144,6 +144,12 @@ class ProcessEvent
                                     'sport_id'         => $sportId
                                 ]);
 
+                                SystemConfiguration::updateOrCreate([
+                                    'type' => 'MATCHED_PROCESS'
+                                ], [
+                                    'value' => '1'
+                                ]);
+
                                 $activeEventMarkets = explode(',', $eventMarketListTable->get($eventId, 'marketIDs'));
                                 foreach ($activeEventMarkets as $marketId) {
                                     if (!empty($marketId)) {
@@ -187,19 +193,6 @@ class ProcessEvent
                         }
                     }
                 }
-            }
-
-            if ($message["data"]["provider"] == $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']) {
-                $sidebarLeagues = MasterLeague::getSideBarLeaguesBySportAndGameSchedule(
-                    $connection,
-                    $sportId,
-                    $swooleTable['enabledProviders'][$swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']]["value"],
-                    $swooleTable['systemConfig']['EVENT_VALID_MAX_MISSING_COUNT']['value'],
-                    $schedule
-                );
-                $sidebarResult = $connection->fetchAll($sidebarLeagues);
-
-                self::sendToKafka($sidebarResult, $schedule);
             }
 
             logger('info', 'event', 'Process Event ended ' . $offset);

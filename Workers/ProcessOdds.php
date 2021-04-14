@@ -237,6 +237,12 @@ class ProcessOdds
                     'event_identifier' => $eventIdentifier
                 ]);
 
+                SystemConfiguration::updateOrCreate([
+                    'type' => 'MATCHED_PROCESS'
+                ], [
+                    'value' => '1'
+                ]);
+
                 logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier, [
                     'ref_schedule'  => $referenceSchedule,
                     'missing_count' => $missingCount,
@@ -273,6 +279,12 @@ class ProcessOdds
                             'deleted_at'    => null
                         ], [
                             'event_identifier' => $eventIdentifier
+                        ]);
+
+                        SystemConfiguration::updateOrCreate([
+                            'type' => 'MATCHED_PROCESS'
+                        ], [
+                            'value' => '1'
                         ]);
 
                         logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier, [
