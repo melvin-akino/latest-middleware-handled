@@ -32,6 +32,8 @@ class ProcessEvent
             "offset"      => $offset,
         ];
 
+        $connection->query("BEGIN;");
+
         try {
             $eventsTable          = $swooleTable['events'];
             $eventMarketListTable = $swooleTable['eventMarketList'];
@@ -202,8 +204,10 @@ class ProcessEvent
                 self::sendToKafka($sidebarResult, $schedule);
             }
 
+            $connection->query("COMMIT;");
             logger('info', 'event', 'Process Event ended ' . $offset);
         } catch (Exception $e) {
+            $connection->query("ROLLBACK;");
             logger('error', 'event', 'Exception Error', $e);
         }
 

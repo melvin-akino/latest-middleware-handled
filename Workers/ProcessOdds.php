@@ -367,6 +367,8 @@ class ProcessOdds
                 }
             }
 
+            $connection->query("BEGIN;");
+
             /* event market*/
             foreach ($events as $event) {
                 if (!empty($event)) {
@@ -635,7 +637,10 @@ class ProcessOdds
                     }
                 }
             }
+
+            $connection->query("COMMIT;");
         } catch (Exception $e) {
+            $connection->query("ROLLBACK;");
             logger('error', 'odds', $e, $message);
         }
 
