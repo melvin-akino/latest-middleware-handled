@@ -43,7 +43,7 @@ function checkRate()
     $count = 0;
 }
 
-function databaseConnectionPool()
+function databaseConnectionPool($isOddEventService = false)
 {
     global $config;
 
@@ -51,8 +51,14 @@ function databaseConnectionPool()
     foreach ($config['database']['pgsql'] as $key => $db) {
         $dbString[] = $key . '=' . $db;
     }
+
     $connectionString = implode(' ', $dbString);
-    $pool             = new ConnectionPool(
+
+    if ($isOddEventService) {
+        $config['database']['connection_pool']['maxActive'] = getenv('ODDS_EVENTS_PROCESSES_NUMBER', 100);
+    }
+
+    $pool = new ConnectionPool(
         $config['database']['connection_pool'],
         new CoroutinePostgreSQLConnector,
         [
