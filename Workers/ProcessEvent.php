@@ -144,12 +144,6 @@ class ProcessEvent
                                     'sport_id'         => $sportId
                                 ]);
 
-                                SystemConfiguration::updateOrCreate([
-                                    'type' => 'MATCHED_PROCESS'
-                                ], [
-                                    'value' => '1'
-                                ]);
-
                                 $activeEventMarkets = explode(',', $eventMarketListTable->get($eventId, 'marketIDs'));
                                 foreach ($activeEventMarkets as $marketId) {
                                     if (!empty($marketId)) {
