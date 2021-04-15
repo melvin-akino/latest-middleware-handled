@@ -105,7 +105,7 @@ class Model
             if (is_null($array[key($array)])) {
                 $str .= "null";
             } else {
-                $str .= "'" . addslashes($array[key($array)]) . "'";
+                $str .= "'" . str_replace("'", "''", $array[key($array)]) . "'";
             }
 
             next($array);
