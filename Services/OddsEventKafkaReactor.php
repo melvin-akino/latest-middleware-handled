@@ -95,6 +95,7 @@ function reactor($queue)
                                     }
                                     $oddsEventQueue[$payload['data']['provider'] . ':' . $payload['data']['schedule'] . ':' . $payload['data']['sport']][] = $payload['request_uid'];
                                     logger('info', 'odds-events-reactor', 'Request UIDs', $oddsEventQueue);
+                                    freeUpProcess();
                                 }
                                 
                                 break;
