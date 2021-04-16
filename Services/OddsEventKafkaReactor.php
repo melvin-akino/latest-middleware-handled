@@ -220,39 +220,23 @@ function oddHandler($message, $offset)
         }
         $swooleTable['eventOddsHash'][$eventId] = ['hash' => $caching];
 
-        $maxReconnection = 20;
-        $connectionCount = 0;
-        do {
-            try {
-                $connected = true;
-                $connection = $dbPool->borrow();
-            } catch(BorrowConnectionTimeoutException $be) {
-                $connected = false;
-            }
-            $connectionCount++;
-        } while (!$connected && $connectionCount < $maxReconnection);
+        go(function () use (&$dbPool, $swooleTable, $message, $offset) {
+            $maxReconnection = 20;
+            $connectionCount = 0;
+            do {
+                try {
+                    $connected = true;
+                    $connection = $dbPool->borrow();
 
-        if (!$connected) {
-            $statsArray = [
-                "type"        => "odds",
-                "status"      => 'ERROR',
-                "time"        => microtime(true) - $start,
-                "request_uid" => $message["request_uid"],
-                "request_ts"  => $message["request_ts"],
-                "offset"      => $offset,
-            ];
-
-            addStats($statsArray);
-            return;
-        }
-
-        go(function () use ($dbPool, $connection, $swooleTable, $message, $offset) {
-            try {
-                ProcessOdds::handle($connection, $swooleTable, $message, $offset);
-                $dbPool->return($connection);
-            } catch (Exception $e) {
-                logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
-            }
+                    ProcessOdds::handle($connection, $swooleTable, $message, $offset);
+                    $dbPool->return($connection);
+                } catch(BorrowConnectionTimeoutException $be) {
+                    $connected = false;
+                } catch (Exception $e) {
+                    $dbPool->return($connection);
+                }
+                $connectionCount++;
+            } while (!$connected && $connectionCount < $maxReconnection);
         });
     } catch (Exception $e) {
         logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
@@ -331,39 +315,23 @@ function eventHandler($message, $offset)
             return;
         }
 
-        $maxReconnection = 20;
-        $connectionCount = 0;
-        do {
-            try {
-                $connected = true;
-                $connection = $dbPool->borrow();
-            } catch(BorrowConnectionTimeoutException $be) {
-                $connected = false;
-            }
-            $connectionCount++;
-        } while (!$connected && $connectionCount < $maxReconnection);
+        go(function () use (&$dbPool, $swooleTable, $message, $offset) {
+            $maxReconnection = 20;
+            $connectionCount = 0;
+            do {
+                try {
+                    $connected = true;
+                    $connection = $dbPool->borrow();
 
-        if (!$connected) {
-            $statsArray = [
-                "type"        => "odds",
-                "status"      => 'ERROR',
-                "time"        => microtime(true) - $start,
-                "request_uid" => $message["request_uid"],
-                "request_ts"  => $message["request_ts"],
-                "offset"      => $offset,
-            ];
-
-            addStats($statsArray);
-            return;
-        }
-
-        go(function () use ($dbPool, $connection, $swooleTable, $message, $offset) {
-            try {
-                ProcessEvent::handle($connection, $swooleTable, $message, $offset);
-                $dbPool->return($connection);
-            } catch (Exception $e) {
-                logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
-            }
+                    ProcessEvent::handle($connection, $swooleTable, $message, $offset);
+                    $dbPool->return($connection);
+                } catch(BorrowConnectionTimeoutException $be) {
+                    $connected = false;
+                } catch (Exception $e) {
+                    $dbPool->return($connection);
+                }
+                $connectionCount++;
+            } while (!$connected && $connectionCount < $maxReconnection);
         });
     } catch (Exception $e) {
         logger('info', 'odds-events-reactor', 'Exception Error', (array) $e);
