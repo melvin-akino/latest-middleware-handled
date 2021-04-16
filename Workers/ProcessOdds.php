@@ -252,7 +252,7 @@ class ProcessOdds
                 $swooleTable['lockHashData'][$eventIndexHash]['type'] = 'event';
                 $eventResult = Event::getEventByProviderParam($connection, $eventIdentifier, $providerId, $sportId);
 
-                if ($connection->numRows($eventResult)) {
+                if ($connection->numRows($eventResult) > 0) {
                     $event = $connection->fetchArray($eventResult);
                     try {
                         $missingCount = 0;
@@ -300,6 +300,7 @@ class ProcessOdds
 
                     $eventId = $event['id'];
                 } else {
+                    $missingCount = 0;
                     $eventResult = Event::create($connection, [
                         'event_identifier' => $eventIdentifier,
                         'sport_id'         => $sportId,
