@@ -220,21 +220,34 @@ function oddHandler($message, $offset)
         }
         $swooleTable['eventOddsHash'][$eventId] = ['hash' => $caching];
 
-        go(function () use ($dbPool, $swooleTable, $message, $offset) {
-            $maxReconnection = 20;
-            $connectionCount = 0;
-            
+        $maxReconnection = 20;
+        $connectionCount = 0;
+        do {
             try {
-                do {
-                    try {
-                        $connected = true;
-                        $connection = $dbPool->borrow();
-                    } catch(BorrowConnectionTimeoutException $be) {
-                        $connected = false;
-                    }
-                    $connectionCount++;
-                } while (!$connected && $connectionCount < $maxReconnection);
+                $connected = true;
+                $connection = $dbPool->borrow();
+            } catch(BorrowConnectionTimeoutException $be) {
+                $connected = false;
+            }
+            $connectionCount++;
+        } while (!$connected && $connectionCount < $maxReconnection);
 
+        if (!$connected) {
+            $statsArray = [
+                "type"        => "odds",
+                "status"      => 'ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+            return;
+        }
+
+        go(function () use ($dbPool, $connection, $swooleTable, $message, $offset) {
+            try {
                 ProcessOdds::handle($connection, $swooleTable, $message, $offset);
                 $dbPool->return($connection);
             } catch (Exception $e) {
@@ -318,21 +331,34 @@ function eventHandler($message, $offset)
             return;
         }
 
-        go(function () use ($dbPool, $swooleTable, $message, $offset) {
-            $maxReconnection = 20;
-            $connectionCount = 0;
-            
+        $maxReconnection = 20;
+        $connectionCount = 0;
+        do {
             try {
-                do {
-                    try {
-                        $connected = true;
-                        $connection = $dbPool->borrow();
-                    } catch(BorrowConnectionTimeoutException $be) {
-                        $connected = false;
-                    }
-                    $connectionCount++;
-                } while (!$connected && $connectionCount < $maxReconnection);
+                $connected = true;
+                $connection = $dbPool->borrow();
+            } catch(BorrowConnectionTimeoutException $be) {
+                $connected = false;
+            }
+            $connectionCount++;
+        } while (!$connected && $connectionCount < $maxReconnection);
 
+        if (!$connected) {
+            $statsArray = [
+                "type"        => "odds",
+                "status"      => 'ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
+
+            addStats($statsArray);
+            return;
+        }
+
+        go(function () use ($dbPool, $connection, $swooleTable, $message, $offset) {
+            try {
                 ProcessEvent::handle($connection, $swooleTable, $message, $offset);
                 $dbPool->return($connection);
             } catch (Exception $e) {
@@ -392,7 +418,6 @@ Co\run(function () {
     preProcess();
     $queue = makeConsumer();
 
-    Swoole\Timer::tick(1000,"checkRate");
     Swoole\Timer::tick(10000, "checkTableCounts");
     Swoole\Timer::tick(360000, "clearHashData");
     Swoole\Timer::tick(10000, "swooleStats", 'odds');
