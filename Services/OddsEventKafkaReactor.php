@@ -228,7 +228,7 @@ function oddHandler($message, $offset)
                     try {
                         $connected = true;
                         $connection = $dbPool->borrow();
-                    catch(BorrowConnectionTimeoutException $be) {
+                    } catch(BorrowConnectionTimeoutException $be) {
                         $connected = false;
                     }
                     $connectionCount++;
@@ -326,7 +326,7 @@ function eventHandler($message, $offset)
                     try {
                         $connected = true;
                         $connection = $dbPool->borrow();
-                    catch(BorrowConnectionTimeoutException $be) {
+                    } catch(BorrowConnectionTimeoutException $be) {
                         $connected = false;
                     }
                     $connectionCount++;
