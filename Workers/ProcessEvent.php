@@ -189,19 +189,6 @@ class ProcessEvent
                 }
             }
 
-            if ($message["data"]["provider"] == $swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']) {
-                $sidebarLeagues = MasterLeague::getSideBarLeaguesBySportAndGameSchedule(
-                    $connection,
-                    $sportId,
-                    $swooleTable['enabledProviders'][$swooleTable['systemConfig']['PRIMARY_PROVIDER']['value']]["value"],
-                    $swooleTable['systemConfig']['EVENT_VALID_MAX_MISSING_COUNT']['value'],
-                    $schedule
-                );
-                $sidebarResult = $connection->fetchAll($sidebarLeagues);
-
-                self::sendToKafka($sidebarResult, $schedule);
-            }
-
             logger('info', 'event', 'Process Event ended ' . $offset);
         } catch (Exception $e) {
             logger('error', 'event', 'Exception Error', $e);
