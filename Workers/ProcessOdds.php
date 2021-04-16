@@ -254,79 +254,41 @@ class ProcessOdds
 
                 if ($connection->numRows($eventResult)) {
                     $event = $connection->fetchArray($eventResult);
-
                     try {
                         $missingCount = 0;
-                        if ($event) {
-                            Event::update($connection, [
-                                'sport_id'      => $sportId,
-                                'provider_id'   => $providerId,
-                                'league_id'     => $leagueId,
-                                'team_home_id'  => $teamHomeId,
-                                'team_away_id'  => $teamAwayId,
-                                'ref_schedule'  => $referenceSchedule,
-                                'missing_count' => $missingCount,
-                                'game_schedule' => $gameSchedule,
-                                'score'         => $score,
-                                'running_time'  => $runningtime,
-                                'home_penalty'  => $homeRedcard,
-                                'away_penalty'  => $awayRedcard,
-                                'updated_at'    => $timestamp,
-                                'deleted_at'    => null
-                            ], [
-                                'event_identifier' => $eventIdentifier
-                            ]);
+                        Event::update($connection, [
+                            'sport_id'      => $sportId,
+                            'provider_id'   => $providerId,
+                            'league_id'     => $leagueId,
+                            'team_home_id'  => $teamHomeId,
+                            'team_away_id'  => $teamAwayId,
+                            'ref_schedule'  => $referenceSchedule,
+                            'missing_count' => $missingCount,
+                            'game_schedule' => $gameSchedule,
+                            'score'         => $score,
+                            'running_time'  => $runningtime,
+                            'home_penalty'  => $homeRedcard,
+                            'away_penalty'  => $awayRedcard,
+                            'updated_at'    => $timestamp,
+                            'deleted_at'    => null
+                        ], [
+                            'event_identifier' => $eventIdentifier
+                        ]);
 
-                            logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier, [
-                                'sport_id'      => $sportId,
-                                'provider_id'   => $providerId,
-                                'league_id'     => $leagueId,
-                                'team_home_id'  => $teamHomeId,
-                                'team_away_id'  => $teamAwayId,
-                                'ref_schedule'  => $referenceSchedule,
-                                'missing_count' => $missingCount,
-                                'game_schedule' => $gameSchedule,
-                                'score'         => $score,
-                                'running_time'  => $runningtime,
-                                'home_penalty'  => $homeRedcard,
-                                'away_penalty'  => $awayRedcard
-                            ]);
-                        } else {
-                            $eventResult = Event::create($connection, [
-                                'event_identifier' => $eventIdentifier,
-                                'sport_id'         => $sportId,
-                                'provider_id'      => $providerId,
-                                'league_id'        => $leagueId,
-                                'team_home_id'     => $teamHomeId,
-                                'team_away_id'     => $teamAwayId,
-                                'ref_schedule'     => $referenceSchedule,
-                                'missing_count'    => $missingCount,
-                                'game_schedule'    => $gameSchedule,
-                                'score'            => $score,
-                                'running_time'     => $runningtime,
-                                'home_penalty'     => $homeRedcard,
-                                'away_penalty'     => $awayRedcard,
-                                'created_at'       => $timestamp
-                            ], 'id');
-
-                            $event       = $connection->fetchArray($eventResult);
-
-                            logger('info', 'odds', 'Event Created ' . $event['id'], [
-                                'event_identifier' => $eventIdentifier,
-                                'sport_id'         => $sportId,
-                                'provider_id'      => $providerId,
-                                'league_id'        => $leagueId,
-                                'team_home_id'     => $teamHomeId,
-                                'team_away_id'     => $teamAwayId,
-                                'ref_schedule'     => $referenceSchedule,
-                                'missing_count'    => $missingCount,
-                                'game_schedule'    => $gameSchedule,
-                                'score'            => $score,
-                                'running_time'     => $runningtime,
-                                'home_penalty'     => $homeRedcard,
-                                'away_penalty'     => $awayRedcard
-                            ]);
-                        }
+                        logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier, [
+                            'sport_id'      => $sportId,
+                            'provider_id'   => $providerId,
+                            'league_id'     => $leagueId,
+                            'team_home_id'  => $teamHomeId,
+                            'team_away_id'  => $teamAwayId,
+                            'ref_schedule'  => $referenceSchedule,
+                            'missing_count' => $missingCount,
+                            'game_schedule' => $gameSchedule,
+                            'score'         => $score,
+                            'running_time'  => $runningtime,
+                            'home_penalty'  => $homeRedcard,
+                            'away_penalty'  => $awayRedcard
+                        ]);
                     } catch (Exception $e) {
                         logger('error', 'odds', 'Another worker already created the event');
 
@@ -338,10 +300,42 @@ class ProcessOdds
 
                     $eventId = $event['id'];
                 } else {
-                    $statsArray['status'] = "ERROR";
-                    $statsArray["time"] = microtime(true) - $startTime;
-                    addStats($statsArray);
-                    return;
+                    $eventResult = Event::create($connection, [
+                        'event_identifier' => $eventIdentifier,
+                        'sport_id'         => $sportId,
+                        'provider_id'      => $providerId,
+                        'league_id'        => $leagueId,
+                        'team_home_id'     => $teamHomeId,
+                        'team_away_id'     => $teamAwayId,
+                        'ref_schedule'     => $referenceSchedule,
+                        'missing_count'    => $missingCount,
+                        'game_schedule'    => $gameSchedule,
+                        'score'            => $score,
+                        'running_time'     => $runningtime,
+                        'home_penalty'     => $homeRedcard,
+                        'away_penalty'     => $awayRedcard,
+                        'created_at'       => $timestamp
+                    ], 'id');
+
+                    $event       = $connection->fetchArray($eventResult);
+
+                    logger('info', 'odds', 'Event Created ' . $event['id'], [
+                        'event_identifier' => $eventIdentifier,
+                        'sport_id'         => $sportId,
+                        'provider_id'      => $providerId,
+                        'league_id'        => $leagueId,
+                        'team_home_id'     => $teamHomeId,
+                        'team_away_id'     => $teamAwayId,
+                        'ref_schedule'     => $referenceSchedule,
+                        'missing_count'    => $missingCount,
+                        'game_schedule'    => $gameSchedule,
+                        'score'            => $score,
+                        'running_time'     => $runningtime,
+                        'home_penalty'     => $homeRedcard,
+                        'away_penalty'     => $awayRedcard
+                    ]);
+
+                    $eventId = $event['id'];
                 }
             }
 
