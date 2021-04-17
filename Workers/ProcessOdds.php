@@ -251,11 +251,11 @@ class ProcessOdds
             } else {
                 $swooleTable['lockHashData'][$eventIndexHash]['type'] = 'event';
                 $eventResult = Event::getEventByProviderParam($connection, $eventIdentifier, $providerId, $sportId);
-                $event       = $connection->fetchArray($eventResult);
 
-                try {
-                    $missingCount = 0;
-                    if ($event) {
+                if ($connection->numRows($eventResult) > 0) {
+                    $event = $connection->fetchArray($eventResult);
+                    try {
+                        $missingCount = 0;
                         Event::update($connection, [
                             'sport_id'      => $sportId,
                             'provider_id'   => $providerId,
@@ -289,52 +289,55 @@ class ProcessOdds
                             'home_penalty'  => $homeRedcard,
                             'away_penalty'  => $awayRedcard
                         ]);
-                    } else {
-                        $eventResult = Event::create($connection, [
-                            'event_identifier' => $eventIdentifier,
-                            'sport_id'         => $sportId,
-                            'provider_id'      => $providerId,
-                            'league_id'        => $leagueId,
-                            'team_home_id'     => $teamHomeId,
-                            'team_away_id'     => $teamAwayId,
-                            'ref_schedule'     => $referenceSchedule,
-                            'missing_count'    => $missingCount,
-                            'game_schedule'    => $gameSchedule,
-                            'score'            => $score,
-                            'running_time'     => $runningtime,
-                            'home_penalty'     => $homeRedcard,
-                            'away_penalty'     => $awayRedcard,
-                            'created_at'       => $timestamp
-                        ], 'id');
+                    } catch (Exception $e) {
+                        logger('error', 'odds', 'Another worker already created the event');
 
-                        $event       = $connection->fetchArray($eventResult);
-
-                        logger('info', 'odds', 'Event Created ' . $event['id'], [
-                            'event_identifier' => $eventIdentifier,
-                            'sport_id'         => $sportId,
-                            'provider_id'      => $providerId,
-                            'league_id'        => $leagueId,
-                            'team_home_id'     => $teamHomeId,
-                            'team_away_id'     => $teamAwayId,
-                            'ref_schedule'     => $referenceSchedule,
-                            'missing_count'    => $missingCount,
-                            'game_schedule'    => $gameSchedule,
-                            'score'            => $score,
-                            'running_time'     => $runningtime,
-                            'home_penalty'     => $homeRedcard,
-                            'away_penalty'     => $awayRedcard
-                        ]);
+                        $statsArray['status'] = "ERROR";
+                        $statsArray["time"] = microtime(true) - $startTime;
+                        addStats($statsArray);
+                        return;
                     }
-                } catch (Exception $e) {
-                    logger('error', 'odds', 'Another worker already created the event');
 
-                    $statsArray['status'] = "ERROR";
-                    $statsArray["time"] = microtime(true) - $startTime;
-                    addStats($statsArray);
-                    return;
+                    $eventId = $event['id'];
+                } else {
+                    $missingCount = 0;
+                    $eventResult = Event::create($connection, [
+                        'event_identifier' => $eventIdentifier,
+                        'sport_id'         => $sportId,
+                        'provider_id'      => $providerId,
+                        'league_id'        => $leagueId,
+                        'team_home_id'     => $teamHomeId,
+                        'team_away_id'     => $teamAwayId,
+                        'ref_schedule'     => $referenceSchedule,
+                        'missing_count'    => $missingCount,
+                        'game_schedule'    => $gameSchedule,
+                        'score'            => $score,
+                        'running_time'     => $runningtime,
+                        'home_penalty'     => $homeRedcard,
+                        'away_penalty'     => $awayRedcard,
+                        'created_at'       => $timestamp
+                    ], 'id');
+
+                    $event       = $connection->fetchArray($eventResult);
+
+                    logger('info', 'odds', 'Event Created ' . $event['id'], [
+                        'event_identifier' => $eventIdentifier,
+                        'sport_id'         => $sportId,
+                        'provider_id'      => $providerId,
+                        'league_id'        => $leagueId,
+                        'team_home_id'     => $teamHomeId,
+                        'team_away_id'     => $teamAwayId,
+                        'ref_schedule'     => $referenceSchedule,
+                        'missing_count'    => $missingCount,
+                        'game_schedule'    => $gameSchedule,
+                        'score'            => $score,
+                        'running_time'     => $runningtime,
+                        'home_penalty'     => $homeRedcard,
+                        'away_penalty'     => $awayRedcard
+                    ]);
+
+                    $eventId = $event['id'];
                 }
-
-                $eventId = $event['id'];
             }
 
             $eventsTable[$eventIndexHash] = [
@@ -538,6 +541,7 @@ class ProcessOdds
                                         }
                                     } else {
                                         try {
+                                            $memUid = md5($eventId . $oddTypeId . $marketFlag . $marketId);
                                             $eventMarketResult = EventMarket::create($connection, [
                                                 'event_id'                => $eventId,
                                                 'odd_type_id'             => $oddTypeId,
@@ -548,6 +552,7 @@ class ProcessOdds
                                                 'market_flag'             => $marketFlag,
                                                 'provider_id'             => $providerId,
                                                 'market_event_identifier' => $event["eventId"],
+                                                'mem_uid'                 => $memUid,
                                                 'deleted_at'              => null,
                                                 'created_at'              => $timestamp
                                             ], 'id');
