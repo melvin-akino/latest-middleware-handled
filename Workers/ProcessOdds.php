@@ -613,11 +613,6 @@ class ProcessOdds
                                     'odds'                    => $odds,
                                 ];
 
-                                if ($eventMarket['odd_label'] != $points) {
-                                    EventMarketGroup::delete($connection, 'event_market_id', $eventMarketId);
-                                    var_dump(json_encode((array) $connection));
-                                }
-
                                 $newMarkets[] = $marketId;
                                 $eventMarketListTable->set($eventId, ['marketIDs' => implode(',', $newMarkets)]);
                             } else {
