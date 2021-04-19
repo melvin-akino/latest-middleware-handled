@@ -55,7 +55,7 @@ function databaseConnectionPool($isOddEventService = false)
     $connectionString = implode(' ', $dbString);
 
     if ($isOddEventService) {
-        $config['database']['connection_pool']['maxActive'] = getenv('ODDS_EVENTS_PROCESSES_NUMBER', 100);
+        $config['database']['connection_pool']['maxActive'] = 100;// getenv('ODDS_EVENTS_PROCESSES_NUMBER', 100);
     }
 
     $pool = new ConnectionPool(
@@ -208,6 +208,19 @@ function swooleStats($timer, $which)
                 logger('info', 'stats', $k);
                 logger('info', 'stats', json_encode($s));
                 logger('info', 'stats', json_encode($swooleTable['statsTimeOddsPerSecond'][$k]));
+
+                logger('info', 'stats',
+                    'For second ['.$k.']: Total Messages: '.$s["total"].' ('.$swooleTable['statsTimeOddsPerSecond'][$k]["total"].
+                    ') .. Processed: '.$s["processed"].' ('.$swooleTable['statsTimeOddsPerSecond'][$k]["processed"].') Errors: '.
+                    (
+                        $s["error"]+
+                        $s["timestamp_error"]+
+                        $s["payload_error"]+
+                        $s["hash_error"]+
+                        $s["inactiveSport_error"]+
+                        $s["inactiveProvider_error"]
+                    )
+                   );
             } else {
                 $swooleTable['statsCountOddsPerSecond']->del($k);
                 $swooleTable['statsTimeOddsPerSecond']->del($k);
