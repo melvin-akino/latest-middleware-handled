@@ -465,7 +465,7 @@ class ProcessOdds
                                             $eventMarket['event_id'] == $eventId &&
                                             $eventMarket['market_event_identifier'] == $event["eventId"]
                                         )) {
-                                            $eventMarketUpdateResult = EventMarket::var_dump(json_encode((array) $connection));($connection, $eventMarketId, [
+                                            $eventMarketUpdateResult = EventMarket::updateDataByEventMarketId($connection, $eventMarketId, [
                                                 'odds'                    => $odds,
                                                 'odd_label'               => $points,
                                                 'is_main'                 => $marketType,
