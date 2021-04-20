@@ -355,6 +355,11 @@ function checkTableCounts()
     logger('info', 'odds-events-reactor', 'Count Sports:' . $swooleTable['enabledSports']->count());
     logger('info', 'odds-events-reactor', 'Count Sport Odd Types:' . $swooleTable['sportsOddTypes']->count());
     logger('info', 'odds-events-reactor', 'Count Maintenance:' . $swooleTable['maintenance']->count());
+
+    logger('info', 'odds-events-reactor', 'Count Stats Count Events Per Second:' . $swooleTable['statsCountEventsPerSecond']->count());
+    logger('info', 'odds-events-reactor', 'Count Stats Time Events Per Second:' . $swooleTable['statsTimeEventsPerSecond']->count());
+    logger('info', 'odds-events-reactor', 'Count Stats Count Odds Per Second:' . $swooleTable['statsCountOddsPerSecond']->count());
+    logger('info', 'odds-events-reactor', 'Count Stats Time Odds Per Second:' . $swooleTable['statsTimeOddsPerSecond']->count());
 }
 
 function clearHashData() 

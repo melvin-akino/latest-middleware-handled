@@ -640,6 +640,19 @@ class ProcessOdds
             $connection->query("COMMIT;");
         } catch (Exception $e) {
             $connection->query("ROLLBACK;");
+            $activeEventMarkets = explode(',', $eventMarketListTable->get($eventIdentifier, 'marketIDs'));
+            foreach ($activeEventMarkets as $marketId) {
+                if (!empty($marketId)) {
+                    EventMarket::update($connection, [
+                        'deleted_at' => Carbon::now()
+                    ], [
+                        'bet_identifier' => $marketId,
+                        'provider_id'    => $providerId
+                    ]);
+
+                    $eventMarketsTable->del(md5(implode(':', [$providerId, $marketId])));
+                }
+            }
             logger('error', 'odds', $e, $message);
         }
 
