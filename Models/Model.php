@@ -17,14 +17,12 @@ class Model
     public static function softDelete($connection, $columnName, $value)
     {
         $sql = "UPDATE " . static::$table . " SET deleted_at = '" . Carbon::now() . "' WHERE {$columnName} = '{$value}'";
-        echo $sql . "\n";
         return $connection->query($sql);
     }
 
     public static function delete($connection, $columnName, $value)
     {
         $sql = "DELETE FROM " . static::$table . " WHERE {$columnName} = '{$value}'";
-        echo $sql . "\n";
         return $connection->query($sql);
     }
 
@@ -44,7 +42,6 @@ class Model
         if ($return) {
             $sql .= " RETURNING {$return}";
         }
-        echo $sql . "\n";
         return $connection->query($sql);
     }
 
@@ -53,7 +50,6 @@ class Model
         $sql = "UPDATE " . static::$table . " SET ";
         $sql .= self::_setValue($data, ',');
         $sql .= self::_where($where);
-        echo $sql . "\n";
         return $connection->query($sql);
     }
 

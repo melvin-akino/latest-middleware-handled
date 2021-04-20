@@ -18,7 +18,6 @@ class EventMarket extends Model
     public static function getDataByBetIdentifier($connection, $betIdentifier)
     {
         $sql = "SELECT * FROM " . static::$table . " WHERE bet_identifier = '{$betIdentifier}' LIMIT 1";
-        echo $sql . "\n";
         return $connection->query($sql);
     }
 
