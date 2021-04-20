@@ -55,7 +55,7 @@ function databaseConnectionPool($isOddEventService = false)
     $connectionString = implode(' ', $dbString);
 
     if ($isOddEventService) {
-        $config['database']['connection_pool']['maxActive'] = 100;// getenv('ODDS_EVENTS_PROCESSES_NUMBER', 100);
+        $config['database']['connection_pool']['maxActive'] = getenv('ODDS_EVENTS_PROCESSES_NUMBER', 100);
     }
 
     $pool = new ConnectionPool(
