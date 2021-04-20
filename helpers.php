@@ -195,6 +195,19 @@ function swooleStats($timer, $which)
                 logger('info', 'stats', $k);
                 logger('info', 'stats', json_encode($s));
                 logger('info', 'stats', json_encode($swooleTable['statsTimeEventsPerSecond'][$k]));
+
+                logger('info', 'stats',
+                    'Event For second ['.$k.']: Total Messages: '.$s["total"].' ('.$swooleTable['statsTimeEventsPerSecond'][$k]["total"].
+                    ') .. Processed: '.$s["processed"].' ('.$swooleTable['statsTimeEventsPerSecond'][$k]["processed"].') Errors: '.
+                    (
+                        $s["error"]+
+                        $s["timestamp_error"]+
+                        $s["payload_error"]+
+                        $s["hash_error"]+
+                        $s["inactiveSport_error"]+
+                        $s["inactiveProvider_error"]
+                    )
+                   );
             } else {
                 $swooleTable['statsCountEventsPerSecond']->del($k);
                 $swooleTable['statsTimeEventsPerSecond']->del($k);
@@ -205,12 +218,8 @@ function swooleStats($timer, $which)
         logger('info', 'stats', "**************** start swoole table dump ****************");
         foreach ($swooleTable['statsCountOddsPerSecond'] as $k => $s) {
             if ($k > (time() - 30)) {
-                logger('info', 'stats', $k);
-                logger('info', 'stats', json_encode($s));
-                logger('info', 'stats', json_encode($swooleTable['statsTimeOddsPerSecond'][$k]));
-
                 logger('info', 'stats',
-                    'For second ['.$k.']: Total Messages: '.$s["total"].' ('.$swooleTable['statsTimeOddsPerSecond'][$k]["total"].
+                    'Odds For second ['.$k.']: Total Messages: '.$s["total"].' ('.$swooleTable['statsTimeOddsPerSecond'][$k]["total"].
                     ') .. Processed: '.$s["processed"].' ('.$swooleTable['statsTimeOddsPerSecond'][$k]["processed"].') Errors: '.
                     (
                         $s["error"]+
