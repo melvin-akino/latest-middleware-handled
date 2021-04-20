@@ -394,5 +394,6 @@ Co\run(function () {
     Swoole\Timer::tick(10000, "checkTableCounts");
     Swoole\Timer::tick(360000, "clearHashData");
     Swoole\Timer::tick(10000, "swooleStats", 'odds');
+    Swoole\Timer::tick(10000, "swooleStats", 'events');
     reactor($queue, $dbPool);
 });
