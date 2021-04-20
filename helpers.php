@@ -195,6 +195,19 @@ function swooleStats($timer, $which)
                 logger('info', 'stats', $k);
                 logger('info', 'stats', json_encode($s));
                 logger('info', 'stats', json_encode($swooleTable['statsTimeEventsPerSecond'][$k]));
+
+                logger('info', 'stats',
+                    'Event For second ['.$k.']: Total Messages: '.$s["total"].' ('.$swooleTable['statsTimeEventsPerSecond'][$k]["total"].
+                    ') .. Processed: '.$s["processed"].' ('.$swooleTable['statsTimeEventsPerSecond'][$k]["processed"].') Errors: '.
+                    (
+                        $s["error"]+
+                        $s["timestamp_error"]+
+                        $s["payload_error"]+
+                        $s["hash_error"]+
+                        $s["inactiveSport_error"]+
+                        $s["inactiveProvider_error"]
+                    )
+                   );
             } else {
                 $swooleTable['statsCountEventsPerSecond']->del($k);
                 $swooleTable['statsTimeEventsPerSecond']->del($k);
@@ -205,9 +218,18 @@ function swooleStats($timer, $which)
         logger('info', 'stats', "**************** start swoole table dump ****************");
         foreach ($swooleTable['statsCountOddsPerSecond'] as $k => $s) {
             if ($k > (time() - 30)) {
-                logger('info', 'stats', $k);
-                logger('info', 'stats', json_encode($s));
-                logger('info', 'stats', json_encode($swooleTable['statsTimeOddsPerSecond'][$k]));
+                logger('info', 'stats',
+                    'Odds For second ['.$k.']: Total Messages: '.$s["total"].' ('.$swooleTable['statsTimeOddsPerSecond'][$k]["total"].
+                    ') .. Processed: '.$s["processed"].' ('.$swooleTable['statsTimeOddsPerSecond'][$k]["processed"].') Errors: '.
+                    (
+                        $s["error"]+
+                        $s["timestamp_error"]+
+                        $s["payload_error"]+
+                        $s["hash_error"]+
+                        $s["inactiveSport_error"]+
+                        $s["inactiveProvider_error"]
+                    )
+                   );
             } else {
                 $swooleTable['statsCountOddsPerSecond']->del($k);
                 $swooleTable['statsTimeOddsPerSecond']->del($k);
@@ -239,11 +261,11 @@ function addStats($what)
                 "total"            => 0,
                 "processed"        => 0,
                 "error"            => 0,
-                "timestamp"        => 0,
-                "payload"          => 0,
-                "hash"             => 0,
-                "inactiveSport"    => 0,
-                "inactiveProvider" => 0,
+                "timestamp_error"        => 0,
+                "payload_error"          => 0,
+                "hash_error"             => 0,
+                "inactiveSport_error"    => 0,
+                "inactiveProvider_error" => 0,
             ]);
         }
         if (!$timeTable->exists($now)) {
@@ -251,11 +273,11 @@ function addStats($what)
                 "total"            => 0,
                 "processed"        => 0,
                 "error"            => 0,
-                "timestamp"        => 0,
-                "payload"          => 0,
-                "hash"             => 0,
-                "inactiveSport"    => 0,
-                "inactiveProvider" => 0,
+                "timestamp_error"        => 0,
+                "payload_error"          => 0,
+                "hash_error"             => 0,
+                "inactiveSport_error"    => 0,
+                "inactiveProvider_error" => 0,
             ]);
         }
 
@@ -273,22 +295,22 @@ function addStats($what)
                 $statsTable->incr($now, "processed", 1);
                 break;
             case 'TIMESTAMP_ERROR':
-                $avgTime                  = $timeTable[$now]["error"];
+                $avgTime                  = $timeTable[$now]["timestamp_error"];
                 $allTime                  = ($avgTime * $totalCount) + $what["time"];
-                $timeTable[$now]["timestamp"] = $allTime / ($totalCount + 1);
-                $statsTable->incr($now, "timestamp", 1);
+                $timeTable[$now]["timestamp_error"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "timestamp_error", 1);
                 break;
             case 'PAYLOAD_ERROR':
-                $avgTime                  = $timeTable[$now]["error"];
+                $avgTime                  = $timeTable[$now]["payload_error"];
                 $allTime                  = ($avgTime * $totalCount) + $what["time"];
-                $timeTable[$now]["payload"] = $allTime / ($totalCount + 1);
-                $statsTable->incr($now, "payload", 1);
+                $timeTable[$now]["payload_error"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "payload_error", 1);
                 break;
             case 'HASH_ERROR':
-                $avgTime                  = $timeTable[$now]["error"];
+                $avgTime                  = $timeTable[$now]["hash_error"];
                 $allTime                  = ($avgTime * $totalCount) + $what["time"];
-                $timeTable[$now]["hash"] = $allTime / ($totalCount + 1);
-                $statsTable->incr($now, "hash", 1);
+                $timeTable[$now]["hash_error"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "hash_error", 1);
                 break;
             case 'ERROR':
                 $avgTime                  = $timeTable[$now]["error"];
@@ -297,16 +319,16 @@ function addStats($what)
                 $statsTable->incr($now, "error", 1);
                 break;
             case 'SPORT_ERROR':
-                $avgTime                          = $timeTable[$now]["inactiveSport"];
+                $avgTime                          = $timeTable[$now]["inactiveSport_error"];
                 $allTime                          = ($avgTime * $totalCount) + $what["time"];
-                $timeTable[$now]["inactiveSport"] = $allTime / ($totalCount + 1);
-                $statsTable->incr($now, "inactiveSport", 1);
+                $timeTable[$now]["inactiveSport_error"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "inactiveSport_error", 1);
                 break;
             case 'PROVIDER_ERROR':
-                $avgTime                             = $timeTable[$now]["inactiveProvider"];
+                $avgTime                             = $timeTable[$now]["inactiveProvider_error"];
                 $allTime                             = ($avgTime * $totalCount) + $what["time"];
-                $timeTable[$now]["inactiveProvider"] = $allTime / ($totalCount + 1);
-                $statsTable->incr($now, "inactiveProvider", 1);
+                $timeTable[$now]["inactiveProvider_error"] = $allTime / ($totalCount + 1);
+                $statsTable->incr($now, "inactiveProvider_error", 1);
                 break;
             default:
                 logger('error', 'stats', 'Odds stats got a status that was NOT correct!');

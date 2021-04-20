@@ -370,6 +370,7 @@ class ProcessOdds
                 }
             }
 
+            $connection->query("BEGIN;");
             /* event market*/
             foreach ($events as $event) {
                 if (!empty($event)) {
@@ -380,7 +381,7 @@ class ProcessOdds
                     foreach ($marketOdds as $odd) {
                         $selections = $odd["marketSelection"];
                         if (empty($selections)) {
-                            EventMarket::softDelete($connection, 'event_id', $eventId);
+                            $eventMarketSoftDeleteResult = EventMarket::softDelete($connection, 'event_id', $eventId);
 
                             if (is_array($activeEventMarkets)) {
                                 foreach ($activeEventMarkets as $marketId) {
@@ -416,7 +417,7 @@ class ProcessOdds
                                             $eventMarket['market_event_identifier'] == $event["eventId"] &&
                                             $eventMarket['market_flag'] == $marketFlag
                                         ) {
-                                            EventMarket::softDelete($connection, 'bet_identifier', $activeEventMarket);
+                                            $eventMarketSoftDeleteResult = EventMarket::softDelete($connection, 'bet_identifier', $activeEventMarket);
                                             $eventMarketsTable->del(md5(implode(':', [$providerId, $activeEventMarket])));
 
                                             logger('info', 'odds', 'Event Market Deleted with bet identifier ' . $activeEventMarket);
@@ -462,7 +463,7 @@ class ProcessOdds
                                             $eventMarket['event_id'] == $eventId &&
                                             $eventMarket['market_event_identifier'] == $event["eventId"]
                                         )) {
-                                            EventMarket::updateDataByEventMarketId($connection, $eventMarketId, [
+                                            $eventMarketUpdateResult = EventMarket::updateDataByEventMarketId($connection, $eventMarketId, [
                                                 'odds'                    => $odds,
                                                 'odd_label'               => $points,
                                                 'is_main'                 => $marketType,
@@ -606,10 +607,6 @@ class ProcessOdds
                                     'odds'                    => $odds,
                                 ];
 
-                                if ($eventMarket['odd_label'] != $points) {
-                                    EventMarketGroup::delete($connection, 'event_market_id', $eventMarketId);
-                                }
-
                                 $newMarkets[] = $marketId;
                                 $eventMarketListTable->set($eventId, ['marketIDs' => implode(',', $newMarkets)]);
                             } else {
@@ -640,7 +637,22 @@ class ProcessOdds
                     }
                 }
             }
+            $connection->query("COMMIT;");
         } catch (Exception $e) {
+            $connection->query("ROLLBACK;");
+            $activeEventMarkets = explode(',', $eventMarketListTable->get($eventIdentifier, 'marketIDs'));
+            foreach ($activeEventMarkets as $marketId) {
+                if (!empty($marketId)) {
+                    EventMarket::update($connection, [
+                        'deleted_at' => Carbon::now()
+                    ], [
+                        'bet_identifier' => $marketId,
+                        'provider_id'    => $providerId
+                    ]);
+
+                    $eventMarketsTable->del(md5(implode(':', [$providerId, $marketId])));
+                }
+            }
             logger('error', 'odds', $e, $message);
         }
 
