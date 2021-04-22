@@ -17,6 +17,7 @@ class Event extends Model
     public static function getEventByProviderParam($connection, $eventIdentifier, $providerId, $sportId)
     {
         $sql = "SELECT * FROM " . static::$table . " WHERE event_identifier = '{$eventIdentifier}' AND provider_id = '{$providerId}' AND sport_id = '{$sportId}' ORDER BY id DESC LIMIT 1";
+        echo $sql . "\n";
         return $connection->query($sql);
     }
 
