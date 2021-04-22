@@ -51,12 +51,12 @@ class ProcessOdds
             $leagueName        = trim($messageData["leagueName"]);
             $gameSchedule      = $messageData["schedule"];
             $referenceSchedule = date("Y-m-d H:i:s", strtotime($messageData["referenceSchedule"]));
-            $homescore         = $messageData["home_score"];
-            $awayscore         = $messageData["away_score"];
+            $homescore         = $messageData["home_score"] ?: 0;
+            $awayscore         = $messageData["away_score"] ?: 0;
             $score             = $homescore . ' - ' . $awayscore;
             $runningtime       = $messageData["runningtime"];
-            $homeRedcard       = $messageData["home_redcard"];
-            $awayRedcard       = $messageData["away_redcard"];
+            $homeRedcard       = $messageData["home_redcard"] ?: 0;
+            $awayRedcard       = $messageData["away_redcard"] ?: 0;
             $events            = $messageData["events"];
             $eventIdentifier   = $events[0]["eventId"];
 
