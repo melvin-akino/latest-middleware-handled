@@ -382,6 +382,7 @@ class ProcessOdds
                         $selections = $odd["marketSelection"];
                         if (empty($selections)) {
                             $eventMarketSoftDeleteResult = EventMarket::softDelete($connection, 'event_id', $eventId);
+                            var_dump(json_encode($connection));
 
                             if (is_array($activeEventMarkets)) {
                                 foreach ($activeEventMarkets as $marketId) {
@@ -418,6 +419,7 @@ class ProcessOdds
                                             $eventMarket['market_flag'] == $marketFlag
                                         ) {
                                             $eventMarketSoftDeleteResult = EventMarket::softDelete($connection, 'bet_identifier', $activeEventMarket);
+                                            var_dump(json_encode($connection));
                                             $eventMarketsTable->del(md5(implode(':', [$providerId, $activeEventMarket])));
 
                                             logger('info', 'odds', 'Event Market Deleted with bet identifier ' . $activeEventMarket);
@@ -474,6 +476,7 @@ class ProcessOdds
                                                 'updated_at'              => $timestamp
                                             ]);
 
+                                            var_dump(json_encode($connection));
                                             logger('info', 'odds', 'Event Market Update event market ID ' . $eventMarketId, [
                                                 'odds'                    => $odds,
                                                 'odd_label'               => $points,
@@ -493,6 +496,7 @@ class ProcessOdds
                                     }
                                 } else {
                                     $eventMarketResult = EventMarket::getDataByBetIdentifier($connection, $marketId);
+                                    var_dump(json_encode($connection));
                                     $eventMarket       = $connection->fetchArray($eventMarketResult);
                                     if (!empty($eventMarket['id'])) {
                                         $eventMarketId = $eventMarket['id'];
@@ -510,6 +514,7 @@ class ProcessOdds
                                                 'deleted_at'              => null,
                                                 'updated_at'              => $timestamp
                                             ]);
+                                            var_dump(json_encode($connection));
 
                                             logger('info', 'odds', 'Event Market Update event market ID ' . $eventMarketId, [
                                                 'event_id'                => $eventId,
@@ -557,6 +562,7 @@ class ProcessOdds
                                                 'deleted_at'              => null,
                                                 'created_at'              => $timestamp
                                             ], 'id');
+                                            var_dump(json_encode($connection));
                                             $eventMarket       = $connection->fetchArray($eventMarketResult);
                                         } catch (Exception $e) {
                                             logger('error', 'odds', 'Another worker already created the event market', [
@@ -612,6 +618,7 @@ class ProcessOdds
                             } else {
                                 if (is_array($activeEventMarkets) && in_array($marketId, $activeEventMarkets)) {
                                     EventMarket::softDelete($connection, 'bet_identifier', $marketId);
+                                    var_dump(json_encode($connection));
 
                                     $eventMarketsTable->del(md5(implode(':', [$providerId, $marketId])));
 
@@ -631,6 +638,7 @@ class ProcessOdds
                     array_key_exists($activeEventMarket, $noLongerActiveMarkets)
                     ) {
                         EventMarket::softDelete($connection, 'bet_identifier', $activeEventMarket);
+                        var_dump(json_encode($connection));
                         $eventMarketsTable->del(md5(implode(':', [$providerId, $activeEventMarket])));
 
                         logger('info', 'odds', 'Event Market Deleted with bet identifier ' . $activeEventMarket);
@@ -639,6 +647,7 @@ class ProcessOdds
             }
             $connection->query("COMMIT;");
         } catch (Exception $e) {
+            var_dump((array) $e);
             $connection->query("ROLLBACK;");
             $activeEventMarkets = explode(',', $eventMarketListTable->get($eventIdentifier, 'marketIDs'));
             foreach ($activeEventMarkets as $marketId) {
