@@ -81,6 +81,7 @@ class ProcessOdds
                         'name'        => $leagueName,
                         'created_at'  => $timestamp
                     ], 'id');
+                    var_dump(json_encode($connection));
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the league');
 
@@ -123,6 +124,7 @@ class ProcessOdds
                         'sport_id'    => $sportId,
                         'created_at'  => $timestamp
                     ], 'id');
+                    var_dump(json_encode($connection));
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the team');
 
@@ -168,6 +170,7 @@ class ProcessOdds
                         'sport_id'    => $sportId,
                         'created_at'  => $timestamp
                     ], 'id');
+                    var_dump(json_encode($connection));
                 } catch (Exception $e) {
                     logger('error', 'odds', 'Another worker already created the team');
 
@@ -236,6 +239,7 @@ class ProcessOdds
                 ], [
                     'event_identifier' => $eventIdentifier
                 ]);
+                var_dump(json_encode($connection));
 
                 logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier, [
                     'ref_schedule'  => $referenceSchedule,
@@ -251,6 +255,7 @@ class ProcessOdds
             } else {
                 $swooleTable['lockHashData'][$eventIndexHash]['type'] = 'event';
                 $eventResult = Event::getEventByProviderParam($connection, $eventIdentifier, $providerId, $sportId);
+                var_dump(json_encode($connection));
 
                 if ($connection->numRows($eventResult) > 0) {
                     $event = $connection->fetchArray($eventResult);
@@ -274,6 +279,7 @@ class ProcessOdds
                         ], [
                             'event_identifier' => $eventIdentifier
                         ]);
+                        var_dump(json_encode($connection));
 
                         logger('info', 'odds', 'Event Updated event identifier ' . $eventIdentifier, [
                             'sport_id'      => $sportId,
@@ -317,6 +323,7 @@ class ProcessOdds
                         'away_penalty'     => $awayRedcard,
                         'created_at'       => $timestamp
                     ], 'id');
+                    var_dump(json_encode($connection));
 
                     $event       = $connection->fetchArray($eventResult);
 
