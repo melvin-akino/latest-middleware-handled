@@ -377,7 +377,7 @@ class ProcessOdds
                 }
             }
 
-            $connection->query("BEGIN;");
+            //$connection->query("BEGIN;");
             /* event market*/
             foreach ($events as $event) {
                 if (!empty($event)) {
@@ -652,10 +652,10 @@ class ProcessOdds
                     }
                 }
             }
-            $connection->query("COMMIT;");
+            //$connection->query("COMMIT;");
         } catch (Exception $e) {
             var_dump((array) $e);
-            $connection->query("ROLLBACK;");
+            //$connection->query("ROLLBACK;");
             $activeEventMarkets = explode(',', $eventMarketListTable->get($eventIdentifier, 'marketIDs'));
             foreach ($activeEventMarkets as $marketId) {
                 if (!empty($marketId)) {
