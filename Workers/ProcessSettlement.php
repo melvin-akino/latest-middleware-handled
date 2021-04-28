@@ -40,12 +40,17 @@ class ProcessSettlement
             $returnBetSourceId = $connection->fetchAssoc($sourceResult);
 
             foreach ($settlements as $settlement) {
+                lockProcess($settlement['bet_id'], 'settlement');
+                $swooleTable['lockHashData']->del($settlement['bet_id']);
+
                 if (empty($settlement['status'])) {
                     logger('error', 'settlements', 'Empty Settlement Status', $settlement);
                     continue;
                 }
 
                 foreach ($orders as $key => $order) {
+                    $swooleTable['lockHashData'][$settlement['bet_id']]['type'] = 'settlement';
+
                     if (!$providersTable->exists($settlement['provider'])) {
                         logger('info', 'settlements', 'Invalid Provider', $settlement);
                         continue;
@@ -71,6 +76,8 @@ class ProcessSettlement
                         break;
                     }
                 }
+
+                $swooleTable['lockHashData']->del($settlement['bet_id']);
             }
 
             logger('info', 'settlements', 'Processed', $message);
