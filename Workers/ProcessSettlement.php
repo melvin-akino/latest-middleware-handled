@@ -41,14 +41,16 @@ class ProcessSettlement
 
             foreach ($settlements as $settlement) {
                 lockProcess($settlement['bet_id'], 'settlement');
+                $swooleTable['lockHashData']->del($settlement['bet_id']);
 
                 if (empty($settlement['status'])) {
                     logger('error', 'settlements', 'Empty Settlement Status', $settlement);
-                    $swooleTable['lockHashData']->del($settlement['bet_id']);
                     continue;
                 }
 
                 foreach ($orders as $key => $order) {
+                    $swooleTable['lockHashData'][$settlement['bet_id']]['type'] = 'settlement';
+
                     if (!$providersTable->exists($settlement['provider'])) {
                         logger('info', 'settlements', 'Invalid Provider', $settlement);
                         continue;
