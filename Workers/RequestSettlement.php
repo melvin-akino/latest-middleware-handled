@@ -80,8 +80,8 @@ class RequestSettlement
                                     'settlement_date' => $previous_day,
                                 ];
                                 go(function () use ($providerAlias, $payload) {
-                                    $payload = array_merge(getPayloadPart($command, $subCommand), $payload);
                                     System::sleep(rand(1, 3));
+                                    $payload = array_merge(getPayloadPart($command, $subCommand), $payload);
                                     kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
                                     logger('info', 'app', 'Settlement: unsettled_date '. $providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req') . " Payload Sent", $payload);
                                 });
@@ -94,8 +94,8 @@ class RequestSettlement
                                         'settlement_date' => Carbon::createFromFormat('Y-m-d', $providerUnsettledDate['unsettled_date'])->format('Y-m-d'),
                                     ];
                                     go(function () use ($providerAlias, $payload) {
-                                        $payload = array_merge(getPayloadPart($command, $subCommand), $payload);
                                         System::sleep(rand(1, 3));
+                                        $payload = array_merge(getPayloadPart($command, $subCommand), $payload);
                                         kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
                                         logger('info', 'app', 'Settlement: current <> unsettled_date ' . $unsettled_date . '->' . $providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req') . " Payload Sent", $payload);
                                     });
@@ -109,8 +109,8 @@ class RequestSettlement
                                         'settlement_date' => Carbon::now()->subHours(5)->format('Y-m-d'),
                                     ];
                                     go(function () use ($providerAlias, $payload) {
-                                        $payload = array_merge(getPayloadPart($command, $subCommand), $payload);
                                         System::sleep(rand(60, 300));
+                                        $payload = array_merge(getPayloadPart($command, $subCommand), $payload);
                                         kafkaPush($providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req'), $payload, $payload['request_uid']);
                                         logger('info', 'app', 'Settlement: subHours5 ' . $subHours5 . '->'  . $providerAlias . getenv('KAFKA_SCRAPE_SETTLEMENT_POSTFIX', '_settlement_req') . " Payload Sent", $payload);
                                     });
