@@ -8,8 +8,9 @@ class Order
 
     public static function getDataByBetId($connection, $providerBetId, bool $withProviderAccountOrders = false)
     {
-        $select = "";
-        $join   = "";
+        $select        = "";
+        $join          = "";
+        $providerBetId = preg_replace('/[A-Za-z]/', '', $providerBetId);
 
         if ($withProviderAccountOrders) {
             $select .= ", ol.id AS order_log_id, pao.exchange_rate AS exchange_rate, pao.actual_stake AS astake, pao.actual_to_win AS ato_win";
@@ -22,7 +23,7 @@ class Order
             JOIN users as u ON u.id = o.user_id
             JOIN currency as c ON c.id = u.currency_id
             {$join}
-            WHERE o.bet_id LIKE '%{$providerBetId}'
+            WHERE '%' & o.bet_id LIKE '{$providerBetId}'
             ORDER BY o.id
             LIMIT 1";
 
