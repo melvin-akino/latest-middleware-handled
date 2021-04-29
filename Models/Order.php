@@ -8,9 +8,8 @@ class Order
 
     public static function getDataByBetId($connection, $providerBetId, bool $withProviderAccountOrders = false)
     {
-        $select        = "";
-        $join          = "";
-        $providerBetId = preg_replace('/[A-Za-z]/', '', $providerBetId);
+        $select = "";
+        $join   = "";
 
         if ($withProviderAccountOrders) {
             $select .= ", ol.id AS order_log_id, pao.exchange_rate AS exchange_rate, pao.actual_stake AS astake, pao.actual_to_win AS ato_win";
