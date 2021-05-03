@@ -28,46 +28,6 @@ class EventMarket extends Model
         return $connection->query($sql);
     }
 
-    public static function getAllUnmatchedMarket($connection)
-    {
-        $sql = "SELECT * FROM " . static::$table . " WHERE NOT EXISTS (SELECT null FROM event_market_groups as emg WHERE emg.event_market_id = event_markets.id) AND deleted_at is null ORDER BY id DESC";
-        return $connection->query($sql);
-    }
-
-    public static function getAllUnmatchedMarketWithMatchedEvents($connection)
-    {
-        $sql = "SELECT em.*, eg.master_event_id FROM " . static::$table . " as em
-            JOIN event_groups as eg ON eg.event_id = em.event_id
-            WHERE NOT EXISTS (SELECT null FROM event_market_groups as emg WHERE emg.event_market_id = em.id) 
-            AND em.deleted_at is null 
-            ORDER BY id DESC";
-        return $connection->query($sql);
-    }
-
-    public static function getMarketsByEventId($connection, $eventId)
-    {
-        $sql = "SELECT em.*, emg.* FROM " . static::$table . " as em 
-                LEFT JOIN event_market_groups as emg ON emg.event_market_id = em.id WHERE event_id = '{$eventId}' AND em.deleted_at is null";
-        return $connection->query($sql);
-    }
-
-    public static function getMarketsByMasterEventId($connection, $masterEventId)
-    {
-        $sql = "SELECT em.*, emg.* FROM " . static::$table . " as em 
-                LEFT JOIN event_market_groups as emg ON emg.event_market_id = em.id
-                JOIN event_groups as eg ON eg.event_id = em.event_id WHERE eg.master_event_id = '{$masterEventId}' AND em.deleted_at is null";
-        return $connection->query($sql);
-    }
-
-    public static function getUnmatchedMarketByIds($connection, $eventMarketIds)
-    {
-        $whereIn = implode("','", $eventMarketIds);
-        $sql = "SELECT em.* FROM " . static::$table . " as em 
-                WHERE NOT EXISTS (SELECT null FROM event_market_groups as emg WHERE emg.event_market_id = em.id) AND em.id IN ('{$whereIn}')";
-
-        return $connection->query($sql);
-    }
-
     public static function getMarketsByMasterEventIds($connection, $masterEventIds)
     {
         $sql = "SELECT e.sport_id, e.game_schedule, em.*, emg.* FROM " . static::$table . " as em 

@@ -14,19 +14,6 @@ class League extends Model
         return $connection->query($sql);
     }
 
-    public static function getLeague($connection, $leagueId)
-    {
-        $sql = "SELECT * FROM " . self::$table . " WHERE id = $leagueId";
-        return $connection->query($sql);
-    }
-
-    public static function getUnmatchedLeagues($connection)
-    {
-        $sql = "SELECT * FROM " . self::$table . " as l
-                WHERE NOT EXISTS (SELECT null FROM league_groups as lg WHERE lg.league_id = l.id)";
-        return $connection->query($sql);
-    }
-
     public static function getMajorLeagues($connection, $schedule)
     {
         $masterLeagueIds = [];

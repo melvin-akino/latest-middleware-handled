@@ -21,34 +21,10 @@ class Event extends Model
         return $connection->query($sql);
     }
 
-    public static function getAllUnmatchedEvents($connection)
-    {
-        $sql = "SELECT * FROM " . static::$table . " WHERE id NOT IN (SELECT event_id FROM event_groups) ORDER BY id DESC";
-        return $connection->query($sql);
-    }
-
-    public static function getAllGroupVerifiedUnmatchedEvents($connection)
-    {
-        $sql = "SELECT e.id as event_id, e.ref_schedule, lg.master_league_id, ht.master_team_id as master_home_team_id, at.master_team_id as master_away_team_id FROM unmatched_data as ue"
-        . " JOIN " . static::$table . " as e ON e.id = ue.data_id"        
-        . " JOIN team_groups as ht on ht.team_id = e.team_home_id"
-        . " JOIN team_groups as at on at.team_id = e.team_away_id"
-        . " JOIN league_groups as lg on lg.league_id = e.league_id"          
-        . " WHERE ue.data_type = 'event'";
-        return $connection->query($sql);
-    }
-
     public static function getEventsById($connection, $eventId)
     {
         $sql = "SELECT e.*, eg.* FROM " . static::$table . " as e 
                 LEFT JOIN event_groups as eg ON eg.event_id = e.id WHERE id = '{$eventId}'";
-        return $connection->query($sql);
-    }
-
-    public static function getUnmatchedEvents($connection)
-    {
-        $sql = "SELECT * FROM " . self::$table . " as e
-                WHERE NOT EXISTS (SELECT null FROM event_groups as eg WHERE eg.event_id = e.id)";
         return $connection->query($sql);
     }
 }
