@@ -34,4 +34,11 @@ class MasterEvent extends Model
                 WHERE master_event_unique_id = '{$masterEventUniqueId}' LIMIT 1";
         return $connection->query($sql);
     }
+
+    public static function getMasterEventIdByMasterLeagueId($connection, $masterLeagueIds)
+    {
+        $sql = "SELECT id FROM " . static::$table . "
+                WHERE master_league_id in ($masterLeagueIds)";
+        return $connection->query($sql);
+    }
 }

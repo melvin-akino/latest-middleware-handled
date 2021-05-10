@@ -1,0 +1,43 @@
+<?php
+
+use Smf\ConnectionPool\ConnectionPool;
+use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
+use Swoole\Coroutine\PostgreSQL;
+use Workers\{
+    ProcessUserWatchlist,
+    ProcessUserSelectedLeague,
+    ProcessMajorLeague
+};
+
+require_once __DIR__ . '/../Bootstrap.php';
+
+$dbPool = null;
+Co\run(function () use ($queue) {
+    global $dbPool;
+
+    $dbPool = databaseConnectionPool();
+
+    $dbPool->init();
+    defer(function () use ($dbPool) {
+        logger('info', 'app', "Closing connection pool");
+        echo "Closing connection pool\n";
+        $dbPool->close();
+    });
+
+    /**
+     * Co-Routine Asynchronous Worker for handling
+     * User watchlist.
+     */
+    // go(function () use ($dbPool) {
+    //     ProcessUserWatchlist::handle($dbPool);
+    // });
+
+    // go(function () use ($dbPool) {
+    //     ProcessUserSelectedLeague::handle($dbPool);
+    // });
+
+    go(function () use ($dbPool) {
+        ProcessMajorLeague::handle($dbPool);
+    });
+
+});
