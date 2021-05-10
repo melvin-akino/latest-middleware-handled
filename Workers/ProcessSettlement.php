@@ -108,13 +108,10 @@ class ProcessSettlement
         $exchangeRateResult = ExchangeRate::getRate($connection, $providerCurrencyId, $order['currency_id']);
         $exchangeRate       = $connection->fetchAssoc($exchangeRateResult);
 
-        // SPECIAL CASE for ISN Provider
-        if (strtolower($data['provider']) == 'isn') {
-            if ((strtolower($data['status']) == 'win') && ($data['profit_loss'] == ($order['ato_win'] / 2))) {
-                $status = 'HALF WIN';
-            } else if ((strtolower($data['status']) == 'lose') && ($order['astake'] / 2 == abs($data['profit_loss']))) {
-                $status = 'HALF LOSE';
-            }
+        if ((strtolower($data['status']) == 'win') && ($data['profit_loss'] == ($order['ato_win'] / 2))) {
+            $status = 'HALF WIN';
+        } else if ((strtolower($data['status']) == 'lose') && ($order['astake'] / 2 == abs($data['profit_loss']))) {
+            $status = 'HALF LOSE';
         }
 
         switch ($status) {
