@@ -2,7 +2,6 @@
 
 namespace Workers;
 
-use Classes\RedisService;
 use Models\{
     EventMarket,
     MasterEvent,
@@ -11,14 +10,15 @@ use Models\{
 use Carbon\Carbon;
 use Co\System;
 use Exception;
+use Ramsey\Uuid\Uuid;
 
 class ProcessUserSelectedLeague
 {
-    public static function handle($dbPool) 
+    public static function handle($dbPool, $providers) 
     {
         while (true)
         {
-            //logger('info', 'minmax', "Processing User Watchlist...");
+            logger('info', 'minmax', "Processing User Selected Leagues markets...");
 
             try {
                 $connection       = $dbPool->borrow();
@@ -45,25 +45,45 @@ class ProcessUserSelectedLeague
                         if ($eventMarkets) {
                             $eventMarketArray = $connection->fetchAll($eventMarkets);
                             foreach($eventMarketArray as $market) {
-                                var_dump($market['bet_identifier']);
-                                //Redis LPUSH HERE
-                                $client = new RedisService();
-                                if (!$client->exists('hg-minmax-medium:queue', $market['bet_identifier']))
-                                {
-                                    $client->lpush('hg-minmax-medium:queue', $market['bet_identifier']);
+                                //Push to Kafka
+                                $requestId = (string) Uuid::uuid4();
+                                $requestTs = getMilliseconds();
+                                //Generate kafka json payload here
+
+                                $payload = [
+                                    'request_id'    => $requestId,
+                                    'request_ts'    => $requestTs,
+                                    'command'       => 'minmax',
+                                    'sub_command'   => 'scrape',
+                                    'data' => [
+                                        'provider'      => $providers[$market['provider_id']],
+                                        'sport'         => (string) $market['sport_id'],
+                                        'schedule'      => $market['game_schedule'],
+                                        'event_id'      => $market['event_id'],
+                                        'odds'          => $market['odds'],
+                                        'memUID'        => $market['mem_uid']
+                                    ]
+
+                                ];
+                                $topic = getenv('KAFKA_MINMAXLOW', 'minmax-low_req');
+
+                                if (!in_array(getenv('APP_ENV'), ['testing'])) {
+                                    kafkaPush($topic, $payload, $requestId);
+                                    logger('info', 'minmax', "Pushed this user selected league market mem_uid to kafka:".$market['mem_uid']);
+                                    var_dump($payload, true);
                                 }
                             }
                         }
                     }
                 } else {
-                    //logger('info', 'minmax', "There are no user watchlist to process.");
+                    logger('info', 'minmax', "There are no user selected leagues markets to process.");
                 }
             } catch (Exception $e) {
-                //logger('error', 'minmax', "Something went wrong during Processing of user watchlists...", (array) $e);
+                logger('error', 'minmax', "Something went wrong during Processing of user watchlists...", (array) $e);
             }
 
             $dbPool->return($connection);
-            System::sleep(10);
+            System::sleep(30);
         }
     }
 }

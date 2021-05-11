@@ -8,6 +8,7 @@ use Workers\{
     ProcessUserSelectedLeague,
     ProcessMajorLeague
 };
+use Models\Provider;
 
 require_once __DIR__ . '/../Bootstrap.php';
 
@@ -23,21 +24,28 @@ Co\run(function () use ($queue) {
         echo "Closing connection pool\n";
         $dbPool->close();
     });
-
+    $connection = $dbPool->borrow();
+    $providerQuery = Provider::getActiveProviders($connection);
+    $providerArray = $connection->fetchAll($providerQuery);
+    foreach($providerArray as $provider)
+    {
+        $providers[$provider['id']] = strtolower($provider['alias']);
+    }
+    $dbPool->return($connection);
     /**
      * Co-Routine Asynchronous Worker for handling
      * User watchlist.
      */
     // go(function () use ($dbPool) {
-    //     ProcessUserWatchlist::handle($dbPool);
+    //     ProcessUserWatchlist::handle($dbPool, $providers);
     // });
 
     // go(function () use ($dbPool) {
-    //     ProcessUserSelectedLeague::handle($dbPool);
+    //     ProcessUserSelectedLeague::handle($dbPool, $providers);
     // });
 
-    go(function () use ($dbPool) {
-        ProcessMajorLeague::handle($dbPool);
+    go(function () use ($dbPool, $providers) {
+        ProcessMajorLeague::handle($dbPool, $providers);
     });
 
 });
