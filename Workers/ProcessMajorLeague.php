@@ -1,7 +1,7 @@
 <?php
 
 namespace Workers;
-
+use Classes\RedisService;
 use Models\{
     EventMarket,
     MasterEvent,
@@ -10,6 +10,7 @@ use Models\{
 use Carbon\Carbon;
 use Co\System;
 use Exception;
+
 
 class ProcessMajorLeague
 {
@@ -30,7 +31,7 @@ class ProcessMajorLeague
                         $masterLeagueIds[] = $league['master_league_id'];
                     }
                     $masterLeagueIdList = implode(",",$masterLeagueIds);
-                    //var_dump($masterLeagueIdList);
+
                     $masterEvents = MasterEvent::getMasterEventIdByMasterLeagueId($connection, $masterLeagueIdList);
 
                     if ($masterEvents) {
@@ -46,7 +47,13 @@ class ProcessMajorLeague
                             $eventMarketArray = $connection->fetchAll($eventMarkets);
                             foreach($eventMarketArray as $market) {
                                 var_dump($market['bet_identifier']);
+                                
                                 //Redis LPUSH HERE
+                                $client = new RedisService();
+                                if (!$client->exists('hg-minmax-high:queue', $market['bet_identifier']))
+                                {
+                                    $client->lpush('hg-minmax-high:queue', $market['bet_identifier']);
+                                }
                             }
                         }
                     }

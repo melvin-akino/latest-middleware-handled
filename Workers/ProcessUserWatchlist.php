@@ -2,6 +2,7 @@
 
 namespace Workers;
 
+use Classes\RedisService;
 use Models\{
     EventMarket,
     UserWatchlist, 
@@ -34,8 +35,12 @@ class ProcessUserWatchlist
                     if ($eventMarkets) {
                         $eventMarketArray = $connection->fetchAll($eventMarkets);
                         foreach($eventMarketArray as $market) {
-                            var_dump($market['bet_identifier']);
                             //Redis LPUSH HERE
+                            $client = new RedisService();
+                            if (!$client->exists('hg-minmax-medium:queue', $market['bet_identifier']))
+                            {
+                                $client->lpush('hg-minmax-medium:queue', $market['bet_identifier']);
+                            }
                         }
                     }
                 } else {

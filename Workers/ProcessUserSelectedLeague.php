@@ -2,6 +2,7 @@
 
 namespace Workers;
 
+use Classes\RedisService;
 use Models\{
     EventMarket,
     MasterEvent,
@@ -30,7 +31,6 @@ class ProcessUserSelectedLeague
                         $masterLeagueIds[] = $league['master_league_id'];
                     }
                     $masterLeagueIdList = implode(",",$masterLeagueIds);
-                    //var_dump($masterLeagueIdList);
                     $masterEvents = MasterEvent::getMasterEventIdByMasterLeagueId($connection, $masterLeagueIdList);
 
                     if ($masterEvents) {
@@ -47,6 +47,11 @@ class ProcessUserSelectedLeague
                             foreach($eventMarketArray as $market) {
                                 var_dump($market['bet_identifier']);
                                 //Redis LPUSH HERE
+                                $client = new RedisService();
+                                if (!$client->exists('hg-minmax-medium:queue', $market['bet_identifier']))
+                                {
+                                    $client->lpush('hg-minmax-medium:queue', $market['bet_identifier']);
+                                }
                             }
                         }
                     }
