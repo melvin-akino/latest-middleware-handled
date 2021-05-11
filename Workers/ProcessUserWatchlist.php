@@ -48,8 +48,8 @@ class ProcessUserWatchlist
                                     'provider'      => $providers[$market['provider_id']],
                                     'sport'         => (string) $market['sport_id'],
                                     'schedule'      => $market['game_schedule'],
-                                    'event_id'      => $market['event_id'],
-                                    'odds'          => $market['odds'],
+                                    'event_id'      => (string) $market['event_id'],
+                                    'odds'          => (string) $market['odds'],
                                     'memUID'        => $market['mem_uid']
                                 ]
 

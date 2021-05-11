@@ -36,13 +36,13 @@ Co\run(function () use ($queue) {
      * Co-Routine Asynchronous Worker for handling
      * User watchlist.
      */
-    // go(function () use ($dbPool) {
-    //     ProcessUserWatchlist::handle($dbPool, $providers);
-    // });
+    go(function () use ($dbPool, $providers) {
+        ProcessUserWatchlist::handle($dbPool, $providers);
+    });
 
-    // go(function () use ($dbPool) {
-    //     ProcessUserSelectedLeague::handle($dbPool, $providers);
-    // });
+    go(function () use ($dbPool, $providers) {
+        ProcessUserSelectedLeague::handle($dbPool, $providers);
+    });
 
     go(function () use ($dbPool, $providers) {
         ProcessMajorLeague::handle($dbPool, $providers);
