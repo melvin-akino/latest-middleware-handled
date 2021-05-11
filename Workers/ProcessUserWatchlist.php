@@ -71,7 +71,7 @@ class ProcessUserWatchlist
             }
 
             $dbPool->return($connection);
-            System::sleep(30);
+            System::sleep(10);
         }
     }
 }
