@@ -52,7 +52,6 @@ class ProcessUserWatchlist
                                     'odds'          => (string) $market['odds'],
                                     'memUID'        => $market['mem_uid']
                                 ]
-
                             ];
 
                             $topic = getenv('KAFKA_MINMAXLOW', 'minmax-low_req');

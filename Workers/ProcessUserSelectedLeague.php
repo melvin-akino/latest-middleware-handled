@@ -70,7 +70,6 @@ class ProcessUserSelectedLeague
                                 if (!in_array(getenv('APP_ENV'), ['testing'])) {
                                     kafkaPush($topic, $payload, $requestId);
                                     logger('info', 'minmax', "Pushed this user selected league market mem_uid to kafka:".$market['mem_uid']);
-                                    var_dump($payload, true);
                                 }
                             }
                         }
