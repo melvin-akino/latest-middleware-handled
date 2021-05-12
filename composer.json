@@ -5,8 +5,7 @@
         "ext-rdkafka": "5.0.0",
         "ramsey/uuid": "^4.1",
         "nesbot/carbon": "^2.45",
-        "guzzlehttp/guzzle": "^7.2",
-        "predis/predis": "^1.1"
+        "guzzlehttp/guzzle": "^7.2"
     },
     "autoload": {
         "psr-4": {
