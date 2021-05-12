@@ -54,7 +54,7 @@ class ProcessUserWatchlist
                                 ]
                             ];
 
-                            $topic = getenv('KAFKA_MINMAXLOW', 'minmax-low_req');
+                            $topic = getenv('KAFKA_MINMAXLOW', 'minmax-high_req');
 
                             if (!in_array(getenv('APP_ENV'), ['testing'])) {
                                 kafkaPush($topic, $payload, $requestId);
