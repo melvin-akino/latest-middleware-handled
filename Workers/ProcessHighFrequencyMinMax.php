@@ -17,7 +17,7 @@ class ProcessHighFrequencyMinMax
     public static function handle($dbPool, $providers, $primaryProviderName, $schedule) 
     {
 
-        logger('info', 'minmax', "Processing User Watchlist markets...");
+        logger('info', 'minmax', "Processing {$schedule} event markets...");
         $providerId = array_search($primaryProviderName, $providers);
         try {
             $connection       = $dbPool->borrow();
@@ -56,15 +56,15 @@ class ProcessHighFrequencyMinMax
 
                         if (!in_array(getenv('APP_ENV'), ['testing'])) {
                             kafkaPush($topic, $payload, $requestId);
-                            logger('info', 'minmax', "Pushed this user watchlist market mem_uid to kafka:".$market['mem_uid']);
+                            logger('info', 'minmax', "Pushed this {$schedule} bet_identifier: ".$market['mem_uid']." - market mem_uid to kafka:".$market['mem_uid']);
                         }
                     }
                 }
             } else {
-                logger('info', 'minmax', "There are no user watchlist markets to process.");
+                logger('info', 'minmax', "There are no {$schedule} event markets to process.");
             }
         } catch (Exception $e) {
-            logger('error', 'minmax', "Something went wrong during Processing of user watchlists...", (array) $e);
+            logger('error', 'minmax', "Something went wrong during Processing of {$schedule} event markets...", (array) $e);
         }
 
         $dbPool->return($connection);
