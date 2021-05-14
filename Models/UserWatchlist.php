@@ -11,7 +11,7 @@ class UserWatchlist extends Model
     public static function getUserWatchlists($connection, $providerId, $schedule)
     {
         $masterEventIds = [];
-        $sql = "SELECT master_event_id FROM " . self::$table 
+        $sql = "SELECT user_watchlist.master_event_id FROM " . self::$table 
         ." JOIN event_groups on event_groups.master_event_id=".self::$table.".master_event_id" 
         ." JOIN events on events.id=event_groups.event_id"
         ." WHERE provider_id={$providerId} AND events.deleted_at is null AND game_schedule='{$schedule}'";

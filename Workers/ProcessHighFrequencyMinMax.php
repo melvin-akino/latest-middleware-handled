@@ -68,6 +68,5 @@ class ProcessHighFrequencyMinMax
         }
 
         $dbPool->return($connection);
-
     }
 }

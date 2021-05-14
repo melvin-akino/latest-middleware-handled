@@ -30,7 +30,7 @@ Co\run(function () use ($queue) {
 
     $primaryProviderResult = SystemConfiguration::getPrimaryProvider($connection);
     $primaryProvider       = $connection->fetchArray($primaryProviderResult);
-    $primaryProviderName = strtolower($primaryProvider['value']);
+    $primaryProviderName   = strtolower($primaryProvider['value']);
     $dbPool->return($connection);
     
     /**
