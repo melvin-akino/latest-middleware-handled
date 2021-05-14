@@ -14,7 +14,7 @@ use Ramsey\Uuid\Uuid;
 
 class ProcessHighFrequencyMinMax
 {
-    public static function handle($dbPool, $providers, $primaryProviderName, $schedule, $frequency) 
+    public static function handle($dbPool, $providers, $primaryProviderName, $schedule) 
     {
         while (true)
         {
@@ -69,7 +69,6 @@ class ProcessHighFrequencyMinMax
             }
 
             $dbPool->return($connection);
-            System::sleep($frequency);
         }
     }
 }

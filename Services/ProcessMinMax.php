@@ -38,21 +38,23 @@ Co\run(function () use ($queue) {
      * User watchlist and Major Leagues in the following game schedules [inplay, today, early].
      * 
      * NEW ENV VARIABLES
-     * KAFKA_MINMAXHIGH=minmax-high_req
+     *   KAFKA_MINMAXHIGH=minmax-high_req
      *   MINMAX_FREQUENCY_INPLAY=10
      *   MINMAX_FREQUENCY_TODAY=15
      *   MINMAX_FREQUENCY_EARLY=20
      */
-    go(function () use ($dbPool, $providers, $primaryProviderName) {
-        ProcessHighFrequencyMinMax::handle($dbPool, $providers, $primaryProviderName, 'inplay', getenv('MINMAX_FREQUENCY_INPLAY'));
-    });
 
-    go(function () use ($dbPool, $providers, $primaryProviderName) {
-        ProcessHighFrequencyMinMax::handle($dbPool, $providers, $primaryProviderName, 'today', getenv('MINMAX_FREQUENCY_TODAY'));
-    });
+    function getInPlayData($dbPool, $providers, $primaryProviderName) {
+        ProcessHighFrequencyMinMax::handle($dbPool, $providers, $primaryProviderName, 'inplay');
+    }
+    function getTodayData($dbPool, $providers, $primaryProviderName) {
+        ProcessHighFrequencyMinMax::handle($dbPool, $providers, $primaryProviderName, 'today');
+    }
+    function getEarlyData($dbPool, $providers, $primaryProviderName) {
+        ProcessHighFrequencyMinMax::handle($dbPool, $providers, $primaryProviderName, 'early');
+    }
 
-    go(function () use ($dbPool, $providers, $primaryProviderName) {
-        ProcessHighFrequencyMinMax::handle($dbPool, $providers, $primaryProviderName, 'early', getenv('MINMAX_FREQUENCY_EARLY'));
-    });
-
+    Swoole\Timer::tick((getenv('MINMAX_FREQUENCY_INPLAY') * 1000), "getInPlayData");
+    Swoole\Timer::tick((getenv('MINMAX_FREQUENCY_TODAY') * 1000), "getTodayData");
+    Swoole\Timer::tick((getenv('MINMAX_FREQUENCY_EARLY') * 1000), "getEarlyData");
 });
