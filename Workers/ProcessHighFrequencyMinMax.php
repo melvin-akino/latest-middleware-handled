@@ -30,7 +30,7 @@ class ProcessHighFrequencyMinMax
                 $masterEventIds = implode(",",$events);
                 var_dump($masterEventIds);
                 $eventMarkets = EventMarket::getMarketsByMasterEventIds($connection,$masterEventIds);
-                if ($eventMarkets) {
+                if ($eventMarkets->count() > 0) {
                     $eventMarketArray = $connection->fetchAll($eventMarkets);
                     foreach($eventMarketArray as $market) {
                         //Push to Kafka
