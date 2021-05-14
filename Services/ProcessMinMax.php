@@ -114,7 +114,7 @@ Co\run(function () use ($queue) {
             } catch (Exception $e) {
                 echo $e->getMessage();
             }
-            Co::sleep((getenv('MINMAX_FREQUENCY_INPLAY') * 1000));
+            Co::sleep((getenv('MINMAX_FREQUENCY_INPLAY')));
         }
     });
     go(function () use ($dbPool, $providers, $primaryProviderName) {
@@ -126,7 +126,7 @@ Co\run(function () use ($queue) {
             } catch (Exception $e) {
                 echo $e->getMessage();
             }
-            Co::sleep((getenv('MINMAX_FREQUENCY_TODAY') * 1000));
+            Co::sleep((getenv('MINMAX_FREQUENCY_TODAY')));
         }
     });
     go(function () use ($dbPool, $providers, $primaryProviderName) {
@@ -138,7 +138,7 @@ Co\run(function () use ($queue) {
             } catch (Exception $e) {
                 echo $e->getMessage();
             }
-            Co::sleep((getenv('MINMAX_FREQUENCY_EARLY') * 1000));
+            Co::sleep((getenv('MINMAX_FREQUENCY_EARLY')));
         }
     });
 });
