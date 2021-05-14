@@ -38,7 +38,7 @@ class ProcessHighFrequencyMinMax
                         $requestTs = getMilliseconds();
                         //Generate kafka json payload here
                         $payload = [
-                            'request_id'    => $requestId,
+                            'request_uid'    => $requestId,
                             'request_ts'    => $requestTs,
                             'command'       => 'minmax',
                             'sub_command'   => 'scrape',
