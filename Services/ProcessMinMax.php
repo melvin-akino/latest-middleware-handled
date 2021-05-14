@@ -39,22 +39,22 @@ Co\run(function () use ($queue) {
      * 
      * NEW ENV VARIABLES
      *   KAFKA_MINMAXHIGH=minmax-high_req
-     *   MINMAX_FREQUENCY_INPLAY=10
-     *   MINMAX_FREQUENCY_TODAY=15
-     *   MINMAX_FREQUENCY_EARLY=20
+     *   MINMAX_FREQUENCY_INPLAY=5
+     *   MINMAX_FREQUENCY_TODAY=10
+     *   MINMAX_FREQUENCY_EARLY=15
      */
 
-    function getInPlayData($dbPool, $providers, $primaryProviderName) {
+    function getInPlayData($timer, $dbPool, $providers, $primaryProviderName) {
         ProcessHighFrequencyMinMax::handle($dbPool, $providers, $primaryProviderName, 'inplay');
     }
-    function getTodayData($dbPool, $providers, $primaryProviderName) {
+    function getTodayData($timer, $dbPool, $providers, $primaryProviderName) {
         ProcessHighFrequencyMinMax::handle($dbPool, $providers, $primaryProviderName, 'today');
     }
-    function getEarlyData($dbPool, $providers, $primaryProviderName) {
+    function getEarlyData($timer, $dbPool, $providers, $primaryProviderName) {
         ProcessHighFrequencyMinMax::handle($dbPool, $providers, $primaryProviderName, 'early');
     }
 
-    Swoole\Timer::tick((getenv('MINMAX_FREQUENCY_INPLAY') * 1000), "getInPlayData");
-    Swoole\Timer::tick((getenv('MINMAX_FREQUENCY_TODAY') * 1000), "getTodayData");
-    Swoole\Timer::tick((getenv('MINMAX_FREQUENCY_EARLY') * 1000), "getEarlyData");
+    Swoole\Timer::tick((getenv('MINMAX_FREQUENCY_INPLAY') * 1000), "getInPlayData", $dbPool, $providers, $primaryProviderName);
+    Swoole\Timer::tick((getenv('MINMAX_FREQUENCY_TODAY') * 1000), "getTodayData", $dbPool, $providers, $primaryProviderName);
+    Swoole\Timer::tick((getenv('MINMAX_FREQUENCY_EARLY') * 1000), "getEarlyData", $dbPool, $providers, $primaryProviderName);
 });
