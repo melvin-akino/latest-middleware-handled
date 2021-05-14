@@ -49,7 +49,7 @@ function process($connection, $providers, $primaryProviderName, $schedule) {
                         $topic = getenv('KAFKA_MINMAXHIGH', 'minmax-high_req');
                         if (!in_array(getenv('APP_ENV'), ['testing'])) {
                             kafkaPush($topic, $payload, $requestId);
-                            logger('info', 'minmax', "[".strtoupper($schedule)."] Pushed this event market mem_uid:".$market['mem_uid']." to kafka");
+                            logger('info', 'minmax', "[".strtoupper($schedule)."] Pushed this event market bet_identifier" . $market['bet_identifier'] . " - mem_uid:".$market['mem_uid']." to kafka");
                         }
                     }
                 }
