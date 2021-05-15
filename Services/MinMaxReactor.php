@@ -24,7 +24,7 @@ Co\run(function () use ($queue) {
         "early" => getenv('MINMAX_FREQUENCY_EARLY')
     );
     foreach($schedules as $schedule=>$interval) {
-        go(function () use ($dbPool) {
+        go(function () use ($dbPool, $schedule, $interval) {
             while (true) {
                 try {
                     $connection = $dbPool->borrow();
