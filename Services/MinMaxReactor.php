@@ -3,7 +3,6 @@ use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
 use Swoole\Coroutine\PostgreSQL;
 use Workers\ProcessMinMax;
-use Models\{Provider,SystemConfiguration};
 
 require_once __DIR__ . '/../Bootstrap.php';
 
@@ -25,7 +24,7 @@ Co\run(function () use ($queue) {
         "early" => getenv('MINMAX_FREQUENCY_EARLY')
     );
     foreach($schedules as $schedule=>$interval) {
-        go(function () use ($dbPool, $providers, $primaryProviderName) {
+        go(function () use ($dbPool) {
             while (true) {
                 try {
                     $connection = $dbPool->borrow();
