@@ -1,8 +1,7 @@
 <?php
 use Smf\ConnectionPool\ConnectionPool;
-use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
-use Swoole\Coroutine\PostgreSQL;
 use Workers\ProcessMinMax;
+use Models\Provider;
 
 require_once __DIR__ . '/../Bootstrap.php';
 
@@ -23,12 +22,22 @@ Co\run(function () use ($queue) {
         "today" => getenv('MINMAX_FREQUENCY_TODAY'),
         "early" => getenv('MINMAX_FREQUENCY_EARLY')
     );
+
+    $connection = $dbPool->borrow();
+    $providerQuery = Provider::getActiveProviders($connection);
+    $providerArray = $connection->fetchAll($providerQuery);
+    foreach($providerArray as $provider)
+    {
+        $providers[$provider['id']] = strtolower($provider['alias']);
+    }
+    $dbPool->return($connection);
+
     foreach($schedules as $schedule=>$interval) {
-        go(function () use ($dbPool, $schedule, $interval) {
+        go(function () use ($dbPool, $providers, $schedule, $interval) {
             while (true) {
                 try {
                     $connection = $dbPool->borrow();
-                    ProcessMinMax::handle($connection, $schedule);
+                    ProcessMinMax::handle($connection, $providers, $schedule);
                     $dbPool->return($connection);
                 } catch (Exception $e) {
                     echo $e->getMessage();

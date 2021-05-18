@@ -68,13 +68,12 @@ class EventMarket extends Model
         return $connection->query($sql);
     }
 
-    public static function getMarketsByMasterEventIds($connection, $masterEventIds, $providerId)
+    public static function getMarketsByMasterEventIds($connection, $masterEventIds)
     {
         $sql = "SELECT e.sport_id, e.game_schedule, em.*, emg.* FROM " . static::$table . " as em 
                 LEFT JOIN event_market_groups as emg ON emg.event_market_id = em.id
                 LEFT JOIN events as e on e.id=em.event_id
                 JOIN event_groups as eg ON eg.event_id = em.event_id WHERE eg.master_event_id in ($masterEventIds)
-                AND e.provider_id = {$providerId} 
                 AND em.is_main = true
                 AND em.deleted_at is null";
         return $connection->query($sql);

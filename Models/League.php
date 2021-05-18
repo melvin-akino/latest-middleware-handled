@@ -27,7 +27,7 @@ class League extends Model
         return $connection->query($sql);
     }
 
-    public static function getMajorLeagues($connection, $providerId, $schedule)
+    public static function getMajorLeagues($connection, $schedule)
     {
         $masterLeagueIds = [];
         $masterEventIds = [];
@@ -43,7 +43,7 @@ class League extends Model
                 $masterLeagueIds[] = $league['master_league_id'];
             }
             $masterLeagueIdList = implode(",",$masterLeagueIds);
-            $masterEvents = MasterEvent::getMasterEventIdByMasterLeagueId($connection, $providerId, $schedule, $masterLeagueIdList);              
+            $masterEvents = MasterEvent::getMasterEventIdByMasterLeagueId($connection, $schedule, $masterLeagueIdList);
             $masterEventIdArray = $connection->fetchAll($masterEvents);
             if (!empty($masterEventIdArray)) {
                 foreach($masterEventIdArray as $event) {
