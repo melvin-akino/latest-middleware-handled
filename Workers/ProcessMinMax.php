@@ -7,7 +7,6 @@ use Models\{
     League,
     UserWatchlist    
 };
-use Models\{Provider,SystemConfiguration};
 
 use Carbon\Carbon;
 use Co\System;
@@ -16,27 +15,16 @@ use Ramsey\Uuid\Uuid;
 
 class ProcessMinMax
 {
-    public static function handle($connection, $schedule) {
-
-        $providerQuery = Provider::getActiveProviders($connection);
-        $providerArray = $connection->fetchAll($providerQuery);
-        foreach($providerArray as $provider)
-        {
-            $providers[$provider['id']] = strtolower($provider['alias']);
-        }
-        $primaryProviderResult = SystemConfiguration::getPrimaryProvider($connection);
-        $primaryProvider       = $connection->fetchArray($primaryProviderResult);
-        $primaryProviderName   = strtolower($primaryProvider['value']);
+    public static function handle($connection, $providers, $schedule) {
 
         logger('info', 'minmax', "[".strtoupper($schedule)."] Processing event markets...");
-        $providerId = array_search($primaryProviderName, $providers);
         try {
-            $userWatchlists  = UserWatchlist::getUserWatchlists($connection, $providerId, $schedule);
-            $majorLeagues  = League::getMajorLeagues($connection, $providerId, $schedule);
+            $userWatchlists  = UserWatchlist::getUserWatchlists($connection, $schedule);
+            $majorLeagues  = League::getMajorLeagues($connection, $schedule);
             $events = array_unique(array_merge($userWatchlists, $majorLeagues));
             if (!empty($events)) {
                 $masterEventIds = implode(",",$events);
-                $eventMarkets = EventMarket::getMarketsByMasterEventIds($connection,$masterEventIds,$providerId);
+                $eventMarkets = EventMarket::getMarketsByMasterEventIds($connection,$masterEventIds);
                 if ($eventMarkets) {
                     $eventMarketArray = $connection->fetchAll($eventMarkets);
                     if ($eventMarketArray) {
