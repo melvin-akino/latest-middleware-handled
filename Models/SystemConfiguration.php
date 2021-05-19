@@ -21,7 +21,6 @@ class SystemConfiguration
     public static function getPrimaryProvider($connection)
     {
         $sql = "SELECT type, value FROM " . self::$table . " WHERE type = 'PRIMARY_PROVIDER'";
-        echo $sql . "\n";
         return $connection->query($sql);
     }
 
