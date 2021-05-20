@@ -4,7 +4,7 @@ use Models\{
     Provider,
     ProviderAccount,
     SystemConfiguration,
-    Order,
+    ProviderBet,
     Team,
     TeamGroup,
     League,
@@ -202,25 +202,25 @@ class PreProcess
         }
     }
 
-    public static function loadActiveOrders()
+    public static function loadActiveProviderBets()
     {
         global $swooleTable;
 
-        foreach ($swooleTable['activeOrders'] as $k => $e) {
-            $swooleTable['activeOrders']->del($k);
+        foreach ($swooleTable['activeProviderBets'] as $k => $e) {
+            $swooleTable['activeProviderBets']->del($k);
         }
 
-        $result = Order::getActiveOrders(self::$connection);
-        $orders = self::$connection->fetchAll($result);
+        $result = ProviderBet::getActiveProviderBets(self::$connection);
+        $providerBets = self::$connection->fetchAll($result);
 
-        foreach ($orders as $order) {
-            $swooleTable['activeOrders']->set($order['id'], [
-                'createdAt'      => $order['created_at'],
-                'betId'          => $order['bet_id'],
-                'orderExpiry'    => $order['order_expiry'],
-                'username'       => $order['username'],
-                'userCurrencyId' => $order['user_currency_id'],
-                'status'         => $order['status']
+        foreach ($providerBets as $providerBet) {
+            $swooleTable['activeProviderBets']->set($providerBet['id'], [
+                'createdAt'      => $providerBet['created_at'],
+                'betId'          => $providerBet['bet_id'],
+                'orderExpiry'    => $providerBet['order_expiry'],
+                'username'       => $providerBet['username'],
+                'userCurrencyId' => $providerBet['user_currency_id'],
+                'status'         => $providerBet['status']
             ]);
         }
     }
