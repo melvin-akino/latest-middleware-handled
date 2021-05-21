@@ -17,7 +17,7 @@ class ProviderBet
                 LEFT JOIN provider_bet_transactions AS pbt ON pbt.provider_bet_id = pb.id";
         }
 
-        $sql = "SELECT pb.*, ub.odd_type_id, u.currency_id, u.uuid, c.code{$select}
+        $sql = "SELECT pb.*, ub.odd_type_id, u.currency_id, u.uuid, ub.user_id, c.code{$select}
             FROM " . self::$table . " as pb
             JOIN user_bets as ub ON pb.user_bet_id = ub.id
             JOIN users as u ON u.id = ub.user_id
@@ -32,7 +32,7 @@ class ProviderBet
 
     public static function getActiveProviderBets($connection)
     {
-        $sql = "SELECT pb.id, pb.status, pb.created_at, pb.bet_id, ub.order_expiry, pa.username, u.currency_id as user_currency_id FROM " . self::$table . " as pb
+        $sql = "SELECT pb.id, pb.status, pb.created_at, pb.bet_id, ub.order_expiry, pa.username, u.currency_id as user_currency_id, ub.user_id FROM " . self::$table . " as pb
             JOIN user_bets as ub ON pb.user_bet_id = ub.id
             JOIN provider_accounts as pa ON pa.id = pb.provider_account_id
             JOIN users as u ON u.id = ub.user_id
