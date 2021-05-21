@@ -178,7 +178,7 @@ class ProcessSettlement
             ]);
 
             if (!empty($data['score'])) {
-                $userBetUpdate = UserBet::updateByBetIdNumber($connection, $providerBet['user_bet_id'], [
+                $userBetUpdate = UserBet::updateById($connection, $providerBet['user_bet_id'], [
                     'final_score'  => $finalScore,
                     'updated_at'   => Carbon::now()
                 ]);
@@ -248,14 +248,12 @@ class ProcessSettlement
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error(json_encode([
-                'WS_SETTLED_BETS' => [
-                    'message' => $e->getMessage(),
-                    'line'    => $e->getLine(),
-                    'file'    => $e->getFile(),
-                    'data'    => $data,
-                ]
-            ]));
+            logger('error', 'settlements', 'Something went wrong', [
+                'message' => $e->getMessage(),
+                'line'    => $e->getLine(),
+                'file'    => $e->getFile(),
+                'data'    => $data
+            ]);
         }
     }
 

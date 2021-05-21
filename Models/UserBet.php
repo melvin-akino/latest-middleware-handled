@@ -2,19 +2,15 @@
 
 namespace Models;
 
-class UserBet
+class UserBet extends Model
 {
-    private static $table = 'user_bets';
+    protected static $table = 'user_bets';
 
-    public static function updateByBetIdNumber($connection, $userBetId, $arrayParams)
+    public static function updateById($connection, $userBetId, $arrayParams)
     {
-        $sql    = "UPDATE " . self::$table . " SET ";
-        $params = [];
-        foreach ($arrayParams as $key => $value) {
-            $params[] = "{$key} = '{$value}'";
-        }
-        $sql .= implode(', ', $params);
-        $sql .= "WHERE id LIKE '%{$userBetId}'";
+        self::update($connection, $arrayParams, [
+            'id' => $userBetId
+        ]);
         return $connection->query($sql);
     }
 }
