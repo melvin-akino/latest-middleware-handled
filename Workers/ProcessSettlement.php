@@ -179,6 +179,7 @@ class ProcessSettlement
 
             if (!empty($data['score'])) {
                 $userBetUpdate = UserBet::updateById($connection, $providerBet['user_bet_id'], [
+                    'status'       => strtoupper($status),
                     'final_score'  => $finalScore,
                     'updated_at'   => Carbon::now()
                 ]);
