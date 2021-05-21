@@ -4,12 +4,13 @@ namespace Workers;
 
 use Models\{
     OddType,
-    Order,
+    UserBet,
+    ProviderBet,
     ExchangeRate,
     Source,
-    OrderLog,
-    ProviderAccountOrder,
-    OrderTransaction
+    ProviderBetLog,
+    ProviderBetTransaction,
+    BetWalletTransaction
 };
 use Carbon\Carbon;
 use Exception;
@@ -25,7 +26,7 @@ class ProcessSettlement
     {
         try {
             self::$swooleTable   = $swooleTable;
-            $orders              = $swooleTable['activeOrders'];
+            $providerBets        = $swooleTable['activeProviderBets'];
             $providersTable      = $swooleTable['enabledProviders'];
             $settlements         = $message['data'];
             $result              = OddType::getColMinusOne($connection);
@@ -48,7 +49,7 @@ class ProcessSettlement
                     continue;
                 }
 
-                foreach ($orders as $key => $order) {
+                foreach ($providerBets as $key => $providerBet) {
                     $swooleTable['lockHashData'][$settlement['bet_id']]['type'] = 'settlement';
 
                     if (!$providersTable->exists($settlement['provider'])) {
@@ -59,7 +60,7 @@ class ProcessSettlement
                     $providerId         = $providersTable->get($settlement['provider'])['value'];
                     $providerCurrencyId = $providersTable->get($settlement['provider'])['currencyId'];
 
-                    preg_match_all('!\d+!', $order['betId'], $mlBetIdArray);
+                    preg_match_all('!\d+!', $providerBet['betId'], $mlBetIdArray);
                     preg_match_all('!\d+!', $settlement['bet_id'], $providerBetIdArray);
 
                     $mlBetIdArrayIndex0       = $mlBetIdArray[0];
@@ -68,9 +69,9 @@ class ProcessSettlement
                     $providerBetId            = end($providerBetIdArrayIndex0);
 
                     if ($mlBetId == $providerBetId) {
-                        if ($order['status'] == 'SUCCESS' || ($order['status'] == 'PENDING' && !empty($order['betId']))) {
+                        if ($providerBet['status'] == 'SUCCESS' || ($providerBet['status'] == 'PENDING' && !empty($providerBet['betId']))) {
                             self::settledBets($connection, $settlement, $providerId, $providerCurrencyId, $colMinusOne, $providerBetId, $returnBetSourceId);
-                            $orders->del($key);
+                            $providerBets->del($key);
                         }
 
                         break;
@@ -103,47 +104,47 @@ class ProcessSettlement
             $status = "LOSE";
         }
 
-        $orderResult        = Order::getDataByBetId($connection, $providerBetId, true);
-        $order              = $connection->fetchAssoc($orderResult);
-        $exchangeRateResult = ExchangeRate::getRate($connection, $providerCurrencyId, $order['currency_id']);
+        $providerBetResult  = ProviderBet::getDataByBetId($connection, $providerBetId, true);
+        $providerBet        = $connection->fetchAssoc($providerBetResult);
+        $exchangeRateResult = ExchangeRate::getRate($connection, $providerCurrencyId, $providerBet['currency_id']);
         $exchangeRate       = $connection->fetchAssoc($exchangeRateResult);
 
-        if ((strtolower($data['status']) == 'win') && ($data['profit_loss'] == ($order['ato_win'] / 2))) {
+        if ((strtolower($data['status']) == 'win') && ($data['profit_loss'] == ($providerBet['ato_win'] / 2))) {
             $status = 'HALF WIN';
-        } else if ((strtolower($data['status']) == 'lose') && ($order['astake'] / 2 == abs($data['profit_loss']))) {
+        } else if ((strtolower($data['status']) == 'lose') && ($providerBet['astake'] / 2 == abs($data['profit_loss']))) {
             $status = 'HALF LOSE';
         }
 
         switch ($status) {
             case 'WIN':
-                $stake               = $order['stake'];
-                $balance             = $order['to_win'];
+                $stake               = $providerBet['stake'];
+                $balance             = $providerBet['to_win'];
                 $sourceName          = "BET_WIN";
                 $stakeReturnToLedger = true;
                 $charge              = 'Credit';
-                $transferAmount      = $order['to_win'];
+                $transferAmount      = $providerBet['to_win'];
 
                 break;
             case 'LOSE':
-                $balance    = $order['stake'] * -1;
+                $balance    = $providerBet['stake'] * -1;
                 $sourceName = "BET_LOSE";
                 $charge     = 'Debit';
 
                 break;
             case 'HALF WIN':
-                $stake               = $order['stake'];
-                $balance             = $order['to_win'] / 2;
+                $stake               = $providerBet['stake'];
+                $balance             = $providerBet['to_win'] / 2;
                 $sourceName          = "BET_HALF_WIN";
                 $stakeReturnToLedger = true;
                 $charge              = 'Credit';
-                $transferAmount      = $order['to_win'] / 2;
+                $transferAmount      = $providerBet['to_win'] / 2;
 
                 break;
             case 'HALF LOSE':
-                $balance        = ($order['stake'] / 2) * -1;
+                $balance        = ($providerBet['stake'] / 2) * -1;
                 $sourceName     = "BET_HALF_LOSE";
                 $charge         = 'Credit';
-                $transferAmount = $order['stake'] / 2;
+                $transferAmount = $providerBet['stake'] / 2;
 
                 break;
             case 'PUSH':
@@ -155,71 +156,69 @@ class ProcessSettlement
             case 'REFUNDED':
                 $balance        = 0;
                 $charge         = 'Credit';
-                $transferAmount = $order['stake'];
+                $transferAmount = $providerBet['stake'];
 
                 break;
         }
 
         $sourceResult = Source::getBySourceName($connection, $sourceName);
-        $source       = $connection->fetchAssoc($orderResult);
+        $source       = $connection->fetchAssoc($providerBetResult);
         $sourceId     = $source['id'];
         $score        = !empty($data['score']) ? $data['score'] : "0 - 0";
         $score        = array_map('trim', explode("-", $score));
         $finalScore   = $score[0] . ' - ' . $score[1];
 
         try {
-            $orderUpdate = Order::updateByBetIdNumber($connection, $providerBetId, [
+            $providerBetUpdate = ProviderBet::updateByBetIdNumber($connection, $providerBetId, [
                 'status'       => strtoupper($status),
                 'profit_loss'  => $balance,
                 'reason'       => $data['reason'],
                 'settled_date' => Carbon::now(),
-                'updated_at'   => Carbon::now(),
-                'final_score'  => $finalScore
+                'updated_at'   => Carbon::now()
             ]);
 
-            $orderLogs = OrderLog::create($connection, [
-                'provider_id'   => $providerId,
-                'sport_id'      => $data['sport'],
-                'bet_id'        => $order['bet_id'],
-                'bet_selection' => $order['bet_selection'],
-                'status'        => $status,
-                'user_id'       => $order['user_id'],
-                'reason'        => $data['reason'],
-                'profit_loss'   => $balance,
-                'order_id'      => $order['id'],
-                'settled_date'  => Carbon::now(),
-                'created_at'    => Carbon::now(),
-                'updated_at'    => Carbon::now(),
+            if (!empty($data['score'])) {
+                $userBetUpdate = UserBet::updateById($connection, $providerBet['user_bet_id'], [
+                    'final_score'  => $finalScore,
+                    'updated_at'   => Carbon::now()
+                ]);
+            }
+
+            $providerBetLogs = ProviderBetLog::create($connection, [
+                'provider_bet_id'   => $providerBet['id'],
+                'status'            => $status,
+                'created_at'        => Carbon::now(),
+                'updated_at'        => Carbon::now()
             ]);
 
-            $orderLogResult    = OrderLog::lastInsertedData($connection);
-            $orderLog          = $connection->fetchArray($orderLogResult);
-            $orderLogsId       = $orderLog['id'];
-            $chargeType        = $charge;
-            $receiver          = $order['user_id'];
-            $transferAmount    = $transferAmount == 0 ? 0 : $transferAmount;
-            $currency          = $order['currency_id'];
-            $creditDebitReason = "[{$sourceName}] - transaction for order id " . $order['id'];
-            $ledger            = self::makeTransaction($connection, $order, $transferAmount, $currency, $sourceId, $chargeType, $creditDebitReason);
+            $providerBetLogResult   = ProviderBetLog::lastInsertedData($connection);
+            $providerBetLog         = $connection->fetchArray($providerBetLogResult);
+            $providerBetLogsId      = $providerBetLog['id'];
+            $chargeType             = $charge;
+            $receiver               = $providerBet['user_id'];
+            $transferAmount         = $transferAmount == 0 ? 0 : $transferAmount;
+            $currency               = $providerBet['currency_id'];
+            $creditDebitReason      = "[{$sourceName}] - transaction for provider bet id " . $providerBet['id'];
+            $ledger                 = self::makeTransaction($connection, $providerBet, $transferAmount, $currency, $sourceId, $chargeType, $creditDebitReason);
 
-            $providerAccountOrderResult = ProviderAccountOrder::create($connection, [
-                'order_log_id'       => $orderLogsId,
+            $providerBetTransactionResult = ProviderBetTransaction::create($connection, [
+                'provider_bet_id'    => $providerBet['id'],
                 'exchange_rate_id'   => $exchangeRate['id'],
                 'actual_stake'       => $data['stake'],
-                'actual_to_win'      => !in_array($order['odd_type_id'], $colMinusOne) ? $data['stake'] * $data['odds'] : $data['stake'] * ($data['odds'] - 1),
+                'actual_to_win'      => !in_array($providerBet['odd_type_id'], $colMinusOne) ? $data['stake'] * $data['odds'] : $data['stake'] * ($data['odds'] - 1),
                 'actual_profit_loss' => $data['profit_loss'],
                 'exchange_rate'      => $exchangeRate['exchange_rate'],
-                'created_at'          => Carbon::now(),
-                'updated_at'          => Carbon::now(),
+                'created_at'         => Carbon::now(),
+                'updated_at'         => Carbon::now(),
             ]);
 
-            $orderTransactionResult = OrderTransaction::create($connection, [
-                'order_logs_id'       => $orderLogsId,
-                'user_id'             => $order['user_id'],
+            $betWalletTransactionResult = BetWalletTransaction::create($connection, [
+                'provider_bet_log_id' => $providerBetLogsId,
+                'user_id'             => $providerBet['user_id'],
                 'source_id'           => $sourceId,
-                'currency_id'         => $order['currency_id'],
+                'currency_id'         => $providerBet['currency_id'],
                 'wallet_ledger_id'    => $ledger->id,
-                'provider_account_id' => $order['provider_account_id'],
+                'provider_account_id' => $providerBet['provider_account_id'],
                 'reason'              => $data['reason'],
                 'amount'              => $balance,
                 'created_at'          => Carbon::now(),
@@ -228,20 +227,20 @@ class ProcessSettlement
 
             if ($stakeReturnToLedger == true) {
                 $transferAmount    = $stake;
-                $receiver          = $order['user_id'];
-                $currency          = $order['currency_id'];
+                $receiver          = $providerBet['user_id'];
+                $currency          = $providerBet['currency_id'];
                 $source            = $returnBetSourceId['id'];
                 $chargeType        = "Credit";
-                $creditDebitReason = "[RETURN_STAKE] - transaction for order id " . $order['id'];
-                $ledger            = self::makeTransaction($connection, $order, $transferAmount, $currency, $source, $chargeType, $creditDebitReason);
+                $creditDebitReason = "[RETURN_STAKE] - transaction for provider bet id " . $providerBet['id'];
+                $ledger            = self::makeTransaction($connection, $providerBet, $transferAmount, $currency, $source, $chargeType, $creditDebitReason);
 
-                $orderTransactionResult = OrderTransaction::create($connection, [
-                    'order_logs_id'       => $orderLogsId,
-                    'user_id'             => $order['user_id'],
+                $betWalletTransactionResult = BetWalletTransaction::create($connection, [
+                    'provider_bet_log_id' => $providerBetLogsId,
+                    'user_id'             => $providerBet['user_id'],
                     'source_id'           => $returnBetSourceId['id'],
-                    'currency_id'         => $order['currency_id'],
+                    'currency_id'         => $providerBet['currency_id'],
                     'wallet_ledger_id'    => $ledger->id,
-                    'provider_account_id' => $order['provider_account_id'],
+                    'provider_account_id' => $providerBet['provider_account_id'],
                     'reason'              => $data['reason'],
                     'amount'              => $stake,
                     'created_at'          => Carbon::now(),
@@ -249,14 +248,12 @@ class ProcessSettlement
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error(json_encode([
-                'WS_SETTLED_BETS' => [
-                    'message' => $e->getMessage(),
-                    'line'    => $e->getLine(),
-                    'file'    => $e->getFile(),
-                    'data'    => $data,
-                ]
-            ]));
+            logger('error', 'settlements', 'Something went wrong', [
+                'message' => $e->getMessage(),
+                'line'    => $e->getLine(),
+                'file'    => $e->getFile(),
+                'data'    => $data
+            ]);
         }
     }
 

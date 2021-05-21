@@ -4,7 +4,7 @@ namespace Workers;
 
 use Models\{
     SystemConfiguration,
-    Order
+    ProviderBet
 };
 use Carbon\Carbon;
 use Co\System;
@@ -65,7 +65,7 @@ class RequestSettlement
                         $subCommand    = 'scrape';
 
                         if ($swooleTable['maintenance']->exists($providerAlias) && empty($swooleTable['maintenance'][$providerAlias]['under_maintenance'])) {
-                            $providerUnsettledDatesResult = Order::getUnsettledDates($connection, $paId);
+                            $providerUnsettledDatesResult = ProviderBet::getUnsettledDates($connection, $paId);
 
                             while ($providerUnsettledDate = $connection->fetchAssoc($providerUnsettledDatesResult)) {
                                 // logger('info', 'app', 'Settlement: ' . $username . '==' . $providerUnsettledDate['unsettled_date']);

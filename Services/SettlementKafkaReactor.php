@@ -16,7 +16,7 @@ function preProcess()
 
     PreProcess::init($connection);
     PreProcess::loadEnabledProviders();
-    preProcess::loadActiveOrders();
+    preProcess::loadActiveProviderBets();
 
     $dbPool->return($connection);
 }
@@ -126,8 +126,8 @@ function settlementeHandler($message, $offset)
     }
 }
 
-function reloadActiveOrders(){
-    PreProcess::loadActiveOrders();
+function reloadActiveProviderBets(){
+    PreProcess::loadActiveProviderBets();
 }
 
 $activeProcesses   = 0;
@@ -158,6 +158,6 @@ Co\run(function() use ($queue, $activeProcesses) {
     });
 
     preProcess();
-    Swoole\Timer::tick(300000, "reloadActiveOrders");  // 5 mins reload
+    Swoole\Timer::tick(300000, "reloadActiveProviderBets");  // 5 mins reload
     reactor($queue);
 });

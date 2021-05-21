@@ -104,7 +104,7 @@ $config = [
                 ["name" => "value", "type" => \Swoole\Table::TYPE_INT]
             ],
         ],
-        "activeOrders"     => [
+        "activeProviderBets"     => [
             "size"   => 10000,
             "column" => [
                 ["name" => "createdAt", "type" => \Swoole\Table::TYPE_STRING, "size" => 50],
