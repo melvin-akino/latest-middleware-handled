@@ -178,7 +178,7 @@ class ProcessSettlement
             ]);
 
             if (!empty($data['score'])) {
-                $userBetUpdate = UserBet::updateById($connection, $providerBet['user_bet_id'], [
+                $userBetUpdate = UserBet::updateByBetIdNumber($connection, $providerBet['user_bet_id'], [
                     'final_score'  => $finalScore,
                     'updated_at'   => Carbon::now()
                 ]);

@@ -6,5 +6,5 @@ use Models\Model;
 
 Class ProviderBetTransaction extends Model
 {
-    private static $table = 'provider_bet_transactions';
+    protected static $table = 'provider_bet_transactions';
 }

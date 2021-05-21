@@ -4,7 +4,7 @@ namespace Models;
 
 class ProviderBet
 {
-    private static $table = 'provider_bets';
+    protected static $table = 'provider_bets';
 
     public static function getDataByBetId($connection, $providerBetId, bool $withProviderBetTransactions = false)
     {
