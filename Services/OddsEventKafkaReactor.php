@@ -181,20 +181,20 @@ function oddHandler($message, $offset)
             return;
         }
 
-        // if (empty($oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']]) || !in_array($message['request_uid'], $oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']])) {
-        //     logger('info', 'odds-events-reactor', 'Validation Error: Request is old', (array) $message);
-        //     $statsArray = [
-        //         "type"        => "odds",
-        //         "status"      => 'TIMESTAMP_ERROR',
-        //         "time"        => microtime(true) - $start,
-        //         "request_uid" => $message["request_uid"],
-        //         "request_ts"  => $message["request_ts"],
-        //         "offset"      => $offset,
-        //     ];
+        if (empty($oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']]) || !in_array($message['request_uid'], $oddsEventQueue[$message['data']['provider'] . ':' . $message['data']['schedule'] . ':' . $message['data']['sport']])) {
+            logger('info', 'odds-events-reactor', 'Validation Error: Request is old', (array) $message);
+            $statsArray = [
+                "type"        => "odds",
+                "status"      => 'TIMESTAMP_ERROR',
+                "time"        => microtime(true) - $start,
+                "request_uid" => $message["request_uid"],
+                "request_ts"  => $message["request_ts"],
+                "offset"      => $offset,
+            ];
 
-        //     addStats($statsArray);
-        //     return;
-        // }
+            addStats($statsArray);
+            return;
+        }
 
         $toHashMessage = $message["data"];
         unset($toHashMessage['runningtime'], $toHashMessage['id']);
