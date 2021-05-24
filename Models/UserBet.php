@@ -13,4 +13,10 @@ class UserBet extends Model
         ]);
         return $connection->query($sql);
     }
+
+    public static function checkifPending($connection, $id)
+    {
+        $sql = "SELECT * FROM " . self::$table . " WHERE id = '{$id}' and status LIKE 'PENDING'";
+        return $connection->query($sql);
+    }
 }

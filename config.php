@@ -115,6 +115,12 @@ $config = [
                 ["name" => "status", "type" => \Swoole\Table::TYPE_STRING, "size" => 20],
             ],
         ],
+        "oldPendingBets"     => [
+            "size"   => 10000,
+            "column" => [
+                ["name" => "user_bet_id", "type" => \Swoole\Table::TYPE_INT],
+            ],
+        ],
         "providerAccounts" => [
             "size"   => 100,
             "column" => [
@@ -282,6 +288,14 @@ $config = [
         ],
         'balance'             => [
             'name'  => 'balance.log',
+            'level' => 'debug'
+        ],
+        'bets-processor' => [
+            'name'  => 'bets-processor.log',
+            'level' => 'debug'
+        ],
+        'old-pending-bets'         => [
+            'name'  => 'old-pending-bets.log',
             'level' => 'debug'
         ],
         'maintenance-reactor' => [
