@@ -211,17 +211,41 @@ class PreProcess
         }
 
         $result = ProviderBet::getActiveProviderBets(self::$connection);
-        $providerBets = self::$connection->fetchAll($result);
+        
+        if (self::$connection->numRows($result)) {
+            $providerBets = self::$connection->fetchAll($result);
 
-        foreach ($providerBets as $providerBet) {
-            $swooleTable['activeProviderBets']->set($providerBet['id'], [
-                'createdAt'      => $providerBet['created_at'],
-                'betId'          => $providerBet['bet_id'],
-                'orderExpiry'    => $providerBet['order_expiry'],
-                'username'       => $providerBet['username'],
-                'userCurrencyId' => $providerBet['user_currency_id'],
-                'status'         => $providerBet['status']
-            ]);
+            foreach ($providerBets as $providerBet) {
+                $swooleTable['activeProviderBets']->set($providerBet['id'], [
+                    'createdAt'      => $providerBet['created_at'],
+                    'betId'          => $providerBet['bet_id'],
+                    'orderExpiry'    => $providerBet['order_expiry'],
+                    'username'       => $providerBet['username'],
+                    'userCurrencyId' => $providerBet['user_currency_id'],
+                    'status'         => $providerBet['status']
+                ]);
+            }
+        }
+    }
+
+    public static function loadOldPendingBets()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['oldPendingBets'] as $k => $e) {
+            $swooleTable['oldPendingBets']->del($k);
+        }
+
+        $result = ProviderBet::getOldPendingBets(self::$connection);
+        
+        if (self::$connection->numRows($result)) {
+            $oldPendingBets = self::$connection->fetchAll($result);
+    
+            foreach ($oldPendingBets as $oldPendingBet) {
+                $swooleTable['oldPendingBets']->set($oldPendingBet['id'], [
+                    'user_bet_id' => $oldPendingBet['user_bet_id']
+                ]);
+            }
         }
     }
 

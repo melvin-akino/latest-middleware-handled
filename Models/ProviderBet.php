@@ -2,6 +2,8 @@
 
 namespace Models;
 
+use Carbon\Carbon;
+
 class ProviderBet
 {
     protected static $table = 'provider_bets';
@@ -36,7 +38,8 @@ class ProviderBet
             JOIN user_bets as ub ON pb.user_bet_id = ub.id
             JOIN provider_accounts as pa ON pa.id = pb.provider_account_id
             JOIN users as u ON u.id = ub.user_id
-            WHERE pb.settled_date is null";
+            WHERE pb.settled_date is null
+            AND pb.status NOT LIKE 'FAILED'";
         return $connection->query($sql);
     }
 
@@ -59,6 +62,32 @@ class ProviderBet
                     provider_accounts pa ON pa.id = pb.provider_account_id
                     WHERE pb.settled_date IS NULL AND pb.provider_account_id = '{$providerAccountId}'
                     GROUP BY pa.username, pb.created_at, pb.provider_account_id";
+        return $connection->query($sql);
+    }
+
+    public static function getOldPendingBets($connection)
+    {
+        $sql = "SELECT pb.id, pb.user_bet_id FROM " . self::$table . " as pb
+            WHERE pb.status LIKE 'PENDING'
+            AND pb.created_at < '".  Carbon::now()->subMinutes(5)->toDateTimeString() ."'";
+        return $connection->query($sql);
+    }
+
+    public static function updateById($connection, $id, $arrayParams)
+    {
+        $sql    = "UPDATE " . self::$table . " SET ";
+        $params = [];
+        foreach ($arrayParams as $key => $value) {
+            $params[] = "{$key} = '{$value}'";
+        }
+        $sql .= implode(', ', $params);
+        $sql .= "WHERE id = {$id}";
+        return $connection->query($sql);
+    }
+
+    public static function getByUserBetId($connection, $userBetId) {
+        $sql = "SELECT pb.id, pb.status FROM " . self::$table . " as pb
+            WHERE pb.user_bet_id = {$userBetId}";
         return $connection->query($sql);
     }
 }
