@@ -55,13 +55,16 @@ Co\run(function () use ($queue) {
      * Leagues Auto-matching.
      */
     go(function () use ($dbPool, $swooleTable) {
-        try {
-            $connection = $dbPool->borrow();
-            ProcessOldPendingBets::handle($connection, $swooleTable);
-            $dbPool->return($connection);
-        } catch (Exception $e) {
-            echo $e->getMessage();
+        while (true) {
+            try {
+                $connection = $dbPool->borrow();
+                ProcessOldPendingBets::handle($connection, $swooleTable);
+                $dbPool->return($connection);
+                Co\System::sleep(0.001);
+            } catch (Exception $e) {
+                echo $e->getMessage();
+            }
+            Co\System::sleep(10);
         }
     });
-
 });
