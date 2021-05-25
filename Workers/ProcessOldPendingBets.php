@@ -71,12 +71,12 @@ class ProcessOldPendingBets
 
                                 if (!$hasPending) {
                                     UserBet::update($connection, [
-                                        'id' => $oldPendingBet['user_bet_id']
-                                    ], [
                                         'status'        => $status,
                                         'updated_at'    => Carbon::now()
+                                    ], [
+                                        'id' => $oldPendingBet['user_bet_id']
                                     ]);
-                                    logger('info', 'old-pending-bets', 'Updated status of user bet: ' . $oldPendingBet['user_bet_id']);
+                                    logger('info', 'old-pending-bets', 'Updated status of user bet: ' . $oldPendingBet['user_bet_id'] . ' to ' . $status);
                                 }
                             }
                         }
