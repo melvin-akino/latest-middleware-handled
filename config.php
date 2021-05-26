@@ -292,6 +292,10 @@ $config = [
             'name'  => 'maintenance.log',
             'level' => 'debug'
         ],
+        'minmax'              => [
+            'name'  => 'minmax.log',
+            'level' => 'debug'
+        ],
         'sessions-reactor'    => [
             'name'  => 'sessions-reactor.log',
             'level' => 'debug'
