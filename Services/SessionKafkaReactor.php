@@ -148,7 +148,7 @@ Co\run(function() use ($queue, $activeProcesses) {
 
     $dbPool->init();
     defer(function () use ($dbPool) {
-        logger('info','maintenance-reactor',  "Closing connection pool");
+        logger('info','sessions-reactor',  "Closing connection pool");
         echo "Closing connection pool\n";
         $dbPool->close();
     });
