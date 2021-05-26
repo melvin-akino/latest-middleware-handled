@@ -5,14 +5,9 @@ namespace Workers;
 use Exception;
 use Carbon\Carbon;
 use Models\{
-    MasterLeague,
     SystemConfiguration,
     Event,
-    EventGroup,
-    EventMarket,
-    EventMarketGroup,
-    MasterEventMarket,
-    UnmatchedData
+    EventMarket
 };
 use Ramsey\Uuid\Uuid;
 

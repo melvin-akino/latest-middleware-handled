@@ -9,8 +9,7 @@ use Models\{
     League,
     Team,
     Event,
-    EventMarket,
-    EventMarketGroup
+    EventMarket
 };
 
 class ProcessOdds
