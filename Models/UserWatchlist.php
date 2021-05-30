@@ -12,6 +12,7 @@ class UserWatchlist extends Model
     {
         $masterEventIds = [];
         $sql = "SELECT ".self::$table.".master_event_id FROM " . self::$table 
+        ." JOIN users ON users.id=".self::$table.".user_id AND users.status=1"
         ." JOIN event_groups on event_groups.master_event_id=".self::$table.".master_event_id" 
         ." JOIN events on events.id=event_groups.event_id"
         ." WHERE events.deleted_at is null AND game_schedule='{$schedule}'";
