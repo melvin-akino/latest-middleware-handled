@@ -57,13 +57,6 @@ class ProcessEvent
                 // and undelete it in DB
                 $eventIndexHash = md5(implode(':', [$sportId, $providerId, $pe]));
                 if (!$eventsTable->exists($eventIndexHash)) {
-                    // Add to cache
-                    $eventsTable[$eventIndexHash]['sport_id']         = $sportId;
-                    $eventsTable[$eventIndexHash]['event_identifier'] = $pe;
-                    $eventsTable[$eventIndexHash]['game_schedule']    = $schedule;
-                    $eventsTable[$eventIndexHash]['provider_id']      = $providerId;
-                    $eventsTable[$eventIndexHash]['missing_count']    = 0;
-
                     // Find it in DB
                     $myEventResult = Event::getEventByProviderParam($connection, $pe, $providerId, $sportId);
                     $myEvent       = $connection->fetchArray($myEventResult);
@@ -73,6 +66,13 @@ class ProcessEvent
                         logger('error', 'event', 'Got event message for event that is NOT in db on offset ' . $offset);
                         break;
                     } else {
+                        // Add to cache
+                        $eventsTable[$eventIndexHash]['sport_id']         = $sportId;
+                        $eventsTable[$eventIndexHash]['event_identifier'] = $pe;
+                        $eventsTable[$eventIndexHash]['game_schedule']    = $schedule;
+                        $eventsTable[$eventIndexHash]['provider_id']      = $providerId;
+                        $eventsTable[$eventIndexHash]['missing_count']    = 0;
+
                         // First need to find the event in DB because... for some reason...
                         // events have master_event_id in the event table... why????
                         //
