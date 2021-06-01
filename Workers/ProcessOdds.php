@@ -199,11 +199,18 @@ class ProcessOdds
             $swooleTable['lockHashData']->del($teamIndexHash);
             /** end away team **/
 
+            logger('debug', 'test', '#1 Processing: event_id ' . $eventIdentifier, $messageData);
+
             /* events */
             $eventId        = null;
             $eventIndexHash = md5(implode(':', [$sportId, $providerId, $eventIdentifier]));
+
+            logger('debug', 'test', '#2 hash: ' . $eventIndexHash);
+
             lockProcess($eventIndexHash, 'event');
             if ($eventsTable->exists($eventIndexHash)) {
+                logger('debug', 'test', '#2.1 hash: ' . $eventIndexHash);
+
                 $eventId = $eventsTable[$eventIndexHash]['id'];
 
                 if ($gameSchedule == self::SCHEDULE_EARLY && $eventsTable[$eventIndexHash]['game_schedule'] == self::SCHEDULE_TODAY) {
@@ -252,11 +259,15 @@ class ProcessOdds
                     'updated_at'    => $timestamp
                 ]);
             } else {
+                logger('debug', 'test', '#2.2 hash: ' . $eventIndexHash);
+
                 $swooleTable['lockHashData'][$eventIndexHash]['type'] = 'event';
                 $eventResult = Event::getEventByProviderParam($connection, $eventIdentifier, $providerId, $sportId);
                 var_dump(json_encode($connection));
 
                 if ($connection->numRows($eventResult) > 0) {
+                    logger('debug', 'test', '#2.2.1 event_id: ' . $eventIdentifier);
+
                     $event = $connection->fetchArray($eventResult);
                     try {
                         $missingCount = 0;
@@ -305,6 +316,8 @@ class ProcessOdds
 
                     $eventId = $event['id'];
                 } else {
+                    logger('debug', 'test', '#2.2.2 event_id: ' . $eventIdentifier);
+
                     $missingCount = 0;
                     $eventResult = Event::create($connection, [
                         'event_identifier' => $eventIdentifier,
@@ -361,6 +374,8 @@ class ProcessOdds
 
             $swooleTable['lockHashData']->del($eventIndexHash);
             /* end events */
+
+            logger('debug', 'test', '#3 end');
 
             $currentMarketsParsed     = [];
             $activeEventMarkets       = [];
