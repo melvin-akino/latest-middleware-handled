@@ -265,9 +265,5 @@ $config = [
             'name'  => 'stats.log',
             'level' => 'debug'
         ],
-        'test'         => [
-            'name'  => 'test.log',
-            'level' => 'debug'
-        ],
     ]
 ];
