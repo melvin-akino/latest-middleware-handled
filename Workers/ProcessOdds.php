@@ -202,6 +202,7 @@ class ProcessOdds
             /* events */
             $eventId        = null;
             $eventIndexHash = md5(implode(':', [$sportId, $providerId, $eventIdentifier]));
+
             lockProcess($eventIndexHash, 'event');
             if ($eventsTable->exists($eventIndexHash)) {
                 $eventId = $eventsTable[$eventIndexHash]['id'];
