@@ -115,6 +115,16 @@ $config = [
                 ["name" => "status", "type" => \Swoole\Table::TYPE_STRING, "size" => 20],
             ],
         ],
+        "oldPendingBets"     => [
+            "size"   => 10000,
+            "column" => [
+                ['name' => 'provider_id', 'type' => \Swoole\Table::TYPE_INT],
+                ['name' => 'sport_id', 'type' => \Swoole\Table::TYPE_INT],
+                ["name" => "bet_id", "type" => \Swoole\Table::TYPE_STRING, "size" => 30],
+                ["name" => "bet_selection", "type" => \Swoole\Table::TYPE_STRING, "size" => 255],
+                ['name' => 'user_id', 'type' => \Swoole\Table::TYPE_INT],
+            ],
+        ],
         "providerAccounts" => [
             "size"   => 100,
             "column" => [

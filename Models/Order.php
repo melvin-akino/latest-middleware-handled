@@ -2,9 +2,9 @@
 
 namespace Models;
 
-class Order
+class Order extends Model
 {
-    private static $table = 'orders';
+    protected static $table = 'orders';
 
     public static function getDataByBetId($connection, $providerBetId, bool $withProviderAccountOrders = false)
     {
@@ -58,5 +58,15 @@ class Order
                     WHERE o.settled_date IS NULL AND o.provider_account_id = '{$providerAccountId}'
                     GROUP BY pa.username, o.created_at, o.provider_account_id";
         return $connection->query($sql);
+    }
+
+    public static function getOldPendingBets($connection)
+    {
+        $sql = "SELECT o.id, o.provider_id, o.sport_id, o.bet_id, o.bet_selection, o.user_id FROM " . self::$table . " as o
+            WHERE o.status LIKE 'PENDING'
+            AND o.created_at < '".  Carbon::now()->subMinutes(5)->toDateTimeString() ."'";
+
+        return $connection->query($sql);
+
     }
 }
