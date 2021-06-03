@@ -2,6 +2,8 @@
 
 namespace Models;
 
+use Carbon\Carbon;
+
 class Order extends Model
 {
     protected static $table = 'orders';
