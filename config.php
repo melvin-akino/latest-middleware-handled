@@ -239,6 +239,14 @@ $config = [
             'name'  => 'balance.log',
             'level' => 'debug'
         ],
+        'bets-processor' => [
+            'name'  => 'bets-processor.log',
+            'level' => 'debug'
+        ],
+        'old-pending-bets'         => [
+            'name'  => 'old-pending-bets.log',
+            'level' => 'debug'
+        ],
         'maintenance-reactor' => [
             'name'  => 'maintenance-reactor.log',
             'level' => 'debug'
