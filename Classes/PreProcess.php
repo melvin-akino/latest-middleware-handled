@@ -218,6 +218,31 @@ class PreProcess
         }
     }
 
+    public static function loadOldPendingBets()
+    {
+        global $swooleTable;
+
+        foreach ($swooleTable['oldPendingBets'] as $k => $e) {
+            $swooleTable['oldPendingBets']->del($k);
+        }
+
+        $result = Order::getOldPendingBets(self::$connection);
+
+        if (self::$connection->numRows($result)) {
+            $oldPendingBets = self::$connection->fetchAll($result);
+
+            foreach ($oldPendingBets as $oldPendingBet) {
+                $swooleTable['oldPendingBets']->set($oldPendingBet['id'], [
+                    'provider_id'   => $oldPendingBet['provider_id'],
+                    'sport_id'      => $oldPendingBet['sport_id'],
+                    'bet_id'        => $oldPendingBet['bet_id'],
+                    'bet_selection' => $oldPendingBet['bet_selection'],
+                    'user_id'       => $oldPendingBet['user_id']
+                ]);
+            }
+        }
+    }
+
     public static function loadMaintenance()
     {
         global $swooleTable;
