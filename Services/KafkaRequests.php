@@ -31,6 +31,19 @@ function preProcess()
     $dbPool->return($connection);
 }
 
+
+function reloadEnabledProviderAccounts()
+{
+    global $dbPool;
+
+    $connection = $dbPool->borrow();
+
+    PreProcess::loadEnabledProviderAccounts();
+
+    $dbPool->return($connection);
+}
+
+
 $dbPool = null;
 makeProcess();
 
@@ -48,6 +61,7 @@ Co\run(function () use ($queue, $activeProcesses) {
     });
 
     preProcess();
+    Swoole\Timer::tick(300000, "reloadEnabledProviderAccounts");  // 5 mins reload
 
     go(function () use ($dbPool, $swooleTable) {
         RequestOddsEvent::handle($dbPool, $swooleTable);
