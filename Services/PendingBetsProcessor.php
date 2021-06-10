@@ -24,12 +24,18 @@ function preProcess()
 function resetProcess()
 {
     global $dbPool;
-
+    
     $connection = $dbPool->borrow();
 
     PreProcess::loadOldPendingBets();
 
     $dbPool->return($connection);
+
+    try {
+        setWalletClients();
+    } catch (Exception $e) {
+        logger('error', 'bets-processor', 'Error', (array) $e);
+    }
 }
 
 $dbPool = null;
