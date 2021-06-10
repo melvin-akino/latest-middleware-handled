@@ -7,6 +7,7 @@ use Swoole\Coroutine\PostgreSQL;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Ramsey\Uuid\Uuid;
+use Carbon\Carbon;
 
 function getPipe($maxProcessNumber = 1)
 {
@@ -335,4 +336,34 @@ function addStats($what)
                 break;
         }
     }
+}
+
+function setWalletClients() {
+    global $swooleTable;
+    global $wallet;
+    
+    $userWalletService = $wallet;
+    $getAccessToken    = $userWalletService->getAccessToken('wallet');
+    $countToExpiration = Carbon::now()->timestamp;
+    $expiresIn         = $getAccessToken->data->expires_in;
+    $refreshToken      = $getAccessToken->data->refresh_token;
+
+    $timestampNow = Carbon::now()->timestamp;
+    if ($countToExpiration + $expiresIn <= $timestampNow) {
+        $getRefreshToken   = $userWalletService->refreshToken($refreshToken);
+        $countToExpiration = $timestampNow;
+
+        if ($getRefreshToken->status) {
+            if ($countToExpiration + $getRefreshToken->data->expires_in <= $timestampNow) {
+                $getAccessToken = $userWalletService->getAccessToken('wallet');
+            }
+        } else {
+            $getAccessToken = $userWalletService->getAccessToken('wallet');
+        }
+    }
+
+    $accessToken = $getAccessToken->data->access_token;
+    $swooleTable['walletClients']->set('ml-users', [
+        'token' => $accessToken
+    ]);
 }

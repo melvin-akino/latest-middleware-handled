@@ -95,14 +95,14 @@ function settlementeHandler($message, $offset)
         $previousTS = $swooleTable['timestamps']['settlements']["ts"];
         $messageTS  = $message["request_ts"];
         if ($messageTS < $previousTS) {
-            logger('info', 'settlement-reactor', 'Timestamp is old', $message);
+            logger('info', 'settlements-reactor', 'Timestamp is old', $message);
 
             return;
         }
         $swooleTable['timestamps']['settlements']['ts'] = $messageTS;
 
         if (empty($message['data'])) {
-            logger('info', 'settlement-reactor', 'Empty Data', $message);
+            logger('info', 'settlements-reactor', 'Empty Data', $message);
             return;
         }
 
