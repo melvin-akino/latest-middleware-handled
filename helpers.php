@@ -367,3 +367,36 @@ function setWalletClients() {
         'token' => $accessToken
     ]);
 }
+
+if (!function_exists('recheckStatus')) {
+    function recheckStatus($status, $profitLoss, $actualToWin, $actualStake, $provider)
+    {
+        switch ($provider) {
+            case 'hg':
+                $decimalPlace = 1;
+                // more logic here...
+            break;
+
+            case 'isn':
+                $decimalPlace = 2;
+                // more logic here...
+            break;
+            
+            default:
+                $decimalPlace = 2;
+                // more logic here...
+            break;
+        }
+
+        $multiplier  = 10 ** $decimalPlace;
+        $actualToWin = ceil($actualToWin * $multiplier) / $multiplier;
+
+        if ((strtolower($status) == 'win') && ($profitLoss == ($actualToWin / 2))) {
+            $status = 'HALF WIN';
+        } else if ((strtolower($status) == 'lose') && ($actualStake / 2 == abs($profitLoss))) {
+            $status = 'HALF LOSE';
+        }
+
+        return $status;
+    }
+}

@@ -107,12 +107,7 @@ class ProcessSettlement
         $order              = $connection->fetchAssoc($orderResult);
         $exchangeRateResult = ExchangeRate::getRate($connection, $providerCurrencyId, $order['currency_id']);
         $exchangeRate       = $connection->fetchAssoc($exchangeRateResult);
-
-        if ((strtolower($data['status']) == 'win') && ($data['profit_loss'] == ($order['ato_win'] / 2))) {
-            $status = 'HALF WIN';
-        } else if ((strtolower($data['status']) == 'lose') && ($order['astake'] / 2 == abs($data['profit_loss']))) {
-            $status = 'HALF LOSE';
-        }
+        $status             = recheckStatus($data['status'], $data['profit_loss'], $order['ato_win'], $order['astake'], $data['provider']);
 
         switch ($status) {
             case 'WIN':
