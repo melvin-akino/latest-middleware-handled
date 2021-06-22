@@ -389,9 +389,10 @@ if (!function_exists('recheckStatus')) {
         }
 
         $multiplier  = 10 ** $decimalPlace;
+        $actualToWin /= 2;
         $actualToWin = ceil($actualToWin * $multiplier) / $multiplier;
 
-        if ((strtolower($status) == 'win') && ($profitLoss == ($actualToWin / 2))) {
+        if ((strtolower($status) == 'win') && ($profitLoss == $actualToWin)) {
             $status = 'HALF WIN';
         } else if ((strtolower($status) == 'lose') && ($actualStake / 2 == abs($profitLoss))) {
             $status = 'HALF LOSE';
