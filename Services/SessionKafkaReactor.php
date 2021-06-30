@@ -4,7 +4,7 @@ use RdKafka\{KafkaConsumer, Conf, Consumer, TopicConf};
 use Smf\ConnectionPool\ConnectionPool;
 use Smf\ConnectionPool\Connectors\CoroutinePostgreSQLConnector;
 use Swoole\Coroutine\PostgreSQL;
-use Workers\{ProcessSessionSync, ProcessSessionTransform};
+use Workers\{ProcessSessionSync, ProcessSessionTransform, ProcessSessionStop};
 
 require_once __DIR__ . '/../Bootstrap.php';
 
@@ -13,6 +13,7 @@ function makeConsumer()
     // LOW LEVEL CONSUMER
     $topics = [
         getenv('KAFKA_SESSIONS', 'SESSIONS'),
+        getenv('KAFKA_STOP_SESSIONS', 'STOP-SESSIONS'),
     ];
 
     $conf = new Conf();
@@ -116,6 +117,7 @@ function sessionHandler($message, $offset)
                 $process    = [
                     'sync'      => ProcessSessionSync::class,
                     'transform' => ProcessSessionTransform::class,
+                    'stop'      => ProcessSessionStop::class
                 ];
 
                 $process[$subCommand]::handle($connection, $swooleTable, $message, $offset);

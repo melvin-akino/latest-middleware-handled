@@ -48,4 +48,16 @@ Class ProviderAccount
         $sql = "UPDATE " . self::$table . " SET deleted_at = null, is_idle = false, is_enabled = false, usage = '{$usage}' WHERE id = '{$providerAccountId}'";
         return $connection->query($sql);
     }
+
+    public static function getProviderAccountByUsername($connection, $username)
+    {
+        $sql = "SELECT * FROM " . self::$table . " WHERE username = '{$username}' AND deleted_at is null";
+        return $connection->query($sql);
+    }
+
+    public static function getProviderAccountsByLine($connection, $getProviderAccountsByLine)
+    {
+        $sql = "SELECT * FROM " . self::$table . " WHERE line = '{$getProviderAccountsByLine}' AND deleted_at is null";
+        return $connection->query($sql);
+    }
 }
