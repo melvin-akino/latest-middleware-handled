@@ -37,12 +37,14 @@ class ProcessSessionSync
                         "username" => $row['username'],
                         "password" => $row['password'],
                         "category" => $providerTypes[$row['type']],
+                        "usage"    => strtolower($row['usage'])
                     ];
                 } else {
                     $command = "stop";
                     $data    = [
                         "provider" => strtolower($message['data']['provider']),
                         "username" => $row['username'],
+                        "usage"    => strtolower($row['usage'])
                     ];
                 }
 
