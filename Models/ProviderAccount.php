@@ -33,7 +33,7 @@ Class ProviderAccount
 
     public static function getByProviderAndTypes($connection, $providerId, $providerTypes)
     {
-        $sql = "SELECT username, password, type, is_enabled FROM " . self::$table . " WHERE provider_id = '{$providerId}' AND type IN ('" . implode("', '", array_keys($providerTypes)) . "') AND deleted_at is null";
+        $sql = "SELECT username, password, type, is_enabled, usage FROM " . self::$table . " WHERE provider_id = '{$providerId}' AND type IN ('" . implode("', '", array_keys($providerTypes)) . "') AND deleted_at is null";
         return $connection->query($sql);
     }
 
@@ -46,6 +46,18 @@ Class ProviderAccount
     public static function updateToInactive($connection, $providerAccountId, $usage = 'OPEN')
     {
         $sql = "UPDATE " . self::$table . " SET deleted_at = null, is_idle = false, is_enabled = false, usage = '{$usage}' WHERE id = '{$providerAccountId}'";
+        return $connection->query($sql);
+    }
+
+    public static function getProviderAccountByUsername($connection, $username)
+    {
+        $sql = "SELECT * FROM " . self::$table . " WHERE username = '{$username}' AND deleted_at is null";
+        return $connection->query($sql);
+    }
+
+    public static function getProviderAccountsByLine($connection, $getProviderAccountsByLine)
+    {
+        $sql = "SELECT * FROM " . self::$table . " WHERE line = '{$getProviderAccountsByLine}' AND deleted_at is null";
         return $connection->query($sql);
     }
 }
