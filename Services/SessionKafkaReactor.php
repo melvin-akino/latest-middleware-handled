@@ -96,7 +96,7 @@ function sessionHandler($message, $offset)
     global $dbPool;
 
     try {
-        $previousTS = $swooleTable['timestamps']['sessions:' . $message['sub_command'] . ':' . strtolower($message['data']['provider'])]['ts'];
+        $previousTS = $swooleTable['timestamps']['sessions:' . $message['sub_command']]['ts'];
         $messageTS  = $message["request_ts"];
         if ($messageTS < $previousTS) {
             logger('info','sessions-reactor', 'Validation Error: Timestamp is old', (array) $message);
