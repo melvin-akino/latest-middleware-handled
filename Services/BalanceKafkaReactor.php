@@ -156,6 +156,17 @@ $dbPool            = null;
 $countToExpiration = Carbon::now()->timestamp;
 makeProcess();
 
+function reloadEnabledProviderAccounts()
+{
+    global $dbPool;
+
+    $connection = $dbPool->borrow();
+
+    PreProcess::loadEnabledProviderAccounts();
+
+    $dbPool->return($connection);
+}
+
 Co\run(function () use ($queue, $activeProcesses) {
     global $dbPool;
     global $wallet;
@@ -174,5 +185,6 @@ Co\run(function () use ($queue, $activeProcesses) {
     });
 
     preProcess();
+    Swoole\Timer::tick(300000, "reloadEnabledProviderAccounts");  // 5 mins reload
     reactor($queue);
 });
