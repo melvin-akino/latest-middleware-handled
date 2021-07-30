@@ -33,6 +33,7 @@ class ProcessSessionStop
                 if ($providerAccountsWithSameLine) {
                     foreach ($providerAccountsWithSameLine as $providerAccount) {
                         $providerAccountId = $providerAccount['id'];
+                        $inactiveAccount['usage'] = $inactiveAccount['usage'] ?: "open";
                         $resultUpdate = ProviderAccount::updateToInactive($connection, $providerAccountId, strtoupper($inactiveAccount['usage']));
                         if ($resultUpdate) {
                             $providerAccountsTable->del($providerAccountId);
