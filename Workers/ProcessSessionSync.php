@@ -24,9 +24,9 @@ class ProcessSessionSync
             'SCRAPER_MIN_MAX' => 'minmax',
         ];
         try {
-            $providersTable   = $swooleTable['enabledProviders'];
-            $providerId       = $providersTable[strtolower($message['data']['provider'])]['value'];
-            $result = ProviderAccount::getByProviderAndTypes($connection, $providerId, $providerTypes);
+            $providersTable = $swooleTable['enabledProviders'];
+            $providerId     = $providersTable[strtolower($message['data']['provider'])]['value'];
+            $result         = ProviderAccount::getByProviderAndTypes($connection, $providerId, $providerTypes);
 
 
             while ($row = $connection->fetchAssoc($result)) {
