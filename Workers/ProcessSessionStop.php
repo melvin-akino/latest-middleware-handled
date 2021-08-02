@@ -17,24 +17,23 @@ class ProcessSessionStop
 
         try {
             // Set the starting time of this function, to keep running stats
-            $startTime = microtime(true);
-
-            $inactiveAccount = $message['data'];
-
+            $startTime             = microtime(true);
+            $inactiveAccount       = $message['data'];
             $providerAccountsTable = $swooleTable['providerAccounts'];
-
-            $result           = ProviderAccount::getProviderAccountByUsername($connection, $inactiveAccount['username']);
-            $providerAccount = $connection->fetchArray($result);
+            $result                = ProviderAccount::getProviderAccountByUsername($connection, $inactiveAccount['username']);
+            $providerAccount       = $connection->fetchArray($result);
 
             if ($providerAccount) {
-                $line = $providerAccount['line'];
-                $result           = ProviderAccount::getProviderAccountsByLine($connection, $line);
+                $line                         = $providerAccount['line'];
+                $result                       = ProviderAccount::getProviderAccountsByLine($connection, $line);
                 $providerAccountsWithSameLine = $connection->fetchAll($result);
+
                 if ($providerAccountsWithSameLine) {
                     foreach ($providerAccountsWithSameLine as $providerAccount) {
-                        $providerAccountId = $providerAccount['id'];
+                        $providerAccountId        = $providerAccount['id'];
                         $inactiveAccount['usage'] = $inactiveAccount['usage'] ?: "open";
-                        $resultUpdate = ProviderAccount::updateToInactive($connection, $providerAccountId, strtoupper($inactiveAccount['usage']));
+                        $resultUpdate             = ProviderAccount::updateToInactive($connection, $providerAccountId, strtoupper($inactiveAccount['usage']));
+
                         if ($resultUpdate) {
                             $providerAccountsTable->del($providerAccountId);
                         } else {

@@ -19,9 +19,8 @@ class ProcessSessionTransform
             // Set the starting time of this function, to keep running stats
             $startTime = microtime(true);
 
-            $activeAccounts   = $message['data']['active_sessions'];
-            $inactiveAccounts = $message['data']['inactive_sessions'];
-
+            $activeAccounts        = $message['data']['active_sessions'];
+            $inactiveAccounts      = $message['data']['inactive_sessions'];
             $providerAccountsTable = $swooleTable['providerAccounts'];
 
             $result           = ProviderAccount::getAll($connection);
@@ -35,7 +34,9 @@ class ProcessSessionTransform
 
                     $providerAccountId = $providerAccount['id'];
                     if (in_array($activeAccount['category'], $categoryTypes)) {
-                        $resultUpdate = ProviderAccount::updateToActive($connection, $providerAccountId);
+                        $usage        = $activeAccount['usage'] ?: "open";
+                        $resultUpdate = ProviderAccount::updateToActive($connection, $providerAccountId, strtoupper($usage));
+
                         if ($resultUpdate) {
                             if ($providerAccountsTable->exists($providerAccountId)) {
                                 $providerAccountsTable[$providerAccountId]['provider_id']       = $providerAccount['provider_id'];
@@ -55,7 +56,9 @@ class ProcessSessionTransform
                         continue;
                     }
 
-                    $providerAccountId = $providerAccount['id'];
+                    $providerAccountId        = $providerAccount['id'];
+                    $inactiveAccount['usage'] = $inactiveAccount['usage'] ?: "open";
+
                     if (in_array($inactiveAccount['category'], $categoryTypes)) {
                         $resultUpdate = ProviderAccount::updateToInactive($connection, $providerAccountId, strtoupper($inactiveAccount['usage']));
                         if ($resultUpdate) {
