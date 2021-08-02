@@ -39,7 +39,7 @@ Class ProviderAccount
 
     public static function updateToActive($connection, $providerAccountId, $usage = 'OPEN')
     {
-        $sql = "UPDATE " . self::$table . " SET deleted_at = null, is_idle = true, is_enabled = true WHERE id = '{$providerAccountId}'";
+        $sql = "UPDATE " . self::$table . " SET deleted_at = null, is_idle = true, is_enabled = true, usage = '{$usage}' WHERE id = '{$providerAccountId}'";
         return $connection->query($sql);
     }
 
