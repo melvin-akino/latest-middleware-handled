@@ -376,6 +376,18 @@ $count           = 0;
 $dbPool          = null;
 $oddsEventQueue  = [];
 
+function reloadProvidersConfig()
+{
+    global $dbPool;
+
+    $connection = $dbPool->borrow();
+
+    PreProcess::loadEnabledProviders();
+    PreProcess::loadSystemConfig();
+
+    $dbPool->return($connection);
+}
+
 Co\run(function () {
     global $dbPool;
 
@@ -391,6 +403,7 @@ Co\run(function () {
     preProcess();
     $queue = makeConsumer();
 
+    Swoole\Timer::tick(300000, "reloadProvidersConfig");
     Swoole\Timer::tick(10000, "checkTableCounts");
     Swoole\Timer::tick(360000, "clearHashData");
     Swoole\Timer::tick(10000, "swooleStats", 'odds');
